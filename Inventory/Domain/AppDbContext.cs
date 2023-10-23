@@ -1,7 +1,6 @@
 ﻿using Inventory.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Data;
+
 
 namespace Inventory.Domain
 {

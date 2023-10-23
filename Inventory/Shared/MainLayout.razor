@@ -5,10 +5,50 @@
 <div class="page">
 
     <main>
-        <div class="top-row px-4">
-            <NavLink href="/login">Login</NavLink>
-            <button>Logout</button>
-        </div>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#">File</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Masters
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Customers</a></li>
+                                <li><a class="dropdown-item" href="#">Supliers</a></li>
+                                <li><a class="dropdown-item" href="#">Products</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Transactions
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Purchase Order</a></li>
+                                <li><a class="dropdown-item" href="#">Purchases</a></li>
+                                <li><a class="dropdown-item" href="#">Sales Order</a></li>
+                                <li><a class="dropdown-item" href="#">Sales</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#">Reports</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#">Utilities</a>
+                        </li>
+                    </ul>
+             
+            </div>
+            <div class="px-4">
+                <NavLink href="/login">Login</NavLink>
+                <button>Logout</button>
+            </div>
+            </div>
+        </nav>
+       
 
         <article class="content px-4">
             @Body

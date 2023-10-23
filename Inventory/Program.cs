@@ -20,6 +20,7 @@ namespace Inventory
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
             });
             builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
+            builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 
 
             var app = builder.Build();

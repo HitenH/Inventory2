@@ -6,7 +6,8 @@ namespace Inventory.Domain.Repository.Abstract
     {
         Task Create(UserEntity user);
         Task<IEnumerable<UserEntity>> GetAll();
-        Task<UserEntity> GetById();
+        Task<UserEntity> GetById(int id);
+        Task<UserEntity> GetByName(string name);
         Task Update(UserEntity user);
         Task Delete(UserEntity user);
     }

@@ -3,5 +3,19 @@
 
 <PageTitle>Login</PageTitle>
 
-<h1>Hello, world!</h1>
-
+<div class="d-flex justify-content-center">
+    <EditForm EditContext="editContext" class="card-header" OnValidSubmit="SignIn">
+        <DataAnnotationsValidator />
+        <div class="mb-3">
+            <label for="login-name" class="form-label">User Name</label>
+            <InputText @bind-Value="loginModel.Name" id="login-name" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label for="login-password" class="form-label">Password</label>
+            <InputText @bind-Value="loginModel.Password" id="login-password" class="form-control" />
+        </div>
+        <ValidationSummary />
+        <ValidationMessage For="@(() => loginModel.Name)" />
+        <button type="submit" id="button-submit" class="btn btn-success">Login</button>
+    </EditForm>
+</div>
