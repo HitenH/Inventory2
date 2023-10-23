@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231023184454_Init")]
+    [Migration("20231023201926_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -40,6 +40,10 @@ namespace Inventory.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Users");
@@ -49,13 +53,15 @@ namespace Inventory.Migrations
                         {
                             Id = 1,
                             Name = "Hiten",
-                            Password = "Hiten"
+                            Password = "Hiten",
+                            Role = "User"
                         },
                         new
                         {
                             Id = 2,
                             Name = "Admin",
-                            Password = "admin"
+                            Password = "admin",
+                            Role = "Admin"
                         });
                 });
 #pragma warning restore 612, 618

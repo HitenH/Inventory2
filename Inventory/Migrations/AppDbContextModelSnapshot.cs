@@ -37,6 +37,10 @@ namespace Inventory.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Users");
@@ -46,13 +50,15 @@ namespace Inventory.Migrations
                         {
                             Id = 1,
                             Name = "Hiten",
-                            Password = "Hiten"
+                            Password = "Hiten",
+                            Role = "User"
                         },
                         new
                         {
                             Id = 2,
                             Name = "Admin",
-                            Password = "admin"
+                            Password = "admin",
+                            Role = "Admin"
                         });
                 });
 #pragma warning restore 612, 618

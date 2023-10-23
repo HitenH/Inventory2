@@ -1,7 +1,10 @@
+using Inventory.Authentication;
 using Inventory.Domain;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +23,8 @@ namespace Inventory
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
             });
             builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
+            builder.Services.AddScoped<ProtectedSessionStorage>();
+            builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
             builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 
 
