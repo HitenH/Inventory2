@@ -15,9 +15,9 @@ namespace Inventory.Domain
         {
             modelBuilder.Entity<UserEntity>().HasData(new List<UserEntity>()
             {
-                new UserEntity(){ Name = "Hiten", Password = "Hiten"},
-                new UserEntity(){ Name = "Admin", Password = "admin"}
-            });
+                new UserEntity(){ Id = 1, Name = "Hiten", Password = "Hiten"},
+                new UserEntity(){ Id = 2, Name = "Admin", Password = "admin"}
+            }); ; ;
         }
     }
 }
