@@ -1,7 +1,14 @@
 ﻿@page "/";
 
-<h3>Index</h3>
+<div class="d-flex justify-content-center">
+    <AuthorizeView>
+        <Authorized>
+            <h1>Welcome @context.User.Identity.Name</h1>
+        </Authorized>
+        <NotAuthorized>
+            <h1>Please Login!</h1>
+        </NotAuthorized>
+    </AuthorizeView>
 
-@code {
+</div>
 
-}
