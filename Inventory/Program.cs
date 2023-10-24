@@ -23,9 +23,11 @@ namespace Inventory
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
             });
             builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
+            builder.Services.AddScoped<ICustomerRepository, CustomerRepositoryEF>();
             builder.Services.AddScoped<ProtectedSessionStorage>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
             builder.Services.AddAutoMapper(typeof(AppMappingProfile));
+            builder.Services.AddBlazorBootstrap();
 
 
             var app = builder.Build();

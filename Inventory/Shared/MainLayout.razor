@@ -15,25 +15,25 @@
                                     <a class="nav-link active" aria-current="page" href="#">File</a>
                                 </li>
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Masters
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#">Customers</a></li>
-                                        <li><a class="dropdown-item" href="#">Supliers</a></li>
-                                        <li><a class="dropdown-item" href="#">Products</a></li>
-                                    </ul>
+                                    <Dropdown>
+                                        <DropdownToggleButton Color="ButtonColor.Light">Masters</DropdownToggleButton>
+                                        <DropdownMenu>
+                                            <DropdownItem href="/customers"  Type="ButtonType.Link">Customers</DropdownItem>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Supliers</DropdownItem>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Products</DropdownItem>
+                                        </DropdownMenu>
+                                    </Dropdown>
                                 </li>
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Transactions
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#">Purchase Order</a></li>
-                                        <li><a class="dropdown-item" href="#">Purchases</a></li>
-                                        <li><a class="dropdown-item" href="#">Sales Order</a></li>
-                                        <li><a class="dropdown-item" href="#">Sales</a></li>
-                                    </ul>
+                                    <Dropdown>
+                                        <DropdownToggleButton Color="ButtonColor.Light">Transactions</DropdownToggleButton>
+                                        <DropdownMenu>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Purchase Order</DropdownItem>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Purchases</DropdownItem>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Sales Order</DropdownItem>
+                                            <DropdownItem To="#" Type="ButtonType.Link">Sales</DropdownItem>
+                                        </DropdownMenu>
+                                    </Dropdown>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link active" aria-current="page" href="#">Reports</a>
@@ -45,21 +45,21 @@
                         </div>
                     </Authorized>
                 </AuthorizeView>
-               
-            <div class="px-4">
-                <AuthorizeView>
-                    <Authorized>
-                            <button class="btn btn-outline-secondary" @onclick="Logout" >Logout</button>
-                    </Authorized>
-                    <NotAuthorized>
+
+                <div class="px-4">
+                    <AuthorizeView>
+                        <Authorized>
+                            <button class="btn btn-outline-secondary" @onclick="Logout">Logout</button>
+                        </Authorized>
+                        <NotAuthorized>
                             <NavLink class="btn btn-outline-secondary" href="/login">Login</NavLink>
-                    </NotAuthorized>
-                </AuthorizeView>
-           
-            </div>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                </div>
             </div>
         </nav>
-       
+
 
         <article class="content px-4">
             @Body
