@@ -34,7 +34,8 @@ namespace Inventory.Pages
                 {
                     if (user.Password != loginModel.Password)
                     {
-                        messageStore.Add(() => loginModel.Password, "Invalid Password!");
+                        navManager.NavigateTo("/login", true);
+                        //messageStore.Add(() => loginModel.Password, "Invalid Password!");
                     }
                     else
                     {
@@ -46,6 +47,10 @@ namespace Inventory.Pages
                         });
                         navManager.NavigateTo("/", true);
                     }
+                }
+                else
+                {
+                    navManager.NavigateTo("/login", true);
                 }
             }
             catch (Exception ex)

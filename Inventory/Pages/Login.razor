@@ -9,12 +9,13 @@
             <label for="login-name" class="form-label">User Name</label>
             <InputText @bind-Value="loginModel.Name" id="login-name" class="form-control" />
         </div>
+        <ValidationMessage For="@(() => loginModel.Name)" />
         <div class="mb-3">
             <label for="login-password" class="form-label">Password</label>
             <InputText type="password" @bind-Value="loginModel.Password" id="login-password" class="form-control" />
         </div>
-        <ValidationSummary />
-        <ValidationMessage For="@(() => loginModel.Name)" />
+@*        <ValidationSummary />*@
+        <ValidationMessage For="@(() => loginModel.Password)" />
         <button type="submit" id="button-submit" class="btn btn-success">Login</button>
     </EditForm>
 </div>

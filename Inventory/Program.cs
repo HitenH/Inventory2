@@ -2,10 +2,8 @@ using Inventory.Authentication;
 using Inventory.Domain;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory
