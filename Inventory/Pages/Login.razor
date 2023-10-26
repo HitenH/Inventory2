@@ -14,7 +14,6 @@
             <label for="login-password" class="form-label">Password</label>
             <InputText type="password" @bind-Value="loginModel.Password" id="login-password" class="form-control" />
         </div>
-@*        <ValidationSummary />*@
         <ValidationMessage For="@(() => loginModel.Password)" />
         <button type="submit" id="button-submit" class="btn btn-success">Login</button>
     </EditForm>

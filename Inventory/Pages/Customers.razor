@@ -1,11 +1,13 @@
 ﻿@page "/customers"
+@attribute [Authorize]
 @using Inventory.Models;
 
 <div class="d-flex justify-content-lg-between mb-3">
     <NavLink href="/customer" class="btn btn-secondary">Add New Customer</NavLink>
+    <Search SearchItemCallBack="SearchItem"></Search>
 </div>
 
-@if (customers == null)
+@if (customersAfterSearch == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -23,26 +25,38 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var customer in customers.AsQueryable())
+            @if (customersAfterSearch.Count != 0)
+            {
+                @foreach (var customer in customersAfterSearch.AsQueryable())
+                {
+                    <tr>
+                        <td class="text-center">@customer.CustomerId</td>
+                        <td class="text-center">@customer.Name</td>
+
+                        @if (customer.Numbers.Count == 0)
+                        {
+                            <td class="text-center">-</td>
+                        }
+                        else
+                        {
+                            <td class="text-center">@customer.Numbers.First().Phone</td>
+                        }
+
+                        <td class="text-center">@customer.Area</td>
+                        <td class="text-center">-</td>
+                        <td class="text-center"><a class="btn btn-secondary" href="customer/@customer.Id">Info</a></td>
+                    </tr>
+                }
+            }
+            else
             {
                 <tr>
-                    <td class="text-center">@customer.CustomerId</td>
-                    <td class="text-center">@customer.Name</td>
-
-                    @if (customer.Numbers.Count == 0)
-                    {
-                        <td class="text-center">-</td>
-                    }
-                    else
-                    {
-                        <td class="text-center">@customer.Numbers.First().Phone</td>
-                    }
-
-                    <td class="text-center">@customer.Area</td>
-                    <td class="text-center">-</td>
-                    <td class="text-center"><a class="btn btn-secondary" href="customer/@customer.Id">Info</a></td>
+                    <td colspan="6" class="text-center">
+                        Not Found!
+                    </td>
                 </tr>
             }
+
         </tbody>
     </table>
 }

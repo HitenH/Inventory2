@@ -33,10 +33,7 @@ namespace Inventory.Pages
                 if (user != null)
                 {
                     if (user.Password != loginModel.Password)
-                    {
-                        navManager.NavigateTo("/login", true);
-                        //messageStore.Add(() => loginModel.Password, "Invalid Password!");
-                    }
+                        loginModel.Password = "";
                     else
                     {
                         var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
@@ -49,9 +46,7 @@ namespace Inventory.Pages
                     }
                 }
                 else
-                {
-                    navManager.NavigateTo("/login", true);
-                }
+                    loginModel = new();
             }
             catch (Exception ex)
             {

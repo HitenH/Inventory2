@@ -14,7 +14,8 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
-        private List<CustomerModel> customers;
+        private List<CustomerModel> customers = new();
+        private List<CustomerModel> customersAfterSearch = new();
 
         protected async override Task OnInitializedAsync()
         {
@@ -25,6 +26,7 @@ namespace Inventory.Pages
                 if (list.Count != 0)
                 {
                     customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
+                    customersAfterSearch = customers;
                 }
             }
             catch (Exception ex)
@@ -32,10 +34,10 @@ namespace Inventory.Pages
                 Logger.LogError("Customers page error" + ex.Message);
             }
         }
-
-        private async Task<GridDataProviderResult<CustomerModel>> CustomerDataProvider(GridDataProviderRequest<CustomerModel> request)
+        public void SearchItem(ChangeEventArgs e)
         {
-            return await Task.FromResult(request.ApplyTo(customers));
+            var search = e.Value.ToString().ToLower();
+            customersAfterSearch = customers.Where(n => n.CustomerId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
         }
     }
 }
