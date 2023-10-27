@@ -3,8 +3,8 @@
 
 <h2 class="d-flex justify-content-center mb-5">Customer</h2>
 
-<EditForm Model="@customerModel" class="card-header mx-5" 
-                 OnValidSubmit="async ()=>
+<EditForm Model="@customerModel" class="card-header mx-5"
+          OnValidSubmit="async ()=>
                 {
                     if(CustomerId == null){
                         await AddCustomer();
@@ -33,14 +33,15 @@
         <label for="area" class="form-label">Area</label>
         <InputText @bind-Value="customerModel.Area" id="area" class="form-control" />
     </div>
-
-    @foreach (var number in customerModel.Numbers)
-    {
-        <div class="mb-3">
-            <label for="phone" class="form-label">Number</label>
-            <InputText id="phone" @bind-Value="number.Phone" class="form-control" />
-        </div>
-    }
+    <div class="d-flex justify-content-between">
+        @foreach (var number in customerModel.Numbers)
+        {
+            <div class="mb-3">
+                <label for="phone" class="form-label">Mobile</label>
+                <InputText id="phone" @bind-Value="number.Phone" class="form-control" />
+            </div>
+        }
+    </div>
     <div class="mb-3">
         <label for="remarks" class="form-label">Remarks</label>
         <InputTextArea @bind-Value="customerModel.Remarks" id="remarks" class="form-control" rows="3" />
