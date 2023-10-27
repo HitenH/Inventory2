@@ -10,6 +10,7 @@ namespace Inventory.Domain
 
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<CustomerEntity> Customers { get; set; }
+        public DbSet<SupplierEntity> Suppliers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

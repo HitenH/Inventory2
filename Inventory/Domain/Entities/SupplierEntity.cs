@@ -2,11 +2,11 @@
 
 namespace Inventory.Domain.Entities
 {
-    public class CustomerEntity
+    public class SupplierEntity
     {
         [Key]
         public Guid Id { get; set; }
-        public string? CustomerId { get; set; }
+        public string? SupplierId { get; set; }
         public string? Name { get; set; }
         public string? ContactPerson { get; set; }
         public string? Address { get; set; }

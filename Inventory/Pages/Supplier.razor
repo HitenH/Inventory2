@@ -1,0 +1,56 @@
+﻿@page "/supplier/{supplierId?}"
+@attribute [Authorize]
+
+<h2 class="d-flex justify-content-center mb-5">Supplier</h2>
+
+<EditForm Model="@supplierModel" class="card-header mx-5" 
+                 OnValidSubmit="async ()=>
+                {
+                    if(SupplierId == null){
+                        await AddSupplier();
+                }
+                    else{
+                        await UpdateSupplier();
+                } }">
+    <DataAnnotationsValidator />
+    <div class="mb-2">
+        <label for="name" class="form-label">Name</label>
+        <InputText @bind-Value="supplierModel.Name" id="name" class="form-control" />
+    </div>
+    <div class="mb-2">
+        <label for="suplid" class="form-label">SupplierId</label>
+        <InputText @bind-Value="supplierModel.SupplierId" id="suplid" class="form-control" rows="3" />
+    </div>
+    <div class="mb-2">
+        <label for="contact-person" class="form-label">ContactPerson</label>
+        <InputText @bind-Value="supplierModel.ContactPerson" id="contact-person" class="form-control" />
+    </div>
+    <div class="mb-2">
+        <label for="address" class="form-label">Address</label>
+        <InputText @bind-Value="supplierModel.Address" id="address" class="form-control" />
+    </div>
+    <div class="mb-2">
+        <label for="area" class="form-label">Area</label>
+        <InputText @bind-Value="supplierModel.Area" id="area" class="form-control" />
+    </div>
+
+    @foreach (var number in supplierModel.Numbers)
+    {
+            <div class="mb-3">
+                <label for="phone" class="form-label">Number</label>
+                <InputText id="phone" @bind-Value="number.Phone" class="form-control" />
+            </div>
+    }
+    <div class="mb-3">
+        <label for="remarks" class="form-label">Remarks</label>
+        <InputTextArea @bind-Value="supplierModel.Remarks" id="remarks" class="form-control" rows="3" />
+    </div>
+    <ValidationSummary />
+    <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+    <NavLink type="button" href="/customers" id="button-close" class="btn btn-info ms-3">Close</NavLink>
+    @if (supplierModel != null)
+    {
+            <button type="button" class="btn btn-danger ms-3" @onclick="DeleteSupplier">Delete</button>
+    }
+    <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+</EditForm>

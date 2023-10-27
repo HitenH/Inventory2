@@ -9,6 +9,7 @@ namespace Inventory
         public AppMappingProfile()
         {
             CreateMap<CustomerEntity, CustomerModel>().ReverseMap();
+            CreateMap<SupplierEntity, SupplierModel>().ReverseMap();
         }
     }
 }

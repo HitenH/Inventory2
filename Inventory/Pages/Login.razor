@@ -15,6 +15,9 @@
             <InputText type="password" @bind-Value="loginModel.Password" id="login-password" class="form-control" />
         </div>
         <ValidationMessage For="@(() => loginModel.Password)" />
-        <button type="submit" id="button-submit" class="btn btn-success">Login</button>
+        <div class="d-flex justify-content-between">
+            <button type="submit" id="button-submit" class="btn btn-success">Login</button>
+            <a class="btn btn-secondary" href="/">Close</a>
+        </div>
     </EditForm>
 </div>

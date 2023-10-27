@@ -2,6 +2,7 @@
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 
 
@@ -15,6 +16,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
+        [Inject] private INumberService NumberService { get; set; }
 
         private CustomerModel customerModel = new CustomerModel();
         private CustomerEntity customerEntity;
@@ -54,7 +56,7 @@ namespace Inventory.Pages
                 try
                 {
                     customerEntity = Mapper.Map<CustomerEntity>(customerModel);
-                    var numbers = GetNumbers(customerEntity.Numbers);
+                    var numbers = NumberService.GetNumbers(customerEntity.Numbers);
                     customerEntity.Numbers = new();
 
                     if (numbers != null)
@@ -83,7 +85,7 @@ namespace Inventory.Pages
                     customerEntity.Numbers = customerModel.Numbers;
                     customerEntity.Remarks = customerModel.Remarks;
 
-                    var numbers = GetNumbers(customerEntity.Numbers);
+                    var numbers = NumberService.GetNumbers(customerEntity.Numbers);
                     customerEntity.Numbers = new();
 
                     if (numbers != null)
@@ -113,17 +115,6 @@ namespace Inventory.Pages
                 }
             }
             navManager.NavigateTo("/customers");
-        }
-
-        private List<Number> GetNumbers(List<Number> list)
-        {
-            var numbers = new List<Number>();
-            foreach (var item in list)
-            {
-                if (item.Phone != "")
-                    numbers.Add(item);
-            }
-            return numbers;
         }
     }
 }
