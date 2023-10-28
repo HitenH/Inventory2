@@ -1,0 +1,23 @@
+﻿@page "/category";
+
+<h2 class="d-flex justify-content-center mb-5">Category</h2>
+
+<EditForm Model="@category" class="card-header mx-5"
+          OnValidSubmit="CreateCategory">
+    <DataAnnotationsValidator />
+    <div class="mb-2">
+        <label for="name" class="form-label">Category Name</label>
+        <InputText @bind-Value="category.Name" id="name" class="form-control" />
+    </div>
+    <div class="mb-2">
+        <label for="categoryid" class="form-label">CustomerId</label>
+        <InputText @bind-Value="category.CategoryId" id="categoryid" class="form-control" rows="3" />
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <InputTextArea @bind-Value="category.Description" id="description" class="form-control" rows="3" />
+    </div>
+    <ValidationSummary />
+    <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+    <NavLink type="button" href="/products" id="button-close" class="btn btn-info ms-3">Close</NavLink>
+</EditForm>

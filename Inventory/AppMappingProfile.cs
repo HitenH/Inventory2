@@ -10,6 +10,9 @@ namespace Inventory
         {
             CreateMap<CustomerEntity, CustomerModel>().ReverseMap();
             CreateMap<SupplierEntity, SupplierModel>().ReverseMap();
+            CreateMap<ProductEntity, ProductModel>().ReverseMap();
+            CreateMap<CategoryEntity, CategoryModel>().ReverseMap();
+            CreateMap<VariantEntity, VariantModel>().ReverseMap();
         }
     }
 }

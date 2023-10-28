@@ -1,0 +1,47 @@
+﻿
+<h3 class="d-flex justify-content-center mb-2 mt-4">Variants</h3>
+<EditForm Model="@variantModel" class="card-header mx-5"
+          OnValidSubmit="async ()=>
+                {
+                    if(variantModel.Id == Guid.Empty){
+                        await AddVariant();
+                }
+                    else{
+                        await UpdateVariant();
+                } }">
+    <DataAnnotationsValidator />
+    <div class="d-flex flex-row justify-content-between">
+        <div class="d-flex justify-content-around align-items-center col-1">
+            <button type="submit" id="button-submit" class="btn btn-light" style="height:40px;">
+                <img src="img/add.png" alt="add" style="width:20px;height:20px;" />
+            </button>
+            <button type="button" id="button-close" class="btn btn-light" style="height:40px;" @onclick="CancelVariant">
+                <img src="img/cancel.png" alt="cancel" style="width:20px;height:20px;" />
+            </button>
+        </div>
+        <div class="mb-2 col-2">
+            <label for="variantid" class="form-label">Variant Id</label>
+            <InputText @bind-Value="variantModel.VariantId" id="variantid" class="form-control" />
+        </div>
+        <div class="mb-2 col-3">
+            <label for="name" class="form-label">Variant Name</label>
+            <InputText @bind-Value="variantModel.Name" id="name" class="form-control" />
+        </div>
+        <div class="mb-2 col-3">
+            <label for="stock" class="form-label">Stock in Hand</label>
+            <InputText @bind-Value="variantModel.StockInHand" id="stock" class="form-control" />
+        </div>
+        <div class="mb-2 col-2">
+            <label for="image" class="form-label">Image</label>
+            <InputFile OnChange="UploadFile" class="form-control" />
+        </div>
+    </div>
+
+    <ValidationSummary />
+
+
+    @*    @if (ProductId != null)
+    {
+    <button type="button" class="btn btn-danger ms-3" @onclick="DeleteProduct">Delete</button>
+    }*@
+</EditForm>

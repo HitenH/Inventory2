@@ -1,0 +1,71 @@
+﻿@page "/product/{productId?}";
+@*@attribute [Authorize];
+*@
+<h2 class="d-flex justify-content-center mb-5">Product</h2>
+
+<EditForm Model="@productModel" class="card-header mx-5"
+          OnValidSubmit="async ()=>
+                {
+                    if(ProductId == null){
+                        await AddProduct();
+                }
+                    else{
+                        await UpdateProduct();
+                } }">
+    <DataAnnotationsValidator />
+    <div class="d-flex justify-content-between">
+        <div class="mb-2 col-5">
+            <label for="name" class="form-label">Name</label>
+            <InputText @bind-Value="productModel.Name" id="name" class="form-control" />
+        </div>
+        <div class="mb-2 col-5">
+            <label for="rate" class="form-label">Rate</label>
+            <InputNumber @bind-Value="productModel.Rate" id="rate" class="form-control col" />
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <div class="mb-2 col-5">
+            <label for="prodid" class="form-label">ProductId</label>
+            <InputText @bind-Value="productModel.ProductId" id="prodid" class="form-control" rows="3" />
+        </div>
+        <div class="mb-2 col-5">
+            <label for="category" class="form-label">Category</label>
+            <InputSelect @bind-Value="categoryId" class="form-control" id="category">
+                <option value="@categoryId">-</option>
+                @if (categories.Count != 0)
+                {
+                    @foreach (var item in categories)
+                    {
+                        if (productModel.Categoty != null && item.Id == productModel.Categoty.Id)
+                        {
+                            <option selected value="@item.Id">@item.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Id">@item.Name</option>
+                        }
+
+                    }
+                }
+
+            </InputSelect>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <InputTextArea @bind-Value="productModel.Description" id="description" class="form-control" rows="2" />
+    </div>
+    <ValidationSummary />
+    <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+    <NavLink type="button" href="/products" id="button-close" class="btn btn-info ms-3">Close</NavLink>
+    @if (ProductId != null)
+    {
+        <button type="button" class="btn btn-danger ms-3" @onclick="DeleteProduct">Delete</button>
+    }
+    <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+</EditForm>
+
+@if (ProductId != null && productEntity != null)
+{
+    <Variant Product="productEntity" />
+}

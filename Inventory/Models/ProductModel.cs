@@ -1,12 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Inventory.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
-namespace Inventory.Domain.Entities
+namespace Inventory.Models
 {
-    public class ProductEntity
+    public class ProductModel
     {
-        [Key]
         public Guid Id { get; set; }
+        [Required]
         public string? ProductId { get; set; }
+        [Required]
         public string? Name { get; set; }
         public decimal? Rate { get; set; }
         public string? Description { get; set; }
