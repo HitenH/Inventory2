@@ -33,13 +33,13 @@ else
                         <td class="text-center">@customer.SupplierId</td>
                         <td class="text-center">@customer.Name</td>
 
-                        @if (customer.Numbers.Count == 0)
+                        @if (customer.Mobiles.Count == 0)
                         {
                             <td class="text-center">-</td>
                         }
                         else
                         {
-                            <td class="text-center">@customer.Numbers.First().Phone</td>
+                            <td class="text-center">@customer.Mobiles.First().Phone</td>
                         }
 
                         <td class="text-center">@customer.Area</td>

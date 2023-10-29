@@ -15,7 +15,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
-        [Inject] private INumberService NumberService { get; set; }
+        [Inject] private IMobileService MobileService { get; set; }
 
 
         private SupplierModel supplierModel = new();
@@ -39,12 +39,12 @@ namespace Inventory.Pages
                     Logger.LogError("GetSupplier error: " + ex.Message);
                 }
             }
-            if (supplierModel.Numbers.Count < 3)
+            if (supplierModel.Mobiles.Count < 3)
             {
-                var count = 3 - supplierModel.Numbers.Count;
+                var count = 3 - supplierModel.Mobiles.Count;
                 for (int i = 0; i < count; i++)
                 {
-                    supplierModel.Numbers.Add(new Number() { Phone = "" });
+                    supplierModel.Mobiles.Add(new Mobile() { Phone = "" });
                 }
             }
         }
@@ -56,11 +56,11 @@ namespace Inventory.Pages
                 try
                 {
                     supplierEntity = Mapper.Map<SupplierEntity>(supplierModel);
-                    var numbers = NumberService.GetNumbers(supplierEntity.Numbers);
-                    supplierEntity.Numbers = new();
+                    var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
+                    supplierEntity.Mobiles = new();
 
                     if (numbers != null)
-                        supplierEntity.Numbers.AddRange(numbers);
+                        supplierEntity.Mobiles.AddRange(numbers);
 
                     await SupplierRepository.Create(supplierEntity);
                 }
@@ -82,14 +82,14 @@ namespace Inventory.Pages
                     supplierEntity.Name = supplierModel.Name;
                     supplierEntity.Address = supplierModel.Address;
                     supplierEntity.Area = supplierModel.Area;
-                    supplierEntity.Numbers = supplierModel.Numbers;
+                    supplierEntity.Mobiles = supplierModel.Mobiles;
                     supplierEntity.Remarks = supplierModel.Remarks;
 
-                    var numbers = NumberService.GetNumbers(supplierEntity.Numbers);
-                    supplierEntity.Numbers = new();
+                    var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
+                    supplierEntity.Mobiles = new();
 
                     if (numbers != null)
-                        supplierEntity.Numbers.AddRange(numbers);
+                        supplierEntity.Mobiles.AddRange(numbers);
 
                     await SupplierRepository.Update(supplierEntity);
                 }

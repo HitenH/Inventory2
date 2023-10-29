@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231026121355_AddSuppliers")]
-    partial class AddSuppliers
+    [Migration("20231028203959_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,26 @@ namespace Inventory.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
 
             modelBuilder.Entity("Inventory.Domain.Entities.CustomerEntity", b =>
                 {
@@ -54,7 +74,24 @@ namespace Inventory.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("Inventory.Domain.Entities.Number", b =>
+            modelBuilder.Entity("Inventory.Domain.Entities.Image", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("ImageData")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ImageTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Image");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,7 +114,35 @@ namespace Inventory.Migrations
 
                     b.HasIndex("SupplierEntityId");
 
-                    b.ToTable("Number");
+                    b.ToTable("Mobile");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CategotyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Rate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategotyId");
+
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
@@ -101,7 +166,7 @@ namespace Inventory.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SupplierrId")
+                    b.Property<string>("SupplierId")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -150,25 +215,82 @@ namespace Inventory.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Inventory.Domain.Entities.Number", b =>
+            modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ProductEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StockInHand")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImageId");
+
+                    b.HasIndex("ProductEntityId");
+
+                    b.ToTable("Variants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.CustomerEntity", null)
-                        .WithMany("Numbers")
+                        .WithMany("Mobiles")
                         .HasForeignKey("CustomerEntityId");
 
                     b.HasOne("Inventory.Domain.Entities.SupplierEntity", null)
-                        .WithMany("Numbers")
+                        .WithMany("Mobiles")
                         .HasForeignKey("SupplierEntityId");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.CategoryEntity", "Categoty")
+                        .WithMany()
+                        .HasForeignKey("CategotyId");
+
+                    b.Navigation("Categoty");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.Image", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId");
+
+                    b.HasOne("Inventory.Domain.Entities.ProductEntity", null)
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductEntityId");
+
+                    b.Navigation("Image");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.CustomerEntity", b =>
                 {
-                    b.Navigation("Numbers");
+                    b.Navigation("Mobiles");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
+                {
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
                 {
-                    b.Navigation("Numbers");
+                    b.Navigation("Mobiles");
                 });
 #pragma warning restore 612, 618
         }

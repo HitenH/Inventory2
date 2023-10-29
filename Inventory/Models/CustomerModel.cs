@@ -14,6 +14,6 @@ namespace Inventory.Models
         public string Address { get; set; }
         public string Area { get; set; }
         public string Remarks { get; set; }
-        public List<Number> Numbers { get; set; } = new();
+        public List<Mobile> Mobiles { get; set; } = new();
     }
 }

@@ -20,7 +20,7 @@ namespace Inventory.Shared
         private Image image = new();
         private List<VariantModel> variants = new();
 
-        protected async override Task OnInitializedAsync()
+        protected override void OnParametersSet()
         {
             if (Product != null && Product.Variants.Count != 0)
             {
@@ -33,11 +33,14 @@ namespace Inventory.Shared
             {
                 try
                 {
-                    variantModel.Image = image;
+                    if (image.ImageData != null)
+                        variantModel.Image = image;
+
                     Product.Variants.Add(Mapper.Map<VariantEntity>(variantModel));
                     await ProductRepository.Update(Product);
-                    //await VariantRepository.Create(Mapper.Map<VariantEntity>(variantModel));
                     CancelVariant();
+                    variants = Product.Variants.Select(v => Mapper.Map<VariantModel>(v)).ToList();
+
                 }
                 catch (Exception ex)
                 {

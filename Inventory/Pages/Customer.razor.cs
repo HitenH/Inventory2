@@ -16,7 +16,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
-        [Inject] private INumberService NumberService { get; set; }
+        [Inject] private IMobileService MobileService { get; set; }
 
         private CustomerModel customerModel = new CustomerModel();
         private CustomerEntity customerEntity;
@@ -39,12 +39,12 @@ namespace Inventory.Pages
                     Logger.LogError("GetCustomer error: " + ex.Message);
                 }
             }
-            if (customerModel.Numbers.Count < 3)
+            if (customerModel.Mobiles.Count < 3)
             {
-                var count = 3 - customerModel.Numbers.Count;
+                var count = 3 - customerModel.Mobiles.Count;
                 for (int i = 0; i < count; i++)
                 {
-                    customerModel.Numbers.Add(new Number() { Phone = "" });
+                    customerModel.Mobiles.Add(new Mobile() { Phone = "" });
                 }
             }
         }
@@ -56,11 +56,11 @@ namespace Inventory.Pages
                 try
                 {
                     customerEntity = Mapper.Map<CustomerEntity>(customerModel);
-                    var numbers = NumberService.GetNumbers(customerEntity.Numbers);
-                    customerEntity.Numbers = new();
+                    var numbers = MobileService.GetMobiles(customerEntity.Mobiles);
+                    customerEntity.Mobiles = new();
 
                     if (numbers != null)
-                        customerEntity.Numbers.AddRange(numbers);
+                        customerEntity.Mobiles.AddRange(numbers);
 
                     await CustomerRepository.Create(customerEntity);
                 }
@@ -82,14 +82,14 @@ namespace Inventory.Pages
                     customerEntity.Name = customerModel.Name;
                     customerEntity.Address = customerModel.Address;
                     customerEntity.Area = customerModel.Area;
-                    customerEntity.Numbers = customerModel.Numbers;
+                    customerEntity.Mobiles = customerModel.Mobiles;
                     customerEntity.Remarks = customerModel.Remarks;
 
-                    var numbers = NumberService.GetNumbers(customerEntity.Numbers);
-                    customerEntity.Numbers = new();
+                    var numbers = MobileService.GetMobiles(customerEntity.Mobiles);
+                    customerEntity.Mobiles = new();
 
                     if (numbers != null)
-                        customerEntity.Numbers.AddRange(numbers);
+                        customerEntity.Mobiles.AddRange(numbers);
 
                     await CustomerRepository.Update(customerEntity);
                 }

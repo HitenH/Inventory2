@@ -18,7 +18,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
-        [Inject] private INumberService NumberService { get; set; }
+        [Inject] private IMobileService NumberService { get; set; }
 
         private ProductModel productModel = new();
         private ProductEntity productEntity = new();

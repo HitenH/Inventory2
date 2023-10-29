@@ -27,12 +27,12 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SupplierEntity>> GetAll()
         {
-            return await context.Suppliers.Include(n => n.Numbers).AsNoTracking().ToListAsync();
+            return await context.Suppliers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
         }
 
         public async Task<SupplierEntity> GetById(Guid id)
         {
-            return await context.Suppliers.Include(n => n.Numbers).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Suppliers.Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(SupplierEntity supplier)

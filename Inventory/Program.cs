@@ -28,7 +28,7 @@ namespace Inventory
             builder.Services.AddScoped<IVariantRepository, VariantRepositoryEF>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
             builder.Services.AddScoped<ProtectedSessionStorage>();
-            builder.Services.AddScoped<INumberService, NumberService>();
+            builder.Services.AddScoped<IMobileService, MobileService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
             builder.Services.AddAutoMapper(typeof(AppMappingProfile));
             builder.Services.AddBlazorBootstrap();

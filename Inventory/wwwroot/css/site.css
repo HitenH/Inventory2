@@ -80,3 +80,20 @@ a, .btn-link {
 
 .validation-message {
     color: red;
+}
+
+/*Variant*/
+.btn-variant-edit,
+.btn-variant-delete,
+.btn-variant-add,
+.btn-variant-cancel {
+    height: 40px;
+    background-color: inherit;
+}
+.variant-edit-img,
+.variant-delete-img,
+.variant-add-img,
+.variant-cancel-img {
+    width: 20px;
+    height: 20px;
+}

@@ -1,6 +1,6 @@
 ﻿
 <h3 class="d-flex justify-content-center mb-2 mt-4">Variants</h3>
-<EditForm Model="@variantModel" class="card-header mx-5"
+<EditForm Model="@variantModel" class="card-header"
           OnValidSubmit="async ()=>
                 {
                     if(variantModel.Id == Guid.Empty){
@@ -12,11 +12,11 @@
     <DataAnnotationsValidator />
     <div class="d-flex flex-row justify-content-between">
         <div class="d-flex justify-content-around align-items-center col-1">
-            <button type="submit" id="button-submit" class="btn btn-light" style="height:40px;">
-                <img src="img/add.png" alt="add" style="width:20px;height:20px;" />
+            <button type="submit" id="button-submit" class="btn btn-light btn-variant-add">
+                <img src="img/add.png" alt="add" class="variant-add-img" />
             </button>
-            <button type="button" id="button-close" class="btn btn-light" style="height:40px;" @onclick="CancelVariant">
-                <img src="img/cancel.png" alt="cancel" style="width:20px;height:20px;" />
+            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelVariant">
+                <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
             </button>
         </div>
         <div class="mb-2 col-2">
@@ -38,10 +38,50 @@
     </div>
 
     <ValidationSummary />
-
-
-    @*    @if (ProductId != null)
-    {
-    <button type="button" class="btn btn-danger ms-3" @onclick="DeleteProduct">Delete</button>
-    }*@
 </EditForm>
+
+
+<table class="table table-striped table-bordered mt-2">
+    <thead>
+        <tr>
+            <th class="text-center"></th>
+            <th class="text-center">Variant Id</th>
+            <th class="text-center">Variant Name</th>
+            <th class="text-center">Stock in Hand</th>
+            <th class="text-center">Iamge</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (variants.Count != 0)
+        {
+            @foreach (var variant in variants.AsQueryable())
+            {
+                <tr>
+                    <td class="text-center col-1">
+                        <div >
+                            <button class="btn btn-light btn-variant-edit">
+                                <img src="img/edit.png" alt="add" class="variant-edit-img"/>
+                            </button>
+                            <button class="btn btn-light btn-variant-delete">
+                                <img src="img/delete.png" alt="add" class="variant-delete-img" />
+                            </button>
+                        </div>
+                    </td>
+                    <td class="text-center">@variant.VariantId</td>
+                    <td class="text-center">@variant.Name</td>
+                    <td class="text-center">@variant.StockInHand</td>
+                    <td class="text-center">-</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">
+                    Not Found!
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>
