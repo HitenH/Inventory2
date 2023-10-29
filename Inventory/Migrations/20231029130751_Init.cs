@@ -45,7 +45,7 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Image",
+                name: "Images",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -54,7 +54,7 @@ namespace Inventory.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Image", x => x.Id);
+                    table.PrimaryKey("PK_Images", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,7 +111,7 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Mobile",
+                name: "Mobiles",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -122,14 +122,14 @@ namespace Inventory.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Mobile", x => x.Id);
+                    table.PrimaryKey("PK_Mobiles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Mobile_Customers_CustomerEntityId",
+                        name: "FK_Mobiles_Customers_CustomerEntityId",
                         column: x => x.CustomerEntityId,
                         principalTable: "Customers",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Mobile_Suppliers_SupplierEntityId",
+                        name: "FK_Mobiles_Suppliers_SupplierEntityId",
                         column: x => x.SupplierEntityId,
                         principalTable: "Suppliers",
                         principalColumn: "Id");
@@ -150,9 +150,9 @@ namespace Inventory.Migrations
                 {
                     table.PrimaryKey("PK_Variants", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Variants_Image_ImageId",
+                        name: "FK_Variants_Images_ImageId",
                         column: x => x.ImageId,
-                        principalTable: "Image",
+                        principalTable: "Images",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Variants_Products_ProductEntityId",
@@ -171,13 +171,13 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Mobile_CustomerEntityId",
-                table: "Mobile",
+                name: "IX_Mobiles_CustomerEntityId",
+                table: "Mobiles",
                 column: "CustomerEntityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Mobile_SupplierEntityId",
-                table: "Mobile",
+                name: "IX_Mobiles_SupplierEntityId",
+                table: "Mobiles",
                 column: "SupplierEntityId");
 
             migrationBuilder.CreateIndex(
@@ -200,7 +200,7 @@ namespace Inventory.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Mobile");
+                name: "Mobiles");
 
             migrationBuilder.DropTable(
                 name: "Users");
@@ -215,7 +215,7 @@ namespace Inventory.Migrations
                 name: "Suppliers");
 
             migrationBuilder.DropTable(
-                name: "Image");
+                name: "Images");
 
             migrationBuilder.DropTable(
                 name: "Products");

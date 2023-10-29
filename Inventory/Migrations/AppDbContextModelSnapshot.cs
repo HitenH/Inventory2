@@ -85,7 +85,7 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Image");
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
@@ -111,7 +111,7 @@ namespace Inventory.Migrations
 
                     b.HasIndex("SupplierEntityId");
 
-                    b.ToTable("Mobile");
+                    b.ToTable("Mobiles");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>

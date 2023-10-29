@@ -27,6 +27,8 @@ namespace Inventory
             builder.Services.AddScoped<IProductRepository, ProductRepositoryEF>();
             builder.Services.AddScoped<IVariantRepository, VariantRepositoryEF>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
+            builder.Services.AddScoped<IMobileRepository, MobileRepositoryEF>();
+            builder.Services.AddScoped<IImageRepository, ImageRepositoryEF>();
             builder.Services.AddScoped<ProtectedSessionStorage>();
             builder.Services.AddScoped<IMobileService, MobileService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();

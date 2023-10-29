@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231028203959_Init")]
+    [Migration("20231029130751_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Image");
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
@@ -114,7 +114,7 @@ namespace Inventory.Migrations
 
                     b.HasIndex("SupplierEntityId");
 
-                    b.ToTable("Mobile");
+                    b.ToTable("Mobiles");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>

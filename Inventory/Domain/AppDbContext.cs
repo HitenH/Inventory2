@@ -14,6 +14,8 @@ namespace Inventory.Domain
         public DbSet<ProductEntity> Products { get; set; }
         public DbSet<VariantEntity> Variants { get; set; }
         public DbSet<CategoryEntity> Categories { get; set; }
+        public DbSet<Mobile> Mobiles { get; set; }
+        public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

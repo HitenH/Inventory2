@@ -32,8 +32,8 @@
             <InputText @bind-Value="variantModel.StockInHand" id="stock" class="form-control" />
         </div>
         <div class="mb-2 col-2">
-            <label for="image" class="form-label">Image</label>
-            <InputFile OnChange="UploadFile" class="form-control" />
+            <label for="image" class="form-label">Image (jpeg)</label>
+            <InputFile OnChange="UploadFile" accept=".jpg, jpeg" class="form-control" />
         </div>
     </div>
 
@@ -70,7 +70,15 @@
                     <td class="text-center">@variant.VariantId</td>
                     <td class="text-center">@variant.Name</td>
                     <td class="text-center">@variant.StockInHand</td>
-                    <td class="text-center">-</td>
+                    <td class="text-center">
+                        @if (variant.Image != null){
+                            <img src="@GetImage(@variant.Image)" style="height:50px; width:40px;" />
+                            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="async ()=> await DeleteFile(variant.Image)">
+                                <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
+                            </button>
+                        }
+
+                        </td>
                 </tr>
             }
         }

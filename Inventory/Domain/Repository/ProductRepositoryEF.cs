@@ -32,7 +32,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetById(Guid id)
         {
-            return await context.Products.Include(p => p.Categoty).Include(p => p.Variants).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Products.Include(p => p.Categoty).Include(p => p.Variants).ThenInclude(v=>v.Image).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(ProductEntity product)

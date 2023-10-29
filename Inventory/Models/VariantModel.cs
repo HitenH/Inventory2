@@ -11,6 +11,6 @@ namespace Inventory.Models
         [Required]
         public string? Name { get; set; }
         public string? StockInHand { get; set; }
-        public Image? Image { get; set; }
+        public Image? Image { get; set; } = new();
     }
 }

@@ -34,12 +34,12 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<VariantEntity>> GetAll()
         {
-            return await context.Variants.AsNoTracking().ToListAsync();
+            return await context.Variants.Include(v => v.Image).AsNoTracking().ToListAsync();
         }
 
         public async Task<VariantEntity> GetById(Guid id)
         {
-            return await context.Variants.FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Variants.Include(v=>v.Image).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(VariantEntity variant)
