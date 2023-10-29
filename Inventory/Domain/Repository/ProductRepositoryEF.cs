@@ -37,8 +37,16 @@ namespace Inventory.Domain.Repository
 
         public async Task Update(ProductEntity product)
         {
-            context.Products.Update(product);
-            await context.SaveChangesAsync();
+            try
+            {
+                context.Products.Update(product);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+           
         }
     }
 }

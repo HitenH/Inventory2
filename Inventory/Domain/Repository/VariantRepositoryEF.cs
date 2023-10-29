@@ -20,8 +20,16 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(VariantEntity variant)
         {
-            context.Variants.Remove(variant);
-            await context.SaveChangesAsync();
+            try
+            {
+                context.Variants.Remove(variant);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+           
         }
 
         public async Task<List<VariantEntity>> GetAll()

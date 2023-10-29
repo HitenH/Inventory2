@@ -7,7 +7,7 @@
                         await AddVariant();
                 }
                     else{
-                        await UpdateVariant();
+                        await EditVariant();
                 } }">
     <DataAnnotationsValidator />
     <div class="d-flex flex-row justify-content-between">
@@ -60,10 +60,10 @@
                     <td class="text-center col-1">
                         <div >
                             <button class="btn btn-light btn-variant-edit">
-                                <img src="img/edit.png" alt="add" class="variant-edit-img"/>
+                                <img src="img/edit.png" alt="add" class="variant-edit-img" @onclick="()=>UpdateVariant(variant)" />
                             </button>
                             <button class="btn btn-light btn-variant-delete">
-                                <img src="img/delete.png" alt="add" class="variant-delete-img" />
+                                <img src="img/delete.png" alt="add" class="variant-delete-img" @onclick="()=>DeleteVariant(variant.Id)" />
                             </button>
                         </div>
                     </td>
