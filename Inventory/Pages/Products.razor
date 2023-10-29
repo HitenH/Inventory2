@@ -1,0 +1,49 @@
+﻿@page "/products"
+@attribute [Authorize]
+
+
+<div class="d-flex justify-content-lg-between mb-3">
+    <NavLink href="/product" class="btn btn-secondary">Add New Product</NavLink>
+    <NavLink href="/category" class="btn btn-secondary">Add New Category</NavLink>
+    <Search SearchItemCallBack="SearchItem"></Search>
+</div>
+
+@if (productsAfterSearch == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th class="text-center">Product Id</th>
+                <th class="text-center">Product Name</th>
+                <th class="text-center">Rate</th>
+                <th class="text-center"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (productsAfterSearch.Count != 0)
+            {
+                @foreach (var product in productsAfterSearch.AsQueryable())
+                {
+                    <tr>
+                        <td class="text-center">@product.ProductId</td>
+                        <td class="text-center">@product.Name</td>
+                        <td class="text-center">@product.Rate</td>
+                        <td class="text-center"><a class="btn btn-secondary" href="product/@product.Id">Info</a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center">
+                        Not Found!
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
