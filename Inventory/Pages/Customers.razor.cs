@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-using BlazorBootstrap;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
-
 
 namespace Inventory.Pages
 {
@@ -15,6 +13,7 @@ namespace Inventory.Pages
 
         private List<CustomerModel> customers = new();
         private List<CustomerModel> customersAfterSearch = new();
+        private bool isSortAscending = false;
 
         protected async override Task OnInitializedAsync()
         {
@@ -37,6 +36,78 @@ namespace Inventory.Pages
         {
             var search = e.Value.ToString().ToLower();
             customersAfterSearch = customers.Where(n => n.CustomerId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+        }
+         
+        public void SortItem(string column)
+        {
+            if (customersAfterSearch.Count != 0)
+            {
+                if (column == "CustomerId")
+                {
+                    if (isSortAscending)
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderBy(c => c.CustomerId).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderByDescending(c => c.CustomerId).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Name")
+                {
+                    if (isSortAscending)
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Mobile")
+                {
+                    if (isSortAscending)
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Area")
+                {
+                    if (isSortAscending)
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Amount")
+                {
+                    if (isSortAscending)
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        customersAfterSearch = customersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+            }
         }
     }
 }

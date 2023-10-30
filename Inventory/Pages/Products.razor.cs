@@ -13,6 +13,7 @@ namespace Inventory.Pages
 
         private List<ProductModel> products;
         private List<ProductModel> productsAfterSearch = new();
+        private bool isSortAscending = false;
 
         protected async override Task OnInitializedAsync()
         {
@@ -35,6 +36,52 @@ namespace Inventory.Pages
         {
             var search = e.Value.ToString().ToLower();
             productsAfterSearch = products.Where(n => n.ProductId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+        }
+
+        public void SortItem(string column)
+        {
+            if (productsAfterSearch.Count != 0)
+            {
+                if (column == "ProductId")
+                {
+                    if (isSortAscending)
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderBy(c => c.ProductId).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderByDescending(c => c.ProductId).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Name")
+                {
+                    if (isSortAscending)
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Rate")
+                {
+                    if (isSortAscending)
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderBy(c => c.Rate).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        productsAfterSearch = productsAfterSearch.OrderByDescending(c => c.Rate).ToList();
+                        isSortAscending = true;
+                    }
+                }
+            }
         }
     }
 

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231029130751_Init")]
+    [Migration("20231029183509_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -230,8 +230,8 @@ namespace Inventory.Migrations
                     b.Property<Guid?>("ProductEntityId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("StockInHand")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("StockInHand")
+                        .HasColumnType("int");
 
                     b.Property<string>("VariantId")
                         .HasColumnType("nvarchar(max)");

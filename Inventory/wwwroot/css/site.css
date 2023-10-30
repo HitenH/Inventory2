@@ -82,6 +82,9 @@ a, .btn-link {
     color: red;
 }
 
+.column-item:hover{
+    cursor:pointer;
+}
 /*Variant*/
 .btn-variant-edit,
 .btn-variant-delete,

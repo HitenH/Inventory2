@@ -10,7 +10,7 @@ namespace Inventory.Models
         public string? VariantId { get; set; }
         [Required]
         public string? Name { get; set; }
-        public string? StockInHand { get; set; }
+        public int? StockInHand { get; set; }
         public Image? Image { get; set; } = new();
     }
 }

@@ -13,6 +13,7 @@ namespace Inventory.Pages
         [Parameter] public string CustomerId { get; set; }
 
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
+        [Inject] private IMobileRepository MobileRepository { get; set; }
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
@@ -79,6 +80,7 @@ namespace Inventory.Pages
                 try
                 {
                     customerEntity.ContactPerson = customerModel.ContactPerson;
+                    customerEntity.CustomerId= customerModel.CustomerId;
                     customerEntity.Name = customerModel.Name;
                     customerEntity.Address = customerModel.Address;
                     customerEntity.Area = customerModel.Area;

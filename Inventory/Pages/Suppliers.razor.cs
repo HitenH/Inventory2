@@ -13,6 +13,7 @@ namespace Inventory.Pages
 
         private List<SupplierModel> suppliers;
         private List<SupplierModel> suppliersAfterSearch;
+        private bool isSortAscending = false;
 
         protected async override Task OnInitializedAsync()
         {
@@ -36,6 +37,78 @@ namespace Inventory.Pages
         {
             var search = e.Value.ToString().ToLower();
             suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+        }
+
+        public void SortItem(string column)
+        {
+            if (suppliersAfterSearch.Count != 0)
+            {
+                if (column == "SuptomerId")
+                {
+                    if (isSortAscending)
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.SupplierId).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.SupplierId).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Name")
+                {
+                    if (isSortAscending)
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Mobile")
+                {
+                    if (isSortAscending)
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Area")
+                {
+                    if (isSortAscending)
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Amount")
+                {
+                    if (isSortAscending)
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+            }
         }
     }
 }

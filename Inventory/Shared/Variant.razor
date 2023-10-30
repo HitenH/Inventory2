@@ -29,7 +29,7 @@
         </div>
         <div class="mb-2 col-3">
             <label for="stock" class="form-label">Stock in Hand</label>
-            <InputText @bind-Value="variantModel.StockInHand" id="stock" class="form-control" />
+            <InputNumber @bind-Value="variantModel.StockInHand" id="stock" class="form-control" />
         </div>
         <div class="mb-2 col-2">
             <label for="image" class="form-label">Image (jpeg)</label>
@@ -45,10 +45,12 @@
     <thead>
         <tr>
             <th class="text-center"></th>
-            <th class="text-center">Variant Id</th>
-            <th class="text-center">Variant Name</th>
-            <th class="text-center">Stock in Hand</th>
-            <th class="text-center">Iamge</th>
+
+
+            <th class="text-center column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
+            <th class="text-center column-item" @onclick="@(()=>SortItem("Name"))">Name</th>
+            <th class="text-center column-item" @onclick="@(()=>SortItem("StockInHand"))">Stock In Hand</th>
+            <th class="text-center">Image</th>
         </tr>
     </thead>
     <tbody>

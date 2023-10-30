@@ -142,7 +142,7 @@ namespace Inventory.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    StockInHand = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StockInHand = table.Column<int>(type: "int", nullable: true),
                     ImageId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },

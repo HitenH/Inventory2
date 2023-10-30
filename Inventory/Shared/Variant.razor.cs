@@ -21,6 +21,7 @@ namespace Inventory.Shared
         private VariantModel variantModel = new();
         private Image image = new();
         private List<VariantModel> variants = new();
+        private bool isSortAscending = false;
 
         protected override void OnParametersSet()
         {
@@ -164,6 +165,52 @@ namespace Inventory.Shared
         public string GetImage(Image image)
         {
             return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
+        }
+
+        public void SortItem(string column)
+        {
+            if (variants.Count != 0)
+            {
+                if (column == "VariantId")
+                {
+                    if (isSortAscending)
+                    {
+                        variants = variants.OrderBy(c => c.VariantId).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        variants = variants.OrderByDescending(c => c.VariantId).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "Name")
+                {
+                    if (isSortAscending)
+                    {
+                        variants = variants.OrderBy(c => c.Name).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        variants = variants.OrderByDescending(c => c.Name).ToList();
+                        isSortAscending = true;
+                    }
+                }
+                else if (column == "StockInHand")
+                {
+                    if (isSortAscending)
+                    {
+                        variants = variants.OrderBy(c => c.StockInHand).ToList();
+                        isSortAscending = false;
+                    }
+                    else
+                    {
+                        variants = variants.OrderByDescending(c => c.StockInHand).ToList();
+                        isSortAscending = true;
+                    }
+                }
+            }
         }
     }
 }

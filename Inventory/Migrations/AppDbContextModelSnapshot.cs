@@ -227,8 +227,8 @@ namespace Inventory.Migrations
                     b.Property<Guid?>("ProductEntityId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("StockInHand")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("StockInHand")
+                        .HasColumnType("int");
 
                     b.Property<string>("VariantId")
                         .HasColumnType("nvarchar(max)");
