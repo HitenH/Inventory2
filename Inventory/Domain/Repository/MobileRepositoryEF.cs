@@ -24,6 +24,12 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
+        public async Task DeleteRange(List<Mobile> mobiles)
+        {
+            context.Mobiles.RemoveRange(mobiles);
+            await context.SaveChangesAsync();
+        }
+
         public async Task<List<Mobile>> GetAll()
         {
             return await context.Mobiles.ToListAsync();

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using Inventory.Domain;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
@@ -18,6 +18,7 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
+        [Inject] private AppDbContext context { get; set; }
 
 
         private SupplierModel supplierModel = new();
@@ -80,35 +81,19 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    if (supplierModel.Mobiles != null)
-                    {
-                        if (supplierModel.Mobiles.Count != 0)
-                        {
-                            foreach (var item in supplierModel.Mobiles)
-                            {
-                                var mobile = await MobileRepository.GetById(item.Id);
-                                if (mobile != null)
-                                {
-                                    mobile.Phone = item.Phone;
-                                }
-                             }
-                        }
-                    }
                     supplierEntity.ContactPerson = supplierModel.ContactPerson;
                     supplierEntity.Name = supplierModel.Name;
                     supplierEntity.SupplierId = supplierModel.SupplierId;
                     supplierEntity.Address = supplierModel.Address;
                     supplierEntity.Area = supplierModel.Area;
-                    supplierEntity.Mobiles = supplierModel.Mobiles;
                     supplierEntity.Remarks = supplierModel.Remarks;
 
-                    var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
+                    var numbers = MobileService.GetMobiles(supplierModel.Mobiles);
                     supplierEntity.Mobiles = new();
-
-                    if (numbers != null)
-                        supplierEntity.Mobiles.AddRange(numbers);
+                    supplierEntity.Mobiles.AddRange(numbers);
 
                     await SupplierRepository.Update(supplierEntity);
+                    await MobileService.DeleteEmptyNumbers(context);
                 }
                 catch (Exception ex)
                 {
@@ -124,6 +109,9 @@ namespace Inventory.Pages
             {
                 try
                 {
+                    if (supplierEntity.Mobiles.Count > 0)
+                        await MobileRepository.DeleteRange(supplierEntity.Mobiles);
+
                     await SupplierRepository.Delete(supplierEntity);
                 }
                 catch (Exception ex)

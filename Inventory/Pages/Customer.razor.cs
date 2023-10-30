@@ -1,10 +1,11 @@
 ﻿using AutoMapper;
+using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Pages
 {
@@ -18,6 +19,7 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
+        [Inject] private AppDbContext context { get; set; }
 
         private CustomerModel customerModel = new CustomerModel();
         private CustomerEntity customerEntity;
@@ -84,16 +86,15 @@ namespace Inventory.Pages
                     customerEntity.Name = customerModel.Name;
                     customerEntity.Address = customerModel.Address;
                     customerEntity.Area = customerModel.Area;
-                    customerEntity.Mobiles = customerModel.Mobiles;
                     customerEntity.Remarks = customerModel.Remarks;
 
-                    var numbers = MobileService.GetMobiles(customerEntity.Mobiles);
+                    var numbers = MobileService.GetMobiles(customerModel.Mobiles);
                     customerEntity.Mobiles = new();
+                    customerEntity.Mobiles.AddRange(numbers);
 
-                    if (numbers != null)
-                        customerEntity.Mobiles.AddRange(numbers);
 
                     await CustomerRepository.Update(customerEntity);
+                    await MobileService.DeleteEmptyNumbers(context);
                 }
                 catch (Exception ex)
                 {
@@ -103,12 +104,15 @@ namespace Inventory.Pages
             navManager.NavigateTo("/customers");
         }
 
-        public async void DeleteCustomer()
+        public async Task DeleteCustomer()
         {
             if (customerEntity != null)
             {
                 try
                 {
+                    if (customerEntity.Mobiles.Count > 0)
+                        await MobileRepository.DeleteRange(customerEntity.Mobiles);
+
                     await CustomerRepository.Delete(customerEntity);
                 }
                 catch (Exception ex)
@@ -117,6 +121,6 @@ namespace Inventory.Pages
                 }
             }
             navManager.NavigateTo("/customers");
-        }
+        }  
     }
 }

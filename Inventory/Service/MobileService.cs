@@ -1,4 +1,6 @@
-﻿using Inventory.Domain.Entities;
+﻿using Inventory.Domain;
+using Inventory.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Service
 {
@@ -13,6 +15,16 @@ namespace Inventory.Service
                     mobiles.Add(item);
             }
             return mobiles;
+        }
+
+        public async Task DeleteEmptyNumbers(AppDbContext context)
+        {
+            var mobiles = await context.Mobiles.Where(m => m.Phone == "").ToListAsync();
+            if (mobiles.Count > 0)
+            {
+                context.Mobiles.RemoveRange(mobiles);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

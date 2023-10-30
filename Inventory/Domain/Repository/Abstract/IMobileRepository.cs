@@ -9,5 +9,6 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<Mobile>> GetAll();
         Task Update(Mobile mobile);
         Task Delete(Mobile mobile);
+        Task DeleteRange(List<Mobile> mobiles);
     }
 }

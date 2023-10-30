@@ -1,5 +1,7 @@
 ﻿using Inventory.Domain.Entities;
+using Inventory.Service;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 
 namespace Inventory.Domain
@@ -16,6 +18,7 @@ namespace Inventory.Domain
         public DbSet<CategoryEntity> Categories { get; set; }
         public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Image> Images { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +27,14 @@ namespace Inventory.Domain
                 new UserEntity(){ Id = 1, Name = "Hiten", Password = "Hiten", Role = "User"},
                 new UserEntity(){ Id = 2, Name = "Admin", Password = "admin", Role = "Admin"}
             });
+
+            modelBuilder.Entity<PurchaseOrder>()
+                        .Property(p => p.Date)
+                        .HasConversion<DateOnlyConverter>();
+
+            modelBuilder.Entity<PurchaseOrder>()
+                        .Property(p => p.DueDate)
+                        .HasConversion<DateOnlyConverter>();
         }
     }
 }
