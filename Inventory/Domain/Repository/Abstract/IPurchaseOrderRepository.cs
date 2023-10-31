@@ -4,11 +4,11 @@ namespace Inventory.Domain.Repository.Abstract
 {
     public interface IPurchaseOrderRepository
     {
-        Task Create(PurchaseOrder model);
-        Task<PurchaseOrder> GetById(Guid id);
-        Task<List<PurchaseOrder>> GetAll();
-        Task Update(PurchaseOrder model);
-        Task Delete(PurchaseOrder model);
-        Task DeleteRange(List<PurchaseOrder> models);
+        Task Create(PurchaseOrderEntity model);
+        Task<PurchaseOrderEntity> GetById(Guid id);
+        Task<List<PurchaseOrderEntity>> GetAll();
+        Task Update(PurchaseOrderEntity model);
+        Task Delete(PurchaseOrderEntity model);
+        Task DeleteRange(List<PurchaseOrderEntity> models);
     }
 }

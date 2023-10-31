@@ -89,14 +89,17 @@ a, .btn-link {
 .btn-variant-edit,
 .btn-variant-delete,
 .btn-variant-add,
-.btn-variant-cancel {
+.btn-variant-cancel,
+.btn-select,
+.btn-order-add {
     height: 40px;
     background-color: inherit;
 }
 .variant-edit-img,
 .variant-delete-img,
 .variant-add-img,
-.variant-cancel-img {
+.variant-cancel-img,
+.select-img {
     width: 20px;
     height: 20px;
 }

@@ -1,0 +1,99 @@
+﻿@page "/purchaseorder"
+@*@attribute [Authorize]*@
+
+<SupplierPopup SelectionType="Hello" IsVisible="isVisibleSupplierPopup" CloseCallBack="CloseSupplierPopup" SupplierModel="GetSupplierFromPopup" />
+
+<EditForm Model="@purchaseOrderModel" class="card-header"
+          OnValidSubmit="async ()=>
+                {
+                    if(purchaseOrderModel.Id == Guid.Empty){
+                        await AddPurchaseOrder();
+                }
+                    else{
+                        await EditPurchaseOrder();
+                } }">
+    <DataAnnotationsValidator />
+       <div class="d-flex flex-row justify-content-between">
+        <div class="d-flex justify-content-around align-items-center">
+            <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
+                <img src="img/add.png" alt="add" class="variant-add-img" />
+            </button>
+            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelOrder">
+                <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
+            </button>
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="date" class="form-label">Date</label>
+            <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.Date" id="date" class="form-control" />
+        </div>
+        <div class="mb-2 col-2 text-center">
+            <label for="supplierid" class="form-label">Supplier ID</label>
+            <div class="d-flex justify-content-between">
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="()=>isVisibleSupplierPopup = true">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
+                <InputText @bind-Value="purchaseOrderModel.SupplierId" id="supplierid" class="form-control" disabled />
+            </div>
+        </div>
+        <div class="mb-2 col-2 text-center">
+            <label for="productid" class="form-label">Product ID</label>
+            <div class="d-flex justify-content-between">
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="SelectProduct">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
+                <InputText @bind-Value="purchaseOrderModel.ProductId" id="productid" class="form-control" disabled />
+            </div>
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="productname" class="form-label">Product Name</label>
+            <InputText @bind-Value="purchaseOrderModel.ProductName" id="productname" class="form-control" disabled />
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="variantid" class="form-label">VariantID</label>
+            <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control" id="variantid">
+                <option value="@purchaseOrderModel.VariantId">-</option>
+                @if (product.Variants.Count != 0)
+                {
+                    @foreach (var item in product.Variants)
+                    {
+                        if (purchaseOrderModel.Id != Guid.Empty && item.VariantId == purchaseOrderModel.VariantId)
+                        {
+                            <option selected value="@item.VariantId">@item.VariantId</option>
+                        }
+                        else
+                        {
+                            <option value="@item.VariantId">@item.VariantId</option>
+                        }
+                    }
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="quantity" class="form-label">Quantity</label>
+            <InputNumber @bind-Value="purchaseOrderModel.Quantity" id="quantity" class="form-control" disabled />
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="duedate" class="form-label">DueDate</label>
+            <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" id="variantid" class="form-control" />
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="productrate" class="form-label">Rate</label>
+            <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control" disabled />
+        </div>
+        <div class="mb-2 col-1 text-center">
+            <label for="orderstatus" class="form-label">OrderStatus</label>
+            <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control" id="orderstatus">
+                <option value="@OrderStatus.None" selected>None</option>
+                <option value="@OrderStatus.Open" selected>Open</option>
+                <option value="@OrderStatus.Completed" selected>Completed</option>
+                <option value="@OrderStatus.Partly" selected>Partly</option>
+            </InputSelect>
+        </div>
+       
+    </div>
+    <div class="mb-2 col-12 text-center">
+        <label for="remarks" class="form-label">Remarks</label>
+        <InputText @bind-Value="purchaseOrderModel.Remarks" id="remarks" class="form-control" />
+    </div>
+    <ValidationSummary />
+</EditForm>

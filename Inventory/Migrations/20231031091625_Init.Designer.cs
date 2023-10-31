@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231030184726_AddPurchaseOrderRepository")]
-    partial class AddPurchaseOrderRepository
+    [Migration("20231031091625_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -145,7 +145,7 @@ namespace Inventory.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseOrder", b =>
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseOrderEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -160,8 +160,14 @@ namespace Inventory.Migrations
                     b.Property<int?>("OrderStatus")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ProductId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("ProductRate")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("Quantity")
                         .HasColumnType("int");
@@ -169,14 +175,13 @@ namespace Inventory.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("SupplierId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("SupplierId");
 
                     b.ToTable("PurchaseOrders");
                 });
@@ -299,21 +304,6 @@ namespace Inventory.Migrations
                         .HasForeignKey("CategotyId");
 
                     b.Navigation("Categoty");
-                });
-
-            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseOrder", b =>
-                {
-                    b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId");
-
-                    b.HasOne("Inventory.Domain.Entities.SupplierEntity", "Supplier")
-                        .WithMany()
-                        .HasForeignKey("SupplierId");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>

@@ -58,6 +58,27 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PurchaseOrders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SupplierId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: true),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    OrderStatus = table.Column<int>(type: "int", nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Suppliers",
                 columns: table => new
                 {
@@ -201,6 +222,9 @@ namespace Inventory.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Mobiles");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrders");
 
             migrationBuilder.DropTable(
                 name: "Users");

@@ -13,38 +13,42 @@ namespace Inventory.Domain.Repository
         {
             this.context = context;
         }
-        public async Task Create(PurchaseOrder model)
+        public async Task Create(PurchaseOrderEntity model)
         {
             await context.PurchaseOrders.AddAsync(model);
             await context.SaveChangesAsync();
         }
 
-        public async Task Delete(PurchaseOrder model)
+
+        public async Task Delete(PurchaseOrderEntity model)
         {
             context.PurchaseOrders.Remove(model);
             await context.SaveChangesAsync();
         }
 
-        public async Task DeleteRange(List<PurchaseOrder> models)
+
+        public async Task DeleteRange(List<PurchaseOrderEntity> models)
         {
             context.PurchaseOrders.RemoveRange(models);
             await context.SaveChangesAsync();
         }
 
-        public async Task<List<PurchaseOrder>> GetAll()
+
+        public async Task<List<PurchaseOrderEntity>> GetAll()
         {
-            return await context.PurchaseOrders.Include(p => p.Supplier).Include(p => p.Product).ToListAsync();
+            return await context.PurchaseOrders.ToListAsync();
         }
 
-        public async Task<PurchaseOrder> GetById(Guid id)
+        public async Task<PurchaseOrderEntity> GetById(Guid id)
         {
-            return await context.PurchaseOrders.Include(p => p.Supplier).Include(p => p.Product).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.PurchaseOrders.FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
-        public async Task Update(PurchaseOrder model)
+        public async Task Update(PurchaseOrderEntity model)
         {
             context.PurchaseOrders.Update(model);
             await context.SaveChangesAsync();
         }
+
     }
 }
