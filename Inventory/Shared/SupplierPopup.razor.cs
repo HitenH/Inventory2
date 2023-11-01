@@ -37,22 +37,6 @@ namespace Inventory.Shared
                     Logger.LogError("Supplier popup error: " + ex.Message);
                 }
         }
-        //protected async override Task OnInitializedAsync()
-        //{
-        //    try
-        //    {
-        //        var suppliersDb = await SupplierRepository.GetAll();
-        //        if (suppliersDb.Count != 0)
-        //        {
-        //            suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
-        //            suppliersAfterSearch = suppliers;
-        //        }    
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError("Supplier popup error: " + ex.Message);
-        //    }
-        //}
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

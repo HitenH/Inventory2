@@ -18,29 +18,31 @@ namespace Inventory.Pages
         private PurchaseOrderModel purchaseOrderModel = new();
         private List<PurchaseOrderModel> orders = new();
         private List<PurchaseOrderModel> ordersAfterSearch = new();
+        private List<PurchaseOrderEntity> ordersDb = new();
         private ProductModel product = new();
         private bool isVisibleSupplierPopup = false;
         private bool isVisibleProductPopup = false;
         private bool isSortAscending = false;
+        private bool isSelected = false;
 
 
         protected async override Task OnInitializedAsync()
         {
+            await GetOrders();
+        }
+
+        public async Task GetOrders()
+        {
             try
             {
-               await GetOrders();
+                ordersDb = await PurchaseOrderRepository.GetAll();
+                orders = ordersDb.Select(o => Mapper.Map<PurchaseOrderModel>(o)).ToList();
+                ordersAfterSearch = orders;
             }
             catch (Exception ex)
             {
                 Logger.LogError("Purchase order error: " + ex.Message);
             }
-        }
-
-        public async Task GetOrders()
-        {
-            var ordersDb = await PurchaseOrderRepository.GetAll();
-            orders = ordersDb.Select(o => Mapper.Map<PurchaseOrderModel>(o)).ToList();
-            ordersAfterSearch = orders;
         }
         public async Task AddPurchaseOrder()
         {
@@ -50,7 +52,7 @@ namespace Inventory.Pages
                 {
                     await PurchaseOrderRepository.Create(Mapper.Map<PurchaseOrderEntity>(purchaseOrderModel));
                     CancelOrder();
-                    GetOrders();
+                    await GetOrders();
                 }
                 catch (Exception ex)
                 {
@@ -81,7 +83,7 @@ namespace Inventory.Pages
 
                         await PurchaseOrderRepository.Update(purchaseOrderEntity);
                         CancelOrder();
-                        GetOrders();
+                        await GetOrders();
                     }
                 }
                 catch (Exception ex)
@@ -287,6 +289,60 @@ namespace Inventory.Pages
                     }
                 }
             }
+        }
+
+        public async void SelectAllItems()
+        {
+            isSelected = !isSelected;
+            if (isSelected)
+            {
+                foreach (var order in ordersAfterSearch)
+                {
+                    order.IsChecked = true;
+                }
+            }
+            else
+            {
+                foreach (var order in ordersAfterSearch)
+                {
+                    order.IsChecked = false;
+                }
+            }
+        }
+
+        public async Task DeleteSelectedOrders()
+        {
+            if (ordersAfterSearch.Count > 0)
+            {
+                try
+                {
+                    ordersDb = ordersDb.Where(o => ordersAfterSearch.Where(or => or.IsChecked == true).Any(p => p.Id == o.Id)).ToList();
+                    await PurchaseOrderRepository.DeleteRange(ordersDb);
+                    await GetOrders();
+                    isSelected= false;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Delete selected orders error:" + ex.Message);
+                }
+            }
+        }
+        public async Task DeleteCompletedOrders()
+        {
+            if (ordersAfterSearch.Count > 0)
+            {
+                try
+                {
+                    ordersDb = ordersDb.Where(o => ordersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
+                    await PurchaseOrderRepository.DeleteRange(ordersDb);
+                    await GetOrders();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Delete completed orders error:" + ex.Message);
+                }
+            }
+
         }
     }
 }

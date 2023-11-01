@@ -37,24 +37,7 @@ namespace Inventory.Shared
                 Logger.LogError("Product popup error: " + ex.Message);
             }
         }
-        //protected async override Task OnAfterRenderedAsync()
-        //{
-        //    try
-        //    {
-        //        var productsDb = await ProductRepository.GetAll();
-        //        if (productsDb.Count != 0)
-        //        {
-        //            products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
-        //            productsAfterSearch = products;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError("Product popup error: " + ex.Message);
-        //    }
-        //}
-
-
+      
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

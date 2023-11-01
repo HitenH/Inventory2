@@ -1,5 +1,6 @@
 ﻿using Inventory.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Inventory.Models
 {
@@ -20,5 +21,8 @@ namespace Inventory.Models
         public OrderStatus? OrderStatus { get; set; }
         public string? Remarks { get; set; } = default;
         public bool IsChecked { get; set; } = default;
+
     }
+
+
 }
