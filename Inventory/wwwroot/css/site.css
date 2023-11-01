@@ -99,7 +99,8 @@ a, .btn-link {
 .variant-delete-img,
 .variant-add-img,
 .variant-cancel-img,
-.select-img {
+.select-img,
+.order-edit-img {
     width: 20px;
     height: 20px;
 }

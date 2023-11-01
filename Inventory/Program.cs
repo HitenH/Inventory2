@@ -20,18 +20,20 @@ namespace Inventory
             builder.Services.AddDbContext<AppDbContext>(option =>
             {
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
-            });
-            builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
-            builder.Services.AddScoped<ICustomerRepository, CustomerRepositoryEF>();
-            builder.Services.AddScoped<ISupplierRepository, SupplierRepositoryEF>();
-            builder.Services.AddScoped<IProductRepository, ProductRepositoryEF>();
-            builder.Services.AddScoped<IVariantRepository, VariantRepositoryEF>();
-            builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
-            builder.Services.AddScoped<IMobileRepository, MobileRepositoryEF>();
-            builder.Services.AddScoped<IImageRepository, ImageRepositoryEF>();
-            builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
-            builder.Services.AddScoped<ProtectedSessionStorage>();
-            builder.Services.AddScoped<IMobileService, MobileService>();
+                
+            }, ServiceLifetime.Transient);
+
+            builder.Services.AddTransient<IUserRepository, UserRepositoryEF>();
+            builder.Services.AddTransient<ICustomerRepository, CustomerRepositoryEF>();
+            builder.Services.AddTransient<ISupplierRepository, SupplierRepositoryEF>();
+            builder.Services.AddTransient<IProductRepository, ProductRepositoryEF>();
+            builder.Services.AddTransient<IVariantRepository, VariantRepositoryEF>();
+            builder.Services.AddTransient<ICategoryRepository, CategoryRepositoryEF>();
+            builder.Services.AddTransient<IMobileRepository, MobileRepositoryEF>();
+            builder.Services.AddTransient<IImageRepository, ImageRepositoryEF>();
+            builder.Services.AddTransient<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
+            builder.Services.AddTransient<ProtectedSessionStorage>();
+            builder.Services.AddTransient<IMobileService, MobileService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
             builder.Services.AddAutoMapper(typeof(AppMappingProfile));
             builder.Services.AddBlazorBootstrap();
