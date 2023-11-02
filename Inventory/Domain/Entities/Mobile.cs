@@ -4,5 +4,7 @@
     {
         public int Id { get; set; }
         public string? Phone { get; set; }
+        public Guid? CustomerEntityId { get; set; }
+        public CustomerEntity? Customer { get; set; }
     }
 }

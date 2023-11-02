@@ -11,12 +11,12 @@ namespace Inventory.Domain
         public AppDbContext(DbContextOptions<AppDbContext> options):base(options) { }
 
         public DbSet<UserEntity> Users { get; set; }
-        //public DbSet<CustomerEntity> Customers { get; set; }
+        public DbSet<CustomerEntity> Customers { get; set; }
         //public DbSet<SupplierEntity> Suppliers { get; set; }
         public DbSet<ProductEntity> Products { get; set; }
         public DbSet<VariantEntity> Variants { get; set; }
         public DbSet<CategoryEntity> Categories { get; set; }
-       // public DbSet<Mobile> Mobiles { get; set; }
+        public DbSet<Mobile> Mobiles { get; set; }
         public DbSet<Image> Images { get; set; }
         //public DbSet<PurchaseOrderEntity> PurchaseOrders { get; set; }
         //public DbSet<PurchaseEntity> Purchases { get; set; }
@@ -57,6 +57,12 @@ namespace Inventory.Domain
                         .HasOne(v => v.Image)
                         .WithOne(i => i.Variant)
                         .HasForeignKey<Image>(k => k.VariantEntityId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CustomerEntity>()
+                        .HasMany(c => c.Mobiles)
+                        .WithOne(m => m.Customer)
+                        .HasForeignKey(k => k.CustomerEntityId)
                         .OnDelete(DeleteBehavior.Cascade);
         }
     }

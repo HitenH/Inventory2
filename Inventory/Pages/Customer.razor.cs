@@ -110,9 +110,6 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    if (customerEntity.Mobiles.Count > 0)
-                        await MobileRepository.DeleteRange(customerEntity.Mobiles);
-
                     await CustomerRepository.Delete(customerEntity);
                 }
                 catch (Exception ex)
