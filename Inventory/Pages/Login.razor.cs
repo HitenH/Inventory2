@@ -21,6 +21,13 @@ namespace Inventory.Pages
 
         protected override void OnInitialized()
         {
+            //////DELETE
+            loginModel = new LoginModel()
+            {
+                Name = "Admin",
+                Password = "admin"
+            };
+            ////////////
             editContext = new EditContext(loginModel);
 
             messageStore = new(editContext);

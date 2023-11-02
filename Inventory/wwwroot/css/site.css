@@ -91,7 +91,7 @@ a, .btn-link {
 .btn-variant-add,
 .btn-variant-cancel,
 .btn-select,
-.btn-order-add {
+.btn-order-add{
     height: 40px;
     background-color: inherit;
 }
@@ -100,7 +100,9 @@ a, .btn-link {
 .variant-add-img,
 .variant-cancel-img,
 .select-img,
-.order-edit-img {
+.order-edit-img,
+.purchase-add-img,
+.purchase-cancel-img {
     width: 20px;
     height: 20px;
 }

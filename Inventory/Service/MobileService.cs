@@ -19,12 +19,12 @@ namespace Inventory.Service
 
         public async Task DeleteEmptyNumbers(AppDbContext context)
         {
-            var mobiles = await context.Mobiles.Where(m => m.Phone == "").ToListAsync();
-            if (mobiles.Count > 0)
-            {
-                context.Mobiles.RemoveRange(mobiles);
-                await context.SaveChangesAsync();
-            }
+            //var mobiles = await context.Mobiles.Where(m => m.Phone == "").ToListAsync();
+            //if (mobiles.Count > 0)
+            //{
+            //    context.Mobiles.RemoveRange(mobiles);
+            //    await context.SaveChangesAsync();
+            //}
         }
     }
 }

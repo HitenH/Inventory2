@@ -15,30 +15,32 @@ namespace Inventory.Domain.Repository
 
         public async Task Create(SupplierEntity supplier)
         {
-            await context.Suppliers.AddAsync(supplier);
-            await context.SaveChangesAsync();
+            //await context.Suppliers.AddAsync(supplier);
+            //await context.SaveChangesAsync();
         }
 
         public async Task Delete(SupplierEntity supplier)
         {
-            context.Suppliers.Remove(supplier);
-            await context.SaveChangesAsync();
+            //context.Suppliers.Remove(supplier);
+            //await context.SaveChangesAsync();
         }
 
         public async Task<List<SupplierEntity>> GetAll()
         {
-            return await context.Suppliers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
+            return new();
+            //return await context.Suppliers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
         }
 
         public async Task<SupplierEntity> GetById(Guid id)
         {
-            return await context.Suppliers.Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            return new();
+            //return await context.Suppliers.Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(SupplierEntity supplier)
         {
-            context.Suppliers.Update(supplier);
-            await context.SaveChangesAsync();
+            //context.Suppliers.Update(supplier);
+            //await context.SaveChangesAsync();
         }
     }
 }

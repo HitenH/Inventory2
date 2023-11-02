@@ -55,7 +55,7 @@ namespace Inventory.Pages
                 try
                 {
                     productEntity = Mapper.Map<ProductEntity>(productModel);
-                    productEntity.Categoty = await GetCategor(categoryId);
+                    productEntity.Category = await GetCategor(categoryId);
                     await ProductRepository.Create(productEntity);
                 }
                 catch (Exception ex)
@@ -74,7 +74,7 @@ namespace Inventory.Pages
                 {
                     productEntity.ProductId = productModel.ProductId;
                     productEntity.Name = productModel.Name;
-                    productEntity.Categoty = await GetCategor(categoryId);
+                    productEntity.Category = await GetCategor(categoryId);
                     productEntity.Description = productModel.Description;
                     productEntity.Rate = productModel.Rate;
 

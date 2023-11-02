@@ -36,7 +36,7 @@
                 {
                     @foreach (var item in categories)
                     {
-                        if (productModel.Categoty != null && item.Id == productModel.Categoty.Id)
+                        if (productModel.Category != null && item.Id == productModel.Category.Id)
                         {
                             <option selected value="@item.Id">@item.Name</option>
                         }

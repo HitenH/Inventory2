@@ -9,7 +9,8 @@ namespace Inventory.Domain.Entities
         public string? VariantId { get; set; }
         public string? Name { get; set; }
         public int? StockInHand { get; set; }
-        public Guid? ImageId { get; set; }
         public Image? Image { get; set; }
+        public Guid? ProductEntityId { get; set; }
+        public ProductEntity? Product { get; set; }
     }
 }

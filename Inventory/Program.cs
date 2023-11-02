@@ -32,6 +32,7 @@ namespace Inventory
             builder.Services.AddTransient<IMobileRepository, MobileRepositoryEF>();
             builder.Services.AddTransient<IImageRepository, ImageRepositoryEF>();
             builder.Services.AddTransient<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
+            builder.Services.AddTransient<IPurchaseRepository, PurchaseRepositoryEF>();
             builder.Services.AddTransient<ProtectedSessionStorage>();
             builder.Services.AddTransient<IMobileService, MobileService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();

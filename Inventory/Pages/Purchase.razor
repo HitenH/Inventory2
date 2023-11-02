@@ -1,0 +1,132 @@
+﻿@*@page "/purchase/{purchaseId?}";
+@attribute [Authorize];
+
+<EditForm Model="@purchaseModel" Context="PurchaseForm" class="card-header mt-5"
+          OnValidSubmit="async ()=>
+                {
+                    if(purchaseEntity.Id == Guid.Empty){
+                        await AddPurchase();
+                }
+                    else{
+                        await EditPurchase();
+                } }">
+    <DataAnnotationsValidator />
+    <SupplierPopup IsVisible="isVisibleSupplierPopup" CloseCallBack="CloseSupplierPopup" SupplierCallBack="GetSupplierFromPopup" />
+    
+
+    <div class="d-flex justify-content-between">
+        <div>
+            <label class="form-label d-block text-center"><h4>Supplier</h4></label>
+            <div class="d-flex justify-content-between">
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenSupplierPopup">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
+                <InputText @bind-Value="supplier.SupplierId" class="form-control text-center" disabled />
+                <InputText @bind-Value="supplier.Name" class="form-control text-center ms-2" disabled />
+            </div>
+        </div>
+        <div class="text-center">
+            <label for="voucher" class="form-label"><h4>Voucher</h4></label>
+            <InputNumber @bind-Value="purchaseEntity.VoucherId" id="voucher" class="form-control text-center" disabled />
+        </div>
+        <div class="text-center">
+            <label for="date" class="form-label"><h4>Date</h4></label>
+            <DateInput TValue="DateOnly" @bind-Value="selectedData" id="date" class="form-control text-center" style="width:150px;" />
+        </div>
+    </div>
+
+    <EditForm Model="@purchaseVariant" Context="PurchaseVariant" class="card-header mt-5"
+              OnValidSubmit="async ()=>
+                {
+                    if(purchaseEntity.Id == Guid.Empty){
+                        await AddPurchaseVariant();
+                }
+                    else{
+                        await EditPurchaseVariant();
+                } }">
+        <DataAnnotationsValidator />
+        <div class="d-flex flex-row justify-content-between">
+            <div class="d-flex justify-content-around align-items-center">
+                <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
+                    <img src="img/add.png" alt="add" class="purchase-add-img" />
+                </button>
+                <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelPurchase">
+                    <img src="img/cancel.png" alt="cancel" class="purchase-cancel-img" />
+                </button>
+            </div>
+            <div class="col-1 text-center">
+                <label for="serialnumber" class="form-label">Sl.</label>
+                <InputNumber @bind-Value="serialnumber" id="serialnumber" class="form-control text-center" disabled />
+            </div>
+            <div class="col-2 text-center">
+                <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
+                <label for="productid" class="form-label">Product ID</label>
+                <div class="d-flex justify-content-between">
+                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
+                        <img src="img/select.png" alt="select" class="select-img" />
+                    </button>
+                    <InputText @bind-Value="purchaseVariant.Product.ProductId" id="productid" class="form-control text-center" disabled />
+                </div>
+            </div>
+            <div class="col-1 text-center">
+                <label for="productname" class="form-label">Product Name</label>
+                <InputText @bind-Value="purchaseVariant.Product.Name" id="productname" class="form-control text-center" disabled />
+            </div>
+            <div class="mb-2 col-1 text-center">
+                <label for="variantid" class="form-label">Variant ID</label>
+                <InputSelect @bind-Value="purchaseVariant.VariantId" class="form-control text-center" id="variantid">
+                    <option value="@purchaseVariant.VariantId" class="text-center">-</option>
+                    @if (purchaseVariant.Product.Variants.Count != 0)
+                    {
+                        @foreach (var item in purchaseVariant.Product.Variants)
+                        {
+                            if (item.VariantId == purchaseVariant.VariantId)
+                            {
+                                <option selected value="@item.VariantId" class="text-center">@item.VariantId</option>
+                            }
+                            else
+                            {
+                                <option value="@item.VariantId" class="text-center">@item.VariantId</option>
+                            }
+                        }
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-1 text-center">
+                <label for="quantity" class="form-label">Quantity</label>
+                <InputNumber @bind-Value="purchaseVariant.Quantity" id="quantity" class="form-control text-center" />
+            </div>
+            <div class="col-1 text-center">
+                <label for="rate" class="form-label">Rate</label>
+                <InputNumber @bind-Value="purchaseVariant.ProductRate" id="rate" class="form-control text-center" />
+            </div>
+            <div class="col-1 text-center">
+                <label for="amount" class="form-label">Ammount</label>
+                <NumberInput TValue="decimal?" Value="purchaseVariant.Amount" id="amount" class="form-control text-center" ValueChanged="(value)=>AmountChanged(value)" ValueExpression="()=>purchaseVariant.Amount" />
+            </div>
+            <div class="col-1 text-center">
+                <label for="discount" class="form-label">Discount (%)</label>
+                <NumberInput TValue="int?" Value="purchaseVariant.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>purchaseVariant.Discount" />
+            </div>
+            <div class="col-1 text-center">
+                <label for="amountafterdiscount" class="form-label">Ammount</label>
+                <InputNumber @bind-Value="purchaseVariant.AmountAfterDiscount" id="amountafterdiscount" class="form-control text-center" disabled />
+            </div>
+        </div>
+        <ValidationSummary />
+    </EditForm>
+
+    <div class="text-center d-block mt-3">
+        <InputText @bind-Value="purchaseModel.Remarks" id="Remarks" class="form-control text-start w-100" placeholder="Remarks/Narration" />
+    </div>
+    <ValidationSummary />
+    <div class="mt-3">
+        <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+        <NavLink type="button" href="/purchases" id="button-close" class="btn btn-info ms-2">Close</NavLink>
+        @if (PurchaseId != null)
+        {
+            <button type="button" class="btn btn-danger ms-3">Delete</button>
+        }
+        <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+    </div>
+</EditForm>*@
