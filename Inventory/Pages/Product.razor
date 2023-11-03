@@ -31,7 +31,7 @@
         <div class="mb-2 col-5">
             <label for="category" class="form-label">Category</label>
             <InputSelect @bind-Value="categoryId" class="form-control" id="category">
-                <option value="@categoryId">-</option>
+                <option value="@(Guid.Empty)">-</option>
                 @if (categories.Count != 0)
                 {
                     @foreach (var item in categories)

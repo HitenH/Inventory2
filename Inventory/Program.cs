@@ -21,14 +21,14 @@ namespace Inventory
             {
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
                 
-            }, ServiceLifetime.Transient);
+            });
 
             builder.Services.AddTransient<IUserRepository, UserRepositoryEF>();
             builder.Services.AddTransient<ICustomerRepository, CustomerRepositoryEF>();
             builder.Services.AddTransient<ISupplierRepository, SupplierRepositoryEF>();
             builder.Services.AddTransient<IProductRepository, ProductRepositoryEF>();
             builder.Services.AddTransient<IVariantRepository, VariantRepositoryEF>();
-            builder.Services.AddTransient<ICategoryRepository, CategoryRepositoryEF>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
             builder.Services.AddTransient<IMobileRepository, MobileRepositoryEF>();
             builder.Services.AddTransient<IImageRepository, ImageRepositoryEF>();
             builder.Services.AddTransient<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();

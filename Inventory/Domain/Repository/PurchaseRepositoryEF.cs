@@ -1,6 +1,5 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
-using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -13,42 +12,63 @@ namespace Inventory.Domain.Repository
         {
             this.context = context;
         }
-        public async Task Create(PurchaseEntity purchase)
+        public async Task<Guid> Create(PurchaseEntity purchase)
         {
-            //try
-            //{
-            //    await context.Purchases.AddAsync(purchase);
-            //    await context.SaveChangesAsync();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.Message);
-            //}
-           
+            try
+            {
+                await context.Purchases.AddAsync(purchase);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return purchase.Id;
         }
 
         public async Task Delete(PurchaseEntity purchase)
         {
-            //context.Purchases.Remove(purchase);
-            //await context.SaveChangesAsync();
+            context.Purchases.Remove(purchase);
+            await context.SaveChangesAsync();
         }
 
         public async Task<List<PurchaseEntity>> GetAll()
         {
-            return new();
-            //return await context.Purchases.AsNoTracking().Include(p => p.Supplier).ToListAsync();
+           return await context.Purchases.AsNoTracking().Include(p => p.Supplier).ToListAsync();
         }
 
         public async Task<PurchaseEntity> GetById(Guid id)
         {
-            return new();
-            //return await context.Purchases.Include(p => p.Supplier).FirstOrDefaultAsync(c => c.Id == id, default);
+          return await context.Purchases.Include(p => p.Supplier).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
-        public async Task Update(PurchaseEntity purchase)
+        public async Task<int> GetLastVoucherId()
         {
-            //context.Purchases.Update(purchase);
-            //await context.SaveChangesAsync();
+            var purchase = await context.Purchases.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync();
+            if (purchase != null)
+            {
+                return purchase.VoucherId;
+            }
+            return 0;
+        }
+
+        public async Task<bool> IsVoucherExist(int voucherId)
+        {
+            return context.Purchases.Any(p => p.VoucherId == voucherId);
+        }
+
+        public async Task<Guid> Update(PurchaseEntity purchase)
+        {
+            try
+            {
+                context.Purchases.Update(purchase);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return purchase.Id;
         }
 
     }

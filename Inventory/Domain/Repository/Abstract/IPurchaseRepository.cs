@@ -4,10 +4,12 @@ namespace Inventory.Domain.Repository.Abstract
 {
     public interface IPurchaseRepository
     {
-        Task Create(PurchaseEntity purchase);
+        Task<Guid> Create(PurchaseEntity purchase);
         Task<PurchaseEntity> GetById(Guid id);
         Task<List<PurchaseEntity>> GetAll();
-        Task Update(PurchaseEntity purchase);
+        Task<Guid> Update(PurchaseEntity purchase);
         Task Delete(PurchaseEntity purchase);
+        Task<int> GetLastVoucherId();
+        Task<bool> IsVoucherExist(int voucherId);
     }
 }

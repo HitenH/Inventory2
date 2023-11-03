@@ -15,8 +15,16 @@ namespace Inventory.Domain.Repository
 
         public async Task Create(ProductEntity product)
         {
-            await context.Products.AddAsync(product);
-            await context.SaveChangesAsync();
+            try
+            {
+                await context.Products.AddAsync(product);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
         }
 
         public async Task Delete(ProductEntity product)
@@ -27,7 +35,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductEntity>> GetAll()
         {
-            return await context.Products.Include(p => p.Variants).ToListAsync();
+            return await context.Products.Include(p => p.Variants).AsNoTracking().ToListAsync();
         }
 
         public async Task<ProductEntity> GetById(Guid id)

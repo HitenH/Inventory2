@@ -14,38 +14,36 @@ namespace Inventory.Domain.Repository
         }
         public async Task Create(Mobile mobile)
         {
-            //await context.Mobiles.AddAsync(mobile);
-            //await context.SaveChangesAsync();
+            await context.Mobiles.AddAsync(mobile);
+            await context.SaveChangesAsync();
         }
 
         public async Task Delete(Mobile mobile)
         {
-            //context.Mobiles.Remove(mobile);
-            //await context.SaveChangesAsync();
+            context.Mobiles.Remove(mobile);
+            await context.SaveChangesAsync();
         }
 
         public async Task DeleteRange(List<Mobile> mobiles)
         {
-            //context.Mobiles.RemoveRange(mobiles);
-            //await context.SaveChangesAsync();
+            context.Mobiles.RemoveRange(mobiles);
+            await context.SaveChangesAsync();
         }
 
         public async Task<List<Mobile>> GetAll()
         {
-            return new();
-            //return await context.Mobiles.ToListAsync();
+             return await context.Mobiles.ToListAsync();
         }
 
         public async Task<Mobile> GetById(int id)
         {
-            return new();
-           // return await context.Mobiles.FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Mobiles.FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(Mobile mobile)
         {
-            //context.Mobiles.Update(mobile);
-            //await context.SaveChangesAsync();
+            context.Mobiles.Update(mobile);
+            await context.SaveChangesAsync();
         }
     }
 }

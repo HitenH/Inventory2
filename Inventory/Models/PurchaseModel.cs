@@ -5,11 +5,17 @@ namespace Inventory.Models
 {
     public class PurchaseModel
     {
+        [Required]
         public Guid Id { get; set; }
         public int VoucherId { get; set; }
-        public SupplierEntity Supplier { get; set; }
-        public DateOnly Date { get; set; }
+        public Guid SupplierEntityId { get; set; }
+        [Required]
+        public string SupplierId { get; set; }
+        [Required]
+        public string SupplierName { get; set; }
+        [Required]
+        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public string? Remarks { get; set; }
-        public List<PurchaseVariant> PurchaseVariants { get; set; } = new();
+        public decimal? TotalAmountProduct { get; set; } = decimal.Zero;
     }
 }

@@ -22,7 +22,7 @@ namespace Inventory.Pages
         private ProductModel productModel = new();
         private ProductEntity productEntity = new();
         private List<CategoryModel> categories = new();
-        private string categoryId = Guid.Empty.ToString();
+        private Guid categoryId = Guid.Empty;
         public VariantModel variant = new();
 
         protected async override Task OnInitializedAsync()
@@ -34,7 +34,8 @@ namespace Inventory.Pages
                     productEntity = await ProductRepository.GetById(Guid.Parse(ProductId));
                     if (productEntity == null)
                         navManager.NavigateTo("/products");
-
+                    if (productEntity.Category != null)
+                        categoryId = productEntity.Category.Id;
                     productModel = Mapper.Map<ProductModel>(productEntity);
                 }
                 var categoriesDb = await CategoryRepository.GetAll();
@@ -55,7 +56,7 @@ namespace Inventory.Pages
                 try
                 {
                     productEntity = Mapper.Map<ProductEntity>(productModel);
-                    productEntity.Category = await GetCategor(categoryId);
+                    productEntity.Category = await GetCategory(categoryId);
                     await ProductRepository.Create(productEntity);
                 }
                 catch (Exception ex)
@@ -74,7 +75,7 @@ namespace Inventory.Pages
                 {
                     productEntity.ProductId = productModel.ProductId;
                     productEntity.Name = productModel.Name;
-                    productEntity.Category = await GetCategor(categoryId);
+                    productEntity.Category = await GetCategory(categoryId);
                     productEntity.Description = productModel.Description;
                     productEntity.Rate = productModel.Rate;
 
@@ -104,9 +105,9 @@ namespace Inventory.Pages
             navManager.NavigateTo("/products");
         }
 
-        public async Task<CategoryEntity> GetCategor(string id)
+        public async Task<CategoryEntity> GetCategory(Guid id)
         {
-            return await CategoryRepository.GetById(Guid.Parse(categoryId));
+            return await CategoryRepository.GetById(categoryId);
         }
 
         public void GetVariant(VariantModel model)

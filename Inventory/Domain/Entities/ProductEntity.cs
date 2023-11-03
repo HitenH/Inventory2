@@ -10,8 +10,8 @@ namespace Inventory.Domain.Entities
         public string? Name { get; set; }
         public decimal? Rate { get; set; }
         public string? Description { get; set; }
-        public Guid? CategoryEntityId { get; set; }
         public CategoryEntity? Category { get; set; }
         public List<VariantEntity>? Variants { get; set; } = new();
+        public List<PurchaseVariant>? PurchaseVariants { get; set; } = new();
     }
 }

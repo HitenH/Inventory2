@@ -109,9 +109,14 @@ namespace Inventory.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("SupplierEntityId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerEntityId");
+
+                    b.HasIndex("SupplierEntityId");
 
                     b.ToTable("Mobiles");
                 });
@@ -122,7 +127,7 @@ namespace Inventory.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CategoryEntityId")
+                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -139,11 +144,149 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryEntityId")
-                        .IsUnique()
-                        .HasFilter("[CategoryEntityId] IS NOT NULL");
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SupplierEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("TotalAmountProduct")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierEntityId");
+
+                    b.ToTable("Purchases");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseOrderEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OrderStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("ProductRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SupplierId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("AmountAfterDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("Discount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProductEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("ProductRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("PurchaseEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SerialNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VariantId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductEntityId");
+
+                    b.HasIndex("PurchaseEntityId");
+
+                    b.ToTable("PurchaseVariant");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Area")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactPerson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SupplierId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.UserEntity", b =>
@@ -230,17 +373,52 @@ namespace Inventory.Migrations
                         .HasForeignKey("CustomerEntityId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("Inventory.Domain.Entities.SupplierEntity", "Supplier")
+                        .WithMany("Mobiles")
+                        .HasForeignKey("SupplierEntityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Customer");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.CategoryEntity", "Category")
-                        .WithOne("Product")
-                        .HasForeignKey("Inventory.Domain.Entities.ProductEntity", "CategoryEntityId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.SupplierEntity", "Supplier")
+                        .WithMany("Purchases")
+                        .HasForeignKey("SupplierEntityId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseVariant", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
+                        .WithMany("PurchaseVariants")
+                        .HasForeignKey("ProductEntityId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.PurchaseEntity", "Purchase")
+                        .WithMany("PurchaseVariants")
+                        .HasForeignKey("PurchaseEntityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Purchase");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
@@ -255,7 +433,7 @@ namespace Inventory.Migrations
 
             modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
                 {
-                    b.Navigation("Product");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.CustomerEntity", b =>
@@ -265,7 +443,21 @@ namespace Inventory.Migrations
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
                 {
+                    b.Navigation("PurchaseVariants");
+
                     b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PurchaseEntity", b =>
+                {
+                    b.Navigation("PurchaseVariants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
+                {
+                    b.Navigation("Mobiles");
+
+                    b.Navigation("Purchases");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>

@@ -109,8 +109,8 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    if (supplierEntity.Mobiles.Count > 0)
-                        await MobileRepository.DeleteRange(supplierEntity.Mobiles);
+                    //if (supplierEntity.Mobiles.Count > 0)
+                    //    await MobileRepository.DeleteRange(supplierEntity.Mobiles);
 
                     await SupplierRepository.Delete(supplierEntity);
                 }
