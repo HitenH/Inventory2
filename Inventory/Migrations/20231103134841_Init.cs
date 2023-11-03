@@ -200,7 +200,7 @@ namespace Inventory.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Discount = table.Column<int>(type: "int", nullable: true),
                     AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    PurchaseEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    PurchaseEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {

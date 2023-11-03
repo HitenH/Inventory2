@@ -14,8 +14,6 @@ namespace Inventory
             CreateMap<CategoryEntity, CategoryModel>().ReverseMap();
             CreateMap<VariantEntity, VariantModel>().ReverseMap();
             CreateMap<PurchaseOrderEntity, PurchaseOrderModel>().ReverseMap();
-            CreateMap<PurchaseVariant, PurchaseVariantModel>().ReverseMap();
-
         }
     }
 }

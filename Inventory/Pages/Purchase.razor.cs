@@ -24,7 +24,7 @@ namespace Inventory.Pages
         private PurchaseModel purchaseModel = new();
         private PurchaseEntity purchaseEntity = new();
         private PurchaseTotalData PurchaseTotalData = new();
-        public bool IsDisabled { get; set; }
+        private bool IsDisabled { get; set; }
         // private int serialnumber = 1;
         //private PurchaseVariantModel purchaseVariant = new();
         //private PurchaseVariant purchaseVariantEntity = new();

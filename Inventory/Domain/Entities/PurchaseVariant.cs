@@ -15,7 +15,7 @@ namespace Inventory.Domain.Entities
         public decimal? Amount { get; set; } = default(decimal);
         public int? Discount { get; set; } = default(int);
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
-        public Guid? PurchaseEntityId { get; set; }
-        public PurchaseEntity? Purchase { get; set; }
+        public Guid PurchaseEntityId { get; set; }
+        public PurchaseEntity Purchase { get; set; }
     }
 }

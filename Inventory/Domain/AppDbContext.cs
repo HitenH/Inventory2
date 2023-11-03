@@ -20,6 +20,7 @@ namespace Inventory.Domain
         public DbSet<Image> Images { get; set; }
         public DbSet<PurchaseOrderEntity> PurchaseOrders { get; set; }
         public DbSet<PurchaseEntity> Purchases { get; set; }
+        public DbSet<PurchaseVariant> PurchaseVariant { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,11 +82,11 @@ namespace Inventory.Domain
                       .HasForeignKey(k => k.ProductEntityId)
                       .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<PurchaseEntity>()
-                        .HasMany(p => p.PurchaseVariants)
-                        .WithOne(v => v.Purchase)
-                        .HasForeignKey(k => k.PurchaseEntityId)
-                        .OnDelete(DeleteBehavior.Cascade);
+            //modelBuilder.Entity<PurchaseEntity>()
+            //            .HasMany(p => p.PurchaseVariants)
+            //            .WithOne(v => v.Purchase)
+            //            .HasForeignKey(k => k.PurchaseEntityId)
+            //            .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

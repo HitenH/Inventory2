@@ -60,9 +60,10 @@
 </EditForm>
 
 
-
 @if (PurchaseId != null)
 {
+    <PurchaseVariantComponent Purchase="purchaseEntity"/>
+
     <EditForm Model="@PurchaseTotalData" Context="PurchaseTotalDataForm" class="card-header mt-5"
           OnValidSubmit="AddTotalAmount">
         <div class="d-flex justify-content-around">

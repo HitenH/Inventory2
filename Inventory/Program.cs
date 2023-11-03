@@ -20,7 +20,6 @@ namespace Inventory
             builder.Services.AddDbContext<AppDbContext>(option =>
             {
                 option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
-                
             });
 
             builder.Services.AddTransient<IUserRepository, UserRepositoryEF>();
@@ -28,11 +27,12 @@ namespace Inventory
             builder.Services.AddTransient<ISupplierRepository, SupplierRepositoryEF>();
             builder.Services.AddTransient<IProductRepository, ProductRepositoryEF>();
             builder.Services.AddTransient<IVariantRepository, VariantRepositoryEF>();
-            builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
+            builder.Services.AddTransient<ICategoryRepository, CategoryRepositoryEF>();
             builder.Services.AddTransient<IMobileRepository, MobileRepositoryEF>();
             builder.Services.AddTransient<IImageRepository, ImageRepositoryEF>();
             builder.Services.AddTransient<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
             builder.Services.AddTransient<IPurchaseRepository, PurchaseRepositoryEF>();
+            builder.Services.AddTransient<IPurchaseVariantRepository, PurchaseVariantRepositoryEF>();
             builder.Services.AddTransient<ProtectedSessionStorage>();
             builder.Services.AddTransient<IMobileService, MobileService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();

@@ -239,7 +239,7 @@ namespace Inventory.Migrations
                     b.Property<decimal?>("ProductRate")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("PurchaseEntityId")
+                    b.Property<Guid>("PurchaseEntityId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int?>("Quantity")
@@ -414,7 +414,8 @@ namespace Inventory.Migrations
                     b.HasOne("Inventory.Domain.Entities.PurchaseEntity", "Purchase")
                         .WithMany("PurchaseVariants")
                         .HasForeignKey("PurchaseEntityId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Product");
 

@@ -107,7 +107,7 @@ namespace Inventory.Shared
                 var variant = await VariantRepository.GetById(id);
                 if (variant != null)
                 {
-                    await DeleteFile(variant.Image);
+                    await DeleteFile(variant.Image); //////////////????????????????????????
                     await VariantRepository.Delete(variant);
                     GetVariants();
                 }
