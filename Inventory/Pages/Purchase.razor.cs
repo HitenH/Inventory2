@@ -19,11 +19,12 @@ namespace Inventory.Pages
 
         private bool isVisibleSupplierPopup = false;
         //private bool isVisibleProductPopup = false;
-        // private SupplierModel supplier = new();
+        private SupplierEntity supplier = new();
         // private ProductEntity product = new();
         private PurchaseModel purchaseModel = new();
         private PurchaseEntity purchaseEntity = new();
         private PurchaseTotalData PurchaseTotalData = new();
+        public bool IsDisabled { get; set; }
         // private int serialnumber = 1;
         //private PurchaseVariantModel purchaseVariant = new();
         //private PurchaseVariant purchaseVariantEntity = new();
@@ -37,14 +38,17 @@ namespace Inventory.Pages
                 purchaseEntity = await PurchaseRepository.GetById(Guid.Parse(PurchaseId));
                 if (purchaseEntity != null)
                 {
-                    purchaseModel.SupplierEntityId = purchaseEntity.SupplierEntityId;
                     purchaseModel.SupplierId = purchaseEntity.Supplier.SupplierId;
                     purchaseModel.SupplierName = purchaseEntity.Supplier.Name;
                     purchaseModel.Date = purchaseEntity.Date;
                     purchaseModel.Remarks = purchaseEntity.Remarks;
                     purchaseModel.TotalAmountProduct = purchaseEntity.TotalAmountProduct;
                     purchaseModel.VoucherId = purchaseEntity.VoucherId;
+                    supplier = purchaseEntity.Supplier;
+                    IsDisabled = false;
                 }
+                else
+                    IsDisabled = true;
             }
             //GetAmountAfterDiscount();
 
@@ -65,7 +69,7 @@ namespace Inventory.Pages
                     {
                         Date = purchaseModel.Date,
                         Remarks = purchaseModel.Remarks,
-                        SupplierEntityId = purchaseModel.SupplierEntityId,
+                        Supplier = supplier,
                         VoucherId = purchaseModel.VoucherId
                     };
                     var id = await PurchaseRepository.Create(purchaseEntity);
@@ -93,8 +97,9 @@ namespace Inventory.Pages
                     {
                         if (purchaseEntity.VoucherId != purchaseModel.VoucherId)
                             purchaseEntity.VoucherId = purchaseModel.VoucherId;
+                        if (purchaseEntity.Supplier.Id != supplier.Id)
+                            purchaseEntity.Supplier = supplier;
 
-                        purchaseEntity.SupplierEntityId = purchaseModel.SupplierEntityId;
                         purchaseEntity.Remarks = purchaseModel.Remarks;
                         purchaseEntity.Date = purchaseModel.Date;
 
@@ -110,6 +115,21 @@ namespace Inventory.Pages
             }
         }
 
+        public async Task DeletePurchase()
+        {
+            if (purchaseEntity != null)
+            {
+                try
+                {
+                    await PurchaseRepository.Delete(purchaseEntity);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Delete purchase: " + ex.Message);
+                }
+                navManager.NavigateTo("/");
+            }
+        }
         public void CancelPurchase()
         {
             purchaseModel = new();
@@ -128,13 +148,13 @@ namespace Inventory.Pages
         {
             isVisibleSupplierPopup = state;
         }
-        public void GetSupplierFromPopup(SupplierModel supplierFromPopup)
+        public async void GetSupplierFromPopup(SupplierModel supplierFromPopup)
         {
             if (supplierFromPopup != null)
             {
-                purchaseModel.SupplierEntityId = supplierFromPopup.Id;
                 purchaseModel.SupplierId = supplierFromPopup.SupplierId;
                 purchaseModel.SupplierName = supplierFromPopup.Name;
+                supplier = await SuplierRepository.GetById(supplierFromPopup.Id);
             }
 
 

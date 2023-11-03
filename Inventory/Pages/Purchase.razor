@@ -30,7 +30,7 @@
         </div>
         <div class="text-center">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
-            <InputNumber @bind-Value="purchaseModel.VoucherId" id="voucher" class="form-control text-center"  />
+            <NumberInput TValue="int" @bind-Value="purchaseModel.VoucherId" id="voucher" class="form-control text-center" Disabled="@IsDisabled" />
         </div>
         <div class="text-center">
             <label for="date" class="form-label"><h4>Date</h4></label>
@@ -53,7 +53,7 @@
         <NavLink type="button" href="/purchases" id="button-close" class="btn btn-info ms-2">Close</NavLink>
         @if (PurchaseId != null)
         {
-            <button type="button" class="btn btn-danger ms-3">Delete</button>
+            <button type="button" class="btn btn-danger ms-3" @onclick="DeletePurchase">Delete</button>
         }
         <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
     </div>

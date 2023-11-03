@@ -8,7 +8,6 @@ namespace Inventory.Models
         [Required]
         public Guid Id { get; set; }
         public int VoucherId { get; set; }
-        public Guid SupplierEntityId { get; set; }
         [Required]
         public string SupplierId { get; set; }
         [Required]
