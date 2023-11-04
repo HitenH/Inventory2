@@ -39,7 +39,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<PurchaseEntity> GetById(Guid id)
         {
-          return await context.Purchases.Include(p => p.Supplier).FirstOrDefaultAsync(c => c.Id == id, default);
+          return await context.Purchases.Include(p => p.Supplier).Include(p => p.PurchaseVariants).ThenInclude(p => p.Product).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task<int> GetLastVoucherId()

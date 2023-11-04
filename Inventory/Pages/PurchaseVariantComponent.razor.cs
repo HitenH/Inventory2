@@ -3,6 +3,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 
@@ -11,13 +12,13 @@ namespace Inventory.Pages
     public partial class PurchaseVariantComponent
     {
         [Parameter] public PurchaseEntity Purchase { get; set; }
-
+        [Parameter] public EventCallback<bool> ChangeState { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
+        [Inject] private ProductService ProductService { get; set; }
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
-        [Inject] private NavigationManager navManager { get; set; }
 
         private bool isVisibleProductPopup = false;
         private ProductEntity product = new();
@@ -27,12 +28,12 @@ namespace Inventory.Pages
         private List<PurchaseVariantModel> purchaseVariants = new();
         private PurchaseVariant purchaseVariantEntity = new();
         private bool isSortAscending = false;
+        private Dictionary<Guid, int> productVariantQuantity = new();
 
-        protected async override Task OnInitializedAsync()
+        protected override void OnAfterRender(bool firstRender)
         {
             GetPurchaseVariants();
             GetAmountAfterDiscount();
-
         }
 
         public async Task AddPurchaseVariant()
@@ -53,9 +54,16 @@ namespace Inventory.Pages
 
                     product.PurchaseVariants.Add(purchaseVariantEntity);
                     await ProductRepository.Update(product);
+                    if (product.Variants.Count != 0 && purchaseVariant.VariantId != null && purchaseVariant.Quantity != 0)
+                    {
+                        var variantEntityId = product.Variants.First(v => v.VariantId == purchaseVariant.VariantId).Id;
+                        productVariantQuantity[variantEntityId] = purchaseVariant.Quantity.Value;
+                        ProductService.AddProductVariantQuantity(product, variantEntityId, purchaseVariant.Quantity.Value);
+                    }
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;
+                    await ChangeState.InvokeAsync(true);
                 }
                 catch (Exception ex)
                 {
@@ -68,11 +76,52 @@ namespace Inventory.Pages
         {
             try
             {
+                if (purchaseVariant != null)
+                {
+                    purchaseVariantEntity = await PurchaseVariantRepository.GetById(purchaseVariant.Id);
+                    if (purchaseVariantEntity != null)
+                    {
+                        purchaseVariant.SerialNumber = serialnumber;
+                        purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
+                        purchaseVariantEntity.VariantId = purchaseVariant.VariantId;
+                        purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
+                        purchaseVariantEntity.Amount = purchaseVariant.Amount;
+                        purchaseVariantEntity.Discount = purchaseVariant.Discount;
+                        purchaseVariantEntity.AmountAfterDiscount = purchaseVariant.AmountAfterDiscount;
+                        purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
 
+                        await PurchaseVariantRepository.Update(purchaseVariantEntity);
+
+                        if (true)
+                        {
+
+                        }
+                    }
+                    CancelPurchaseVariant();
+                    await ChangeState.InvokeAsync(true);
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError("Update purchase error: " + ex.Message);
+            }
+        }
+
+        public async Task DeletePurchaseVariant(Guid id)
+        {
+            try
+            {
+                var variant = await PurchaseVariantRepository.GetById(id);
+                if (variant != null)
+                {
+                    await PurchaseVariantRepository.Delete(variant);
+                    GetPurchaseVariants();
+                    await ChangeState.InvokeAsync(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Delete purchase variant" + ex.Message);
             }
         }
 
@@ -150,24 +199,6 @@ namespace Inventory.Pages
         {
             CancelPurchaseVariant();
             purchaseVariant= model;
-        }
-
-        public async Task DeletePurchaseVariant(Guid id)
-        {
-            try
-            {
-                var variant = await PurchaseVariantRepository.GetById(id);
-                if (variant != null)
-                {
-                    await PurchaseVariantRepository.Delete(variant);
-                    GetPurchaseVariants();
-                }
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
         }
 
         public void SortItem(string column)

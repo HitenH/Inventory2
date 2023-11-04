@@ -27,9 +27,12 @@
             <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
+                @if (purchaseVariant.Id == null)
+                {
+                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
+                        <img src="img/select.png" alt="select" class="select-img" />
+                    </button>
+                }
                 <InputText @bind-Value="purchaseVariant.ProductId" id="productid" class="form-control text-center" requared disabled />
             </div>
         </div>
@@ -74,7 +77,7 @@
             <NumberInput TValue="int?" Value="purchaseVariant.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>purchaseVariant.Discount" />
         </div>
         <div class="col-1 text-center">
-            <label for="amountafterdiscount" class="form-label">Ammount</label>
+            <label for="amountafterdiscount" class="form-label">Amount</label>
             <InputNumber @bind-Value="purchaseVariant.AmountAfterDiscount" id="amountafterdiscount" class="form-control text-center" disabled />
         </div>
     </div>
@@ -94,7 +97,7 @@
             <th class="text-center column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("Amount"))">Amount</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("Discount"))">Discount (%)</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("AmmountAfterDiscount"))">Ammount</th>
+            <th class="text-center column-item" @onclick="@(()=>SortItem("AmmountAfterDiscount"))">Amount</th>
         </tr>
     </thead>
     <tbody>
@@ -121,7 +124,7 @@
                     <td class="text-center">@variant.ProductRate</td>
                     <td class="text-center">@variant.Amount</td>
                     <td class="text-center">@variant.Discount</td>
-                    <td class="text-center">@variant.Amount</td>
+                    <td class="text-center">@variant.AmountAfterDiscount</td>
                 </tr>
             }
         }

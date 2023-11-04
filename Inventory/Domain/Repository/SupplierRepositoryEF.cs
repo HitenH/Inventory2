@@ -35,7 +35,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SupplierEntity>> GetAll()
         {
-            return await context.Suppliers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
+            return await context.Suppliers.Include(n => n.Mobiles).Include(s=>s.Purchases).AsNoTracking().ToListAsync();
         }
 
         public async Task<SupplierEntity> GetById(Guid id)

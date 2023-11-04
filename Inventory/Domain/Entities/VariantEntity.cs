@@ -8,7 +8,7 @@ namespace Inventory.Domain.Entities
         public Guid Id { get; set; }
         public string? VariantId { get; set; }
         public string? Name { get; set; }
-        public int? StockInHand { get; set; }
+        public int? StockInHand { get; set; } = default(int);
         public Image? Image { get; set; }
         public Guid? ProductEntityId { get; set; }
         public ProductEntity? Product { get; set; }

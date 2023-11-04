@@ -11,25 +11,17 @@ namespace Inventory.Pages
     {
         [Parameter] public string PurchaseId { get; set; }
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
-        //[Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private ISupplierRepository SuplierRepository { get; set; }
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private bool isVisibleSupplierPopup = false;
-        //private bool isVisibleProductPopup = false;
         private SupplierEntity supplier = new();
-        // private ProductEntity product = new();
         private PurchaseModel purchaseModel = new();
         private PurchaseEntity purchaseEntity = new();
         private PurchaseTotalData PurchaseTotalData = new();
         private bool IsDisabled { get; set; }
-        // private int serialnumber = 1;
-        //private PurchaseVariantModel purchaseVariant = new();
-        //private PurchaseVariant purchaseVariantEntity = new();
-
-
 
         protected async override Task OnInitializedAsync()
         {
@@ -46,12 +38,11 @@ namespace Inventory.Pages
                     purchaseModel.VoucherId = purchaseEntity.VoucherId;
                     supplier = purchaseEntity.Supplier;
                     IsDisabled = false;
+                    GetTotalAmount();
                 }
                 else
                     IsDisabled = true;
             }
-            //GetAmountAfterDiscount();
-
         }
         public async Task AddPurchase()
         {
@@ -127,7 +118,7 @@ namespace Inventory.Pages
                 {
                     Logger.LogError("Delete purchase: " + ex.Message);
                 }
-                navManager.NavigateTo("/");
+                navManager.NavigateTo("/purchases");
             }
         }
         public void CancelPurchase()
@@ -137,7 +128,16 @@ namespace Inventory.Pages
 
         public async Task AddTotalAmount()
         {
-
+            try
+            {
+                purchaseEntity.TotalAmountProduct = PurchaseTotalData.TotalAmount;
+                await PurchaseRepository.Update(purchaseEntity);
+                navManager.NavigateTo("/purchases");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Add total amount: " + ex.Message);
+            }
         }
 
         public void OpenSupplierPopup()
@@ -156,108 +156,25 @@ namespace Inventory.Pages
                 purchaseModel.SupplierName = supplierFromPopup.Name;
                 supplier = await SuplierRepository.GetById(supplierFromPopup.Id);
             }
-
-
         }
 
+        private void DiscountChanged(decimal value)
+        {
+            PurchaseTotalData.Discount = value;
+            GetTotalAmount();
+        }
 
+        public void GetTotalAmount()
+        {
+            PurchaseTotalData.TotalQuantity = purchaseEntity.PurchaseVariants.Select(x => x.Quantity).Sum().Value;
+            var amount = purchaseEntity.PurchaseVariants.Select(v => v.AmountAfterDiscount).Sum().Value;
+            PurchaseTotalData.TotalAmount = amount - PurchaseTotalData.Discount;
+        }
 
-
-
-
-
-        //public async Task AddPurchaseVariant()
-        //{
-        //    if (purchaseModel != null || purchaseVariant != null)
-        //    {
-
-        //        try
-        //        {
-        //            purchaseVariant.SerialNumber = serialnumber;
-
-        //            var variant = Mapper.Map<PurchaseVariant>(purchaseVariant);
-
-
-        //            product.PurchaseVariants.Add(variant);
-        //            await ProductRepository.Update(product);
-
-        //            purchaseEntity.PurchaseVariants.Add(variant);
-        //            await PurchaseRepository.Update(purchaseEntity);
-        //            CancelPurchaseVariant();
-        //            serialnumber += 1;
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine(ex.Message);
-        //        }
-
-        //    }
-        //}
-
-        //public async Task EditPurchaseVariant()
-        //{
-        //    try
-        //    {
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError("Update purchase error: " + ex.Message);
-        //    }
-        //}
-
-
-        //public void OpenProductPopup()
-        //{
-        //    isVisibleProductPopup = true;
-        //    isVisibleSupplierPopup = false;
-        //}
-
-        //public void CancelPurchaseVariant()
-        //{
-        //    purchaseVariant = new();
-        //    product = new();
-        //}
-
-        //public void CloseProductPopup(bool state)
-        //{
-        //    isVisibleProductPopup = state;
-        //}
-
-
-
-        //public async Task GetProductFromPopup(ProductModel productFromPopup)
-        //{
-        //    if (productFromPopup != null)
-        //    {
-        //        product = await ProductRepository.GetById(productFromPopup.Id);
-        //        purchaseVariant.ProductRate = productFromPopup.Rate;
-        //    }
-        //}
-
-        //private void AmountChanged(decimal? value)
-        //{
-        //    purchaseVariant.Amount = value;
-        //    GetAmountAfterDiscount();
-        //}
-
-        //private void DiscountChanged(int? value)
-        //{
-        //    purchaseVariant.Discount = value;
-        //    GetAmountAfterDiscount();
-        //}
-
-
-        //public void GetAmountAfterDiscount()
-        //{
-        //    if (purchaseVariant.Amount != 0 && purchaseVariant.Discount != 0)
-        //    {
-        //        purchaseVariant.AmountAfterDiscount = purchaseVariant.Amount - (purchaseVariant.Amount * ((decimal)purchaseVariant.Discount / 100));
-        //    }
-        //    else if (purchaseVariant.Amount != 0 && purchaseVariant.Discount == 0)
-        //    {
-        //        purchaseVariant.AmountAfterDiscount = purchaseVariant.Amount;
-        //    }
-        //}
+        public void ChangeStatePurchaseVariant(bool change)
+        {
+            if (change)
+                GetTotalAmount();
+        }
     }
 }

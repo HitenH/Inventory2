@@ -27,24 +27,24 @@ else
         <tbody>
             @if (suppliersAfterSearch.Count != 0)
             {
-                @foreach (var customer in suppliersAfterSearch.AsQueryable())
+                @foreach (var supplier in suppliersAfterSearch.AsQueryable())
                 {
                     <tr>
-                        <td class="text-center">@customer.SupplierId</td>
-                        <td class="text-center">@customer.Name</td>
+                        <td class="text-center">@supplier.SupplierId</td>
+                        <td class="text-center">@supplier.Name</td>
 
-                        @if (customer.Mobiles.Count == 0)
+                        @if (supplier.Mobiles.Count == 0)
                         {
                             <td class="text-center">-</td>
                         }
                         else
                         {
-                            <td class="text-center">@customer.Mobiles.First().Phone</td>
+                            <td class="text-center">@supplier.Mobiles.First().Phone</td>
                         }
 
-                        <td class="text-center">@customer.Area</td>
-                        <td class="text-center">-</td>
-                        <td class="text-center"><a class="btn btn-secondary" href="supplier/@customer.Id">Info</a></td>
+                        <td class="text-center">@supplier.Area</td>
+                        <td class="text-center">@totalAmount[supplier.Id]</td>
+                        <td class="text-center"><a class="btn btn-secondary" href="supplier/@supplier.Id">Info</a></td>
                     </tr>
                 }
             }

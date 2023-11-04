@@ -38,7 +38,7 @@ namespace Inventory
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
             builder.Services.AddAutoMapper(typeof(AppMappingProfile));
             builder.Services.AddBlazorBootstrap();
-
+            builder.Services.AddTransient<ProductService>();
 
             var app = builder.Build();
 

@@ -2,6 +2,8 @@
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Inventory.Pages
 {
@@ -14,6 +16,7 @@ namespace Inventory.Pages
         private List<SupplierModel> suppliers;
         private List<SupplierModel> suppliersAfterSearch;
         private bool isSortAscending = false;
+        private Dictionary<Guid,decimal> totalAmount = new();
 
         protected async override Task OnInitializedAsync()
         {
@@ -26,6 +29,7 @@ namespace Inventory.Pages
                 {
                     suppliers = list.Select(c => Mapper.Map<SupplierModel>(c)).ToList();
                     suppliersAfterSearch = suppliers;
+                    GetTotalAmount();
                 }
             }
             catch (Exception ex)
@@ -39,6 +43,17 @@ namespace Inventory.Pages
             suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
         }
 
+        public void GetTotalAmount()
+        {
+            if (suppliersAfterSearch.Count != 0)
+            {
+                totalAmount = suppliersAfterSearch.Select(supplier => new
+                {
+                    SupplierId = supplier.Id,
+                    TotalAmount = supplier.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
+                }).ToDictionary(result => result.SupplierId, result => result.TotalAmount);
+            }
+        }
         public void SortItem(string column)
         {
             if (suppliersAfterSearch.Count != 0)

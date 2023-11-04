@@ -1,8 +1,9 @@
 ﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Repository.Abstract;
 using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
-namespace Inventory.Domain.Repository.Abstract
+namespace Inventory.Domain.Repository
 {
     public class PurchaseVariantRepositoryEF : IPurchaseVariantRepository
     {
@@ -31,7 +32,7 @@ namespace Inventory.Domain.Repository.Abstract
 
         public async Task<PurchaseVariant> GetById(Guid id)
         {
-            return await context.PurchaseVariant.FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.PurchaseVariant.Include(p => p.Product).ThenInclude(p => p.Variants).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(PurchaseVariant variant)
