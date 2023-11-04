@@ -27,7 +27,7 @@
             <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                @if (purchaseVariant.Id == null)
+                @if (purchaseVariant.Id == Guid.Empty)
                 {
                     <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
                         <img src="img/select.png" alt="select" class="select-img" />
@@ -42,19 +42,19 @@
         </div>
         <div class="mb-2 col-1 text-center">
             <label for="variantid" class="form-label">Variant ID</label>
-            <InputSelect @bind-Value="purchaseVariant.VariantId" class="form-control text-center" id="variantid">
+            <InputSelect @bind-Value="purchaseVariant.VariantEntytiId" class="form-control text-center" id="variantid">
                 <option value="" class="text-center">-</option>
                 @if (product.Variants.Count != 0)
                 {
                     @foreach (var item in product.Variants)
                     {
-                        if (item.VariantId == purchaseVariant.VariantId)
+                        if (item.Id == purchaseVariant.VariantEntytiId)
                         {
-                            <option selected value="@item.VariantId" class="text-center">@item.VariantId</option>
+                            <option selected value="@item.Id" class="text-center">@item.VariantId</option>
                         }
                         else
                         {
-                            <option value="@item.VariantId" class="text-center">@item.VariantId</option>
+                            <option value="@item.Id" class="text-center">@item.VariantId</option>
                         }
                     }
                 }
@@ -119,7 +119,7 @@
                     <td class="text-center">@variant.SerialNumber</td>
                     <td class="text-center">@variant.ProductId</td>
                     <td class="text-center">@variant.ProductName</td>
-                    <td class="text-center">@variant.VariantId</td>
+                    <td class="text-center">@variant.ProductVariantId</td>
                     <td class="text-center">@variant.Quantity</td>
                     <td class="text-center">@variant.ProductRate</td>
                     <td class="text-center">@variant.Amount</td>

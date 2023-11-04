@@ -30,7 +30,15 @@
         </div>
         <div class="text-center">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
-            <NumberInput TValue="int" @bind-Value="purchaseModel.VoucherId" id="voucher" class="form-control text-center" Disabled="@IsDisabled" />
+            @if (IsDisabled)
+            {
+                <InputNumber @bind-Value="purchaseModel.VoucherId" id="voucher" class="form-control text-center" disabled />
+            }
+            else
+            {
+                <InputNumber @bind-Value="purchaseModel.VoucherId" id="voucher" class="form-control text-center" />
+            }
+            
         </div>
         <div class="text-center">
             <label for="date" class="form-label"><h4>Date</h4></label>

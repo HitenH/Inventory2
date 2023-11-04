@@ -248,14 +248,16 @@ namespace Inventory.Migrations
                     b.Property<int>("SerialNumber")
                         .HasColumnType("int");
 
-                    b.Property<string>("VariantId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("VariantEntityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductEntityId");
 
                     b.HasIndex("PurchaseEntityId");
+
+                    b.HasIndex("VariantEntityId");
 
                     b.ToTable("PurchaseVariant");
                 });
@@ -417,7 +419,15 @@ namespace Inventory.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Inventory.Domain.Entities.VariantEntity", "ProductVariant")
+                        .WithMany("PurchaseVariants")
+                        .HasForeignKey("VariantEntityId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Product");
+
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("Purchase");
                 });
@@ -464,6 +474,8 @@ namespace Inventory.Migrations
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
                 {
                     b.Navigation("Image");
+
+                    b.Navigation("PurchaseVariants");
                 });
 #pragma warning restore 612, 618
         }

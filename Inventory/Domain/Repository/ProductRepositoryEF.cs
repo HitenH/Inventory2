@@ -35,12 +35,12 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductEntity>> GetAll()
         {
-            return await context.Products.Include(p => p.Variants).AsNoTracking().ToListAsync();
+            return await context.Products.Include(p => p.Variants).ThenInclude(p => p.PurchaseVariants).AsNoTracking().ToListAsync();
         }
 
         public async Task<ProductEntity> GetById(Guid id)
         {
-            return await context.Products.Include(p => p.Category).Include(p => p.Variants).ThenInclude(v=>v.Image).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Products.Include(p => p.Category).Include(p => p.Variants).ThenInclude(v=>v.Image).Include(p => p.PurchaseVariants).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(ProductEntity product)

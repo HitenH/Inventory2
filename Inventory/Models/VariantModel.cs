@@ -12,5 +12,6 @@ namespace Inventory.Models
         public string? Name { get; set; }
         public int? StockInHand { get; set; }
         public Image? Image { get; set; } = new();
+        public List<PurchaseVariant>? PurchaseVariants { get; set; }
     }
 }

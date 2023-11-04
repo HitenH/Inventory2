@@ -22,10 +22,12 @@ namespace Inventory.Shared
         private Image image = new();
         private List<VariantModel> variants = new();
         private bool isSortAscending = false;
+        private Dictionary<Guid, int> stockInHand = new();
 
         protected override void OnParametersSet()
         {
             GetVariants();
+            GetStockInHandAmount();
         }
         public async Task AddVariant()
         {
@@ -42,6 +44,7 @@ namespace Inventory.Shared
                     await ProductRepository.Update(Product);
                     CancelVariant();
                     GetVariants();
+                    GetStockInHandAmount();
                 }
                 catch (Exception ex)
                 {
@@ -79,6 +82,7 @@ namespace Inventory.Shared
                         await ProductRepository.Update(Product);
                         CancelVariant();
                         GetVariants();
+                        GetStockInHandAmount();
                     }
                 }
                 catch (Exception ex)
@@ -110,6 +114,7 @@ namespace Inventory.Shared
                     await DeleteFile(variant.Image); //////////////????????????????????????
                     await VariantRepository.Delete(variant);
                     GetVariants();
+                    GetStockInHandAmount();
                 }
             }
             catch (Exception ex)
@@ -167,6 +172,17 @@ namespace Inventory.Shared
             return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
         }
 
+        public void GetStockInHandAmount()
+        {
+            if (variants.Count != 0)
+            {
+                stockInHand = variants.Select(variant => new
+                {
+                    VariantId = variant.Id,
+                    Quantity = variant.PurchaseVariants.Sum(purchase => purchase.Quantity ?? 0)
+                }).ToDictionary(result => result.VariantId, result => result.Quantity);
+            }
+        }
         public void SortItem(string column)
         {
             if (variants.Count != 0)

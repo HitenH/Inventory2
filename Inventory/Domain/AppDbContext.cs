@@ -82,6 +82,12 @@ namespace Inventory.Domain
                       .HasForeignKey(k => k.ProductEntityId)
                       .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<VariantEntity>()
+                      .HasMany(v => v.PurchaseVariants)
+                      .WithOne(p => p.ProductVariant)
+                      .HasForeignKey(k => k.VariantEntityId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
             //modelBuilder.Entity<PurchaseEntity>()
             //            .HasMany(p => p.PurchaseVariants)
             //            .WithOne(v => v.Purchase)

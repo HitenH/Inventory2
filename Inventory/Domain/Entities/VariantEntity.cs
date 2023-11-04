@@ -12,5 +12,6 @@ namespace Inventory.Domain.Entities
         public Image? Image { get; set; }
         public Guid? ProductEntityId { get; set; }
         public ProductEntity? Product { get; set; }
+        public List<PurchaseVariant>? PurchaseVariants { get; set; }
     }
 }

@@ -28,8 +28,15 @@ namespace Inventory.Pages
         private List<PurchaseVariantModel> purchaseVariants = new();
         private PurchaseVariant purchaseVariantEntity = new();
         private bool isSortAscending = false;
-        private Dictionary<Guid, int> productVariantQuantity = new();
+        private (Guid, int) productVariantQuantity = new();
 
+        protected override void OnParametersSet()
+        {
+            if (Purchase.PurchaseVariants.Count != 0)
+            {
+                serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
+            }
+        }
         protected override void OnAfterRender(bool firstRender)
         {
             GetPurchaseVariants();
@@ -44,7 +51,7 @@ namespace Inventory.Pages
                 {
                     purchaseVariant.SerialNumber = serialnumber;
                     purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                    purchaseVariantEntity.VariantId = purchaseVariant.VariantId;
+                    purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId;
                     purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
                     purchaseVariantEntity.Amount = purchaseVariant.Amount;
                     purchaseVariantEntity.Discount = purchaseVariant.Discount;
@@ -54,12 +61,6 @@ namespace Inventory.Pages
 
                     product.PurchaseVariants.Add(purchaseVariantEntity);
                     await ProductRepository.Update(product);
-                    if (product.Variants.Count != 0 && purchaseVariant.VariantId != null && purchaseVariant.Quantity != 0)
-                    {
-                        var variantEntityId = product.Variants.First(v => v.VariantId == purchaseVariant.VariantId).Id;
-                        productVariantQuantity[variantEntityId] = purchaseVariant.Quantity.Value;
-                        ProductService.AddProductVariantQuantity(product, variantEntityId, purchaseVariant.Quantity.Value);
-                    }
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;
@@ -83,7 +84,7 @@ namespace Inventory.Pages
                     {
                         purchaseVariant.SerialNumber = serialnumber;
                         purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                        purchaseVariantEntity.VariantId = purchaseVariant.VariantId;
+                        purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId;
                         purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
                         purchaseVariantEntity.Amount = purchaseVariant.Amount;
                         purchaseVariantEntity.Discount = purchaseVariant.Discount;
@@ -91,11 +92,6 @@ namespace Inventory.Pages
                         purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
 
                         await PurchaseVariantRepository.Update(purchaseVariantEntity);
-
-                        if (true)
-                        {
-
-                        }
                     }
                     CancelPurchaseVariant();
                     await ChangeState.InvokeAsync(true);
@@ -191,14 +187,17 @@ namespace Inventory.Pages
                 ProductRate = v.ProductRate,
                 Quantity = v.Quantity,
                 SerialNumber = v.SerialNumber,
-                VariantId = v.VariantId
+                VariantEntytiId = v.VariantEntityId,
+                ProductVariantId = v.ProductVariant.VariantId,
+                ProductEntityId = v.Product.Id
             }).ToList();
         }
 
-        public void UpdatePurchaseVariant(PurchaseVariantModel model)
+        public async void UpdatePurchaseVariant(PurchaseVariantModel model)
         {
             CancelPurchaseVariant();
-            purchaseVariant= model;
+            purchaseVariant = model;
+            product = await ProductRepository.GetById(purchaseVariant.ProductEntityId);
         }
 
         public void SortItem(string column)
@@ -248,12 +247,12 @@ namespace Inventory.Pages
                 {
                     if (isSortAscending)
                     {
-                        purchaseVariants = purchaseVariants.OrderBy(c => c.VariantId).ToList();
+                        purchaseVariants = purchaseVariants.OrderBy(c => c.ProductVariantId).ToList();
                         isSortAscending = false;
                     }
                     else
                     {
-                        purchaseVariants = purchaseVariants.OrderByDescending(c => c.VariantId).ToList();
+                        purchaseVariants = purchaseVariants.OrderByDescending(c => c.ProductVariantId).ToList();
                         isSortAscending = true;
                     }
                 }

@@ -39,10 +39,10 @@ namespace Inventory.Pages
                     supplier = purchaseEntity.Supplier;
                     IsDisabled = false;
                     GetTotalAmount();
-                }
-                else
-                    IsDisabled = true;
+                } 
             }
+            else
+                IsDisabled = true;
         }
         public async Task AddPurchase()
         {
@@ -67,6 +67,7 @@ namespace Inventory.Pages
                     PurchaseId = id.ToString();
                     purchaseModel.Id = id;
                     purchaseEntity = await PurchaseRepository.GetById(id);
+                    IsDisabled = false;
                 }
                 catch (Exception ex)
                 {

@@ -188,13 +188,33 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Images",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ImageTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Images", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Images_Variants_VariantEntityId",
+                        column: x => x.VariantEntityId,
+                        principalTable: "Variants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PurchaseVariant",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SerialNumber = table.Column<int>(type: "int", nullable: false),
                     ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: true),
                     ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
@@ -216,26 +236,11 @@ namespace Inventory.Migrations
                         principalTable: "Purchases",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Images",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ImageTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Images", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Images_Variants_VariantEntityId",
+                        name: "FK_PurchaseVariant_Variants_VariantEntityId",
                         column: x => x.VariantEntityId,
                         principalTable: "Variants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.InsertData(
@@ -284,6 +289,11 @@ namespace Inventory.Migrations
                 column: "PurchaseEntityId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseVariant_VariantEntityId",
+                table: "PurchaseVariant",
+                column: "VariantEntityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Variants_ProductEntityId",
                 table: "Variants",
                 column: "ProductEntityId");
@@ -308,19 +318,19 @@ namespace Inventory.Migrations
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Variants");
-
-            migrationBuilder.DropTable(
                 name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "Purchases");
 
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Variants");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Categories");

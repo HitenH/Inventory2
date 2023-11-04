@@ -14,7 +14,7 @@ namespace Inventory.Models
         public string SupplierName { get; set; }
         [Required]
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-        public string? Remarks { get; set; }
+        public string? Remarks { get; set; } = String.Empty;
         public decimal? TotalAmountProduct { get; set; } = decimal.Zero;
     }
 }
