@@ -13,5 +13,6 @@ namespace Inventory.Domain.Entities
         public Guid? ProductEntityId { get; set; }
         public ProductEntity? Product { get; set; }
         public List<PurchaseVariant>? PurchaseVariants { get; set; }
+        public List<SalesOrderVariantEntity>? SalesOrderVariants { get; set; }
     }
 }

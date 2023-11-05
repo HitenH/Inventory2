@@ -21,6 +21,8 @@ namespace Inventory.Domain
         public DbSet<PurchaseOrderEntity> PurchaseOrders { get; set; }
         public DbSet<PurchaseEntity> Purchases { get; set; }
         public DbSet<PurchaseVariant> PurchaseVariant { get; set; }
+        public DbSet<SalesOrderEntity> SalesOrders { get; set; }
+        public DbSet<SalesOrderVariantEntity> SalesOrderVariants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -88,12 +90,35 @@ namespace Inventory.Domain
                       .HasForeignKey(k => k.VariantEntityId)
                       .OnDelete(DeleteBehavior.NoAction);
 
-            //modelBuilder.Entity<PurchaseEntity>()
-            //            .HasMany(p => p.PurchaseVariants)
-            //            .WithOne(v => v.Purchase)
-            //            .HasForeignKey(k => k.PurchaseEntityId)
-            //            .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PurchaseEntity>()
+                        .HasMany(p => p.PurchaseVariants)
+                        .WithOne(v => v.Purchase)
+                        .HasForeignKey(k => k.PurchaseEntityId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<CustomerEntity>()
+                        .HasMany(c => c.SalesOrders)
+                        .WithOne(s => s.Customer)
+                        .HasForeignKey(k => k.CustomerEntityId)
+                        .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SalesOrderEntity>()
+                        .HasMany(s => s.SalesOrderVariants)
+                        .WithOne(v => v.SalesOrder)
+                        .HasForeignKey(k => k.SalesOrderEntityId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductEntity>()
+                        .HasMany(p => p.SalesOrderVariants)
+                        .WithOne(v => v.Product)
+                        .HasForeignKey(k => k.ProductEntityId)
+                        .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<VariantEntity>()
+                        .HasMany(v => v.SalesOrderVariants)
+                        .WithOne(p => p.ProductVariant)
+                        .HasForeignKey(k => k.VariantEntityId)
+                        .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

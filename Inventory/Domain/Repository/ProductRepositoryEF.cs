@@ -54,7 +54,6 @@ namespace Inventory.Domain.Repository
             {
                 Console.WriteLine(ex.Message);
             }
-           
         }
     }
 }

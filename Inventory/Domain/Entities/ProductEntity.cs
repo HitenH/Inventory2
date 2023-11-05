@@ -13,5 +13,6 @@ namespace Inventory.Domain.Entities
         public CategoryEntity? Category { get; set; }
         public List<VariantEntity>? Variants { get; set; } = new();
         public List<PurchaseVariant>? PurchaseVariants { get; set; } = new();
+        public List<SalesOrderVariantEntity>? SalesOrderVariants { get; set; } = new();
     }
 }
