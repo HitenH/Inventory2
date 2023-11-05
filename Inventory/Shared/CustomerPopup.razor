@@ -1,0 +1,54 @@
+﻿@{
+    var showClass = IsVisible ? "d-block" : "d-none";
+}
+
+<div class="container w-50 @showClass border text-center z-3 position-absolute p-5 rounded-3 bg-white text-dark">
+    <div class="my-3 d-flex justify-content-between">
+        <Search SearchItemCallBack="SearchItem"></Search>
+        <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
+    </div>
+
+    @if (customersAfterSearch == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div style="height: 350px; overflow: auto;">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th class="text-center column-item" @onclick="@(()=>SortItem("CustomerId"))">Customer ID</th>
+                        <th class="text-center column-item" @onclick="@(()=>SortItem("Name"))">Customer Name</th>
+                        <th class="text-center"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (customersAfterSearch.Count != 0)
+                    {
+                        @foreach (var customer in customersAfterSearch.AsQueryable())
+                        {
+                            <tr>
+                                <td class="text-center">@customer.CustomerId</td>
+                                <td class="text-center">@customer.Name</td>
+                                <td class="text-center">
+                                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="@(async ()=> await SelectCustomer(customer))">
+                                        <img src="img/select.png" alt="select" class="select-img" />
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                Not Found!
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

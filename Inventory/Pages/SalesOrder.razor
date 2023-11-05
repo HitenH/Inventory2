@@ -11,7 +11,7 @@
                         await EditOrder();
                 } }">
     <DataAnnotationsValidator />
-    @*<CustomerPopup IsVisible="isVisibleCustomerPopup" CloseCallBack="CloseCustomerPopup" SupplierCallBack="GetCustomerFromPopup" />*@
+    <CustomerPopup IsVisible="isVisibleCustomerPopup" CloseCallBack="CloseCustomerPopup" CustomerCallBack="GetCustomerFromPopup" />
 
 
     <div class="d-flex justify-content-between">
@@ -77,7 +77,7 @@
 </EditForm>
 
 
-@if (SalesOrderId == null)
+@if (SalesOrderId != null)
 {
 @*    <SalesOrderVariantComponent Purchase="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />*@
 
