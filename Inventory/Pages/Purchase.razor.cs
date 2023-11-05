@@ -20,7 +20,7 @@ namespace Inventory.Pages
         private SupplierEntity supplier = new();
         private PurchaseModel purchaseModel = new();
         private PurchaseEntity purchaseEntity = new();
-        private PurchaseTotalData PurchaseTotalData = new();
+        private ComponentTotalData PurchaseTotalData = new();
         private bool IsDisabled { get; set; }
 
         protected async override Task OnInitializedAsync()

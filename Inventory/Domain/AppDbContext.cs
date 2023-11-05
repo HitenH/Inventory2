@@ -44,6 +44,14 @@ namespace Inventory.Domain
                        .Property(p => p.Date)
                        .HasConversion<DateOnlyConverter>();
 
+            modelBuilder.Entity<SalesOrderEntity>()
+                        .Property(p => p.DueDate)
+                        .HasConversion<DateOnlyConverter>();
+
+            modelBuilder.Entity<SalesOrderEntity>()
+                        .Property(p => p.Date)
+                        .HasConversion<DateOnlyConverter>();
+
             modelBuilder.Entity<CategoryEntity>()
                         .HasMany(p => p.Products)
                         .WithOne(p => p.Category);

@@ -1,0 +1,104 @@
+﻿@page "/salesorder/{salesorderId?}";
+@attribute [Authorize];
+
+<EditForm Model="@salesOrderModel" class="card-header mt-5"
+          OnValidSubmit="async ()=>
+                {
+                    if(SalesOrderId == null){
+                        await AddOrder();
+                }
+                    else{
+                        await EditOrder();
+                } }">
+    <DataAnnotationsValidator />
+    @*<CustomerPopup IsVisible="isVisibleCustomerPopup" CloseCallBack="CloseCustomerPopup" SupplierCallBack="GetCustomerFromPopup" />*@
+
+
+    <div class="d-flex justify-content-between">
+        <div>
+            <label class="form-label d-block text-center"><h4>Customer</h4></label>
+            <div class="d-flex justify-content-between">
+                @if (SalesOrderId == null)
+                {
+                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenCustomerPopup">
+                        <img src="img/select.png" alt="select" class="select-img" />
+                    </button>
+                }
+                <InputText @bind-Value="salesOrderModel.CustomerId" class="form-control text-center" disabled />
+                <InputText @bind-Value="salesOrderModel.CustomerName" class="form-control text-center ms-2" disabled />
+            </div>
+        </div>
+        <div class="text-center">
+            <label for="voucher" class="form-label"><h4>Voucher</h4></label>
+            @if (IsDisabled)
+            {
+                <InputNumber @bind-Value="salesOrderModel.VoucherId" id="voucher" class="form-control text-center" disabled />
+            }
+            else
+            {
+                <InputNumber @bind-Value="salesOrderModel.VoucherId" id="voucher" class="form-control text-center" />
+            }
+        </div>
+        <div class="text-center">
+            <label for="orderstatus" class="form-label text-center"><h4>OrderStatus</h4></label>
+            <InputSelect @bind-Value="salesOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
+                <option value="@OrderStatus.None" class="text-center">None</option>
+                <option value="@OrderStatus.Open" class="text-center">Open</option>
+                <option value="@OrderStatus.Completed" class="text-center">Completed</option>
+                <option value="@OrderStatus.Partly" class="text-center">Partly</option>
+            </InputSelect>
+        </div>
+        <div class="text-center">
+            <label for="date" class="form-label"><h4>Date</h4></label>
+            <DateInput TValue="DateOnly" @bind-Value="salesOrderModel.Date" id="date" class="form-control text-center" style="width:150px;" />
+        </div>
+        <div class="text-center">
+            <label for="duedate" class="form-label"><h4>DueDate</h4></label>
+            <DateInput TValue="DateOnly" @bind-Value="salesOrderModel.DueDate" id="duedate" class="form-control text-center" style="width:150px;" />
+        </div>
+    </div>
+    <ValidationSummary />
+    <div class="mt-3">
+        @if (SalesOrderId == null)
+        {
+            <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+        }
+        else
+        {
+            <button type="submit" id="button-submit" class="btn btn-success">Update</button>
+        }
+        <NavLink type="button" href="/salesorders" id="button-close" class="btn btn-info ms-2">Close</NavLink>
+        @if (SalesOrderId != null)
+        {
+            <button type="button" class="btn btn-danger ms-3" @onclick="DeleteOrder">Delete</button>
+        }
+        <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+    </div>
+</EditForm>
+
+
+@if (SalesOrderId == null)
+{
+@*    <SalesOrderVariantComponent Purchase="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />*@
+
+    <EditForm Model="@SalesOrderTotalData" Context="SalesOrderTotalDataForm" class="card-header mt-5"
+          OnValidSubmit="AddTotalAmount">
+        <div class="d-flex justify-content-around">
+            <div class="text-center d-flex col-1">
+                <button type="submit" id="button-submit" class="btn btn-success" @onclick="AddTotalAmount">Save</button>
+            </div>
+            <div class="d-flex col-3">
+                <label for="totalquantity" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Quantity</label>
+                <InputNumber @bind-Value="SalesOrderTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+            </div>
+            <div class="text-center d-flex col-3">
+                <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
+                <NumberInput TValue="decimal" Value="SalesOrderTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>SalesOrderTotalData.Discount" />
+            </div>
+            <div class="text-center d-flex col-3">
+                <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>
+                <InputNumber @bind-Value="SalesOrderTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
+            </div>
+        </div>
+    </EditForm>
+}
