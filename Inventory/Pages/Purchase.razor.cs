@@ -39,6 +39,9 @@ namespace Inventory.Pages
                     supplier = purchaseEntity.Supplier;
                     IsDisabled = false;
                     GetTotalAmount();
+
+                    if(purchaseEntity.TotalAmountProduct > 0)
+                        PurchaseTotalData.Discount = purchaseEntity.PurchaseVariants.Select(v => v.AmountAfterDiscount).Sum().Value - purchaseEntity.TotalAmountProduct.Value;
                 } 
             }
             else

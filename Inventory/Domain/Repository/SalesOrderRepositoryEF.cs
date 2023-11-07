@@ -34,9 +34,15 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
+        public async Task DeleteRange(List<SalesOrderEntity> orders)
+        {
+            context.SalesOrders.RemoveRange(orders);
+            await context.SaveChangesAsync();
+        }
+
         public async Task<List<SalesOrderEntity>> GetAll()
         {
-            return await context.SalesOrders.AsNoTracking().Include(p => p.Customer).ToListAsync();
+            return await context.SalesOrders.Include(p => p.Customer).ToListAsync();
         }
 
         public async Task<SalesOrderEntity> GetById(Guid id)

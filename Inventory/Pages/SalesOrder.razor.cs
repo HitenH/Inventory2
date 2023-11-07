@@ -40,6 +40,9 @@ namespace Inventory.Pages
                     customer = salesOrderEntity.Customer;
                     IsDisabled = false;
                     GetTotalAmount();
+
+                    if (salesOrderEntity.TotalAmountProduct > 0)
+                        SalesOrderTotalData.Discount = salesOrderEntity.SalesOrderVariants.Select(v => v.AmountAfterDiscount).Sum().Value - salesOrderEntity.TotalAmountProduct.Value;
                 }
             }
             else

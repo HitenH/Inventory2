@@ -9,6 +9,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<SalesOrderEntity>> GetAll();
         Task<Guid> Update(SalesOrderEntity order);
         Task Delete(SalesOrderEntity order);
+        Task DeleteRange(List<SalesOrderEntity> orders);
         Task<int> GetLastVoucherId();
         bool IsVoucherExist(int voucherId);
     }

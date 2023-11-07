@@ -342,7 +342,6 @@ namespace Inventory.Pages
                     Logger.LogError("Delete completed orders error:" + ex.Message);
                 }
             }
-
         }
     }
 }
