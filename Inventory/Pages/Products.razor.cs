@@ -8,7 +8,7 @@ namespace Inventory.Pages
     public partial class Products
     {
         [Inject] private IProductRepository ProductRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Products> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private List<ProductModel> products;

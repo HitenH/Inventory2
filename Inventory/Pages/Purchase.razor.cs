@@ -12,7 +12,7 @@ namespace Inventory.Pages
         [Parameter] public string PurchaseId { get; set; }
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private ISupplierRepository SuplierRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Purchase> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 

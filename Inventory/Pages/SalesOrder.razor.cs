@@ -12,7 +12,7 @@ namespace Inventory.Pages
         [Parameter] public string SalesOrderId { get; set; }
         [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<SalesOrder> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
 
         private bool isVisibleCustomerPopup = false;

@@ -11,7 +11,7 @@ namespace Inventory.Shared
     {
         [Parameter] public bool IsVisible { get; set; }
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<CustomerPopup> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         [Parameter] public EventCallback<bool> CloseCallBack { get; set; }

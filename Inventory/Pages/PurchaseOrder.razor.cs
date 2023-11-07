@@ -10,7 +10,7 @@ namespace Inventory.Pages
     public partial class PurchaseOrder
     {
         [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<PurchaseOrder> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 

@@ -10,7 +10,7 @@ namespace Inventory.Shared
     {
         [Parameter] public bool IsVisible { get; set; }
         [Inject] private ISupplierRepository SupplierRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<SupplierPopup> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         [Parameter] public EventCallback<bool> CloseCallBack { get; set; }

@@ -15,7 +15,7 @@ namespace Inventory.Pages
 
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private IMobileRepository MobileRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Customer> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }

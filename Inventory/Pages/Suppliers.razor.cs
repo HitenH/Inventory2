@@ -10,7 +10,7 @@ namespace Inventory.Pages
     public partial class Suppliers
     {
         [Inject] private ISupplierRepository SupplierRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Suppliers> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private List<SupplierModel> suppliers;

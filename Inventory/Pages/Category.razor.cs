@@ -11,7 +11,7 @@ namespace Inventory.Pages
     public partial class Category
     {
         [Inject] private ICategoryRepository CategoryRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Category> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 

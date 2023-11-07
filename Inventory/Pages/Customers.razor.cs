@@ -8,7 +8,7 @@ namespace Inventory.Pages
     public partial class Customers
     {
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Customers> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private List<CustomerModel> customers = new();

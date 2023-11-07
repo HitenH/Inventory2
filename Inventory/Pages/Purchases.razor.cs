@@ -10,7 +10,7 @@ namespace Inventory.Pages
     public partial class Purchases
     {
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Purchases> Logger { get; set; }
 
         private List<PurchaseModel> purchases = new();
         private List<PurchaseModel> purchasesAfterSearch = new();

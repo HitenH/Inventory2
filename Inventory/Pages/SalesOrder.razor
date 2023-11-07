@@ -79,7 +79,7 @@
 
 @if (SalesOrderId != null)
 {
-@*    <SalesOrderVariantComponent Purchase="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />*@
+    <SalesOrderVariantComponent SalesOrder="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />
 
     <EditForm Model="@SalesOrderTotalData" Context="SalesOrderTotalDataForm" class="card-header mt-5"
           OnValidSubmit="AddTotalAmount">

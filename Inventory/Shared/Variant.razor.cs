@@ -14,7 +14,7 @@ namespace Inventory.Shared
         [Inject] private IVariantRepository VariantRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IImageRepository ImageRepository { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<Variant> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IConfiguration config { get; set; }
 

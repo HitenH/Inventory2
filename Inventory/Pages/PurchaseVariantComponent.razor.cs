@@ -17,7 +17,7 @@ namespace Inventory.Pages
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
         [Inject] private ProductService ProductService { get; set; }
-        [Inject] private ILogger<Login> Logger { get; set; }
+        [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private bool isVisibleProductPopup = false;
