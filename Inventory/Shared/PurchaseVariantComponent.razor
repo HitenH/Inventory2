@@ -27,10 +27,6 @@
             <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                @if (purchaseVariant.Id == Guid.Empty)
-                {
-                    
-                }
                 <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
                     <img src="img/select.png" alt="select" class="select-img" />
                 </button>
@@ -43,10 +39,10 @@
         </div>
         <div class="mb-2 col-1 text-center">
             <label for="variantid" class="form-label">Variant ID</label>
-            <InputSelect @bind-Value="purchaseVariant.VariantEntytiId" class="form-control text-center" id="variantid">
-                <option value="" class="text-center">-</option>
-                @if (product.Variants.Count != 0)
-                {
+            @if (product.Variants.Count != 0)
+            {
+                <InputSelect @bind-Value="purchaseVariant.VariantEntytiId" class="form-control text-center" id="variantid" requred>
+                    <option value="" class="text-center">-</option>
                     @foreach (var item in product.Variants)
                     {
                         if (item.Id == purchaseVariant.VariantEntytiId)
@@ -58,8 +54,12 @@
                             <option value="@item.Id" class="text-center">@item.VariantId</option>
                         }
                     }
-                }
+
             </InputSelect>
+            }else{
+                <input class="form-control text-center" value="@purchaseVariant.VariantEntytiId" disabled />
+            }
+
         </div>
         <div class="col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>

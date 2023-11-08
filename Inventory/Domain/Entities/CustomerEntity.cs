@@ -14,5 +14,6 @@ namespace Inventory.Domain.Entities
         public string? Remarks { get; set; }
         public List<Mobile>? Mobiles { get; set; }
         public List<SalesOrderEntity>? SalesOrders { get; set; }
+        public List<SalesEntity>? Sales { get; set; }
     }
 }

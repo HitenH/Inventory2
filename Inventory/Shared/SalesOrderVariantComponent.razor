@@ -42,23 +42,30 @@
         </div>
         <div class="mb-2 col-1 text-center">
             <label for="variantid" class="form-label">Variant ID</label>
-            <InputSelect @bind-Value="salesOrderVariantModel.VariantEntityId" class="form-control text-center" id="variantid">
-                <option value="" class="text-center">-</option>
-                @if (product.Variants.Count != 0)
-                {
-                    @foreach (var item in product.Variants)
+            @if (product.Variants.Count != 0)
+            {
+                <InputSelect @bind-Value="salesOrderVariantModel.VariantEntityId" class="form-control text-center" id="variantid">
+                    <option value="" class="text-center">-</option>
+                    @if (product.Variants.Count != 0)
                     {
-                        if (item.Id == salesOrderVariantModel.VariantEntityId)
+                        @foreach (var item in product.Variants)
                         {
-                            <option selected value="@item.Id" class="text-center">@item.VariantId</option>
-                        }
-                        else
-                        {
-                            <option value="@item.Id" class="text-center">@item.VariantId</option>
+                            if (item.Id == salesOrderVariantModel.VariantEntityId)
+                            {
+                                <option selected value="@item.Id" class="text-center">@item.VariantId</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Id" class="text-center">@item.VariantId</option>
+                            }
                         }
                     }
-                }
-            </InputSelect>
+                </InputSelect>
+            }
+            else
+            {
+                <input class="form-control text-center" value="@salesOrderVariantModel.VariantEntityId" disabled />
+            }
         </div>
         <div class="col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>

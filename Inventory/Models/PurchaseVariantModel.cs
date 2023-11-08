@@ -13,8 +13,8 @@ namespace Inventory.Models
         public string ProductId { get; set; }
         [Required]
         public string ProductName { get; set; }
-
-        public Guid VariantEntytiId { get; set; }
+        [Required]
+        public Guid? VariantEntytiId { get; set; }
         public string ProductVariantId { get; set; }
 
         public int? Quantity { get; set; } = default(int);

@@ -27,7 +27,6 @@ namespace Inventory.Shared
         private List<PurchaseVariantModel> purchaseVariants = new();
         private PurchaseVariant purchaseVariantEntity = new();
         private bool isSortAscending = false;
-        private (Guid, int) productVariantQuantity = new();
 
         protected override void OnParametersSet()
         {
@@ -50,7 +49,7 @@ namespace Inventory.Shared
                 {
                     purchaseVariant.SerialNumber = serialnumber;
                     purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                    purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId;
+                    purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId.Value;
                     purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
                     purchaseVariantEntity.Amount = purchaseVariant.Amount;
                     purchaseVariantEntity.Discount = purchaseVariant.Discount;
@@ -83,7 +82,7 @@ namespace Inventory.Shared
                     {
                         purchaseVariant.SerialNumber = serialnumber;
                         purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                        purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId;
+                        purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId.Value;
                         purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
                         purchaseVariantEntity.Amount = purchaseVariant.Amount;
                         purchaseVariantEntity.Discount = purchaseVariant.Discount;

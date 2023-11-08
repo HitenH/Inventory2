@@ -14,7 +14,6 @@ namespace Inventory.Shared
         [Parameter] public SalesOrderEntity SalesOrder { get; set; }
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
-        [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
         [Inject] private ISalesOrderVariantRepository SalesOrderVariantRepository { get; set; }
         [Inject] private ILogger<SalesOrderVariantComponent> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
@@ -51,7 +50,7 @@ namespace Inventory.Shared
                 {
                     salesOrderVariantModel.SerialNumber = serialnumber;
                     salesOrderVariantEntity.SerialNumber = salesOrderVariantModel.SerialNumber;
-                    salesOrderVariantEntity.VariantEntityId = salesOrderVariantModel.VariantEntityId;
+                    salesOrderVariantEntity.VariantEntityId = salesOrderVariantModel.VariantEntityId.Value;
                     salesOrderVariantEntity.Quantity = salesOrderVariantModel.Quantity;
                     salesOrderVariantEntity.Amount = salesOrderVariantModel.Amount;
                     salesOrderVariantEntity.Discount = salesOrderVariantModel.Discount;
@@ -85,7 +84,7 @@ namespace Inventory.Shared
                     {
                         salesOrderVariantModel.SerialNumber = serialnumber;
                         salesOrderVariantEntity.SerialNumber = salesOrderVariantModel.SerialNumber;
-                        salesOrderVariantEntity.VariantEntityId = salesOrderVariantModel.VariantEntityId;
+                        salesOrderVariantEntity.VariantEntityId = salesOrderVariantModel.VariantEntityId.Value;
                         salesOrderVariantEntity.Quantity = salesOrderVariantModel.Quantity;
                         salesOrderVariantEntity.Amount = salesOrderVariantModel.Amount;
                         salesOrderVariantEntity.Discount = salesOrderVariantModel.Discount;
