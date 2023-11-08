@@ -4,10 +4,9 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
-using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 
-namespace Inventory.Pages
+namespace Inventory.Shared
 {
     public partial class PurchaseVariantComponent
     {
@@ -40,7 +39,7 @@ namespace Inventory.Pages
         protected override void OnAfterRender(bool firstRender)
         {
             GetPurchaseVariants();
-            GetAmountAfterDiscount();
+            GetAmount();
         }
 
         public async Task AddPurchaseVariant()
@@ -149,9 +148,24 @@ namespace Inventory.Pages
             }
         }
 
-        private void AmountChanged(decimal? value)
+        public void QuantityChanged(int? value)
         {
-            purchaseVariant.Amount = value;
+            purchaseVariant.Quantity = value;
+            GetAmount();
+        }
+
+        public void RateChanged(decimal? value)
+        {
+            purchaseVariant.ProductRate = value;
+            GetAmount();
+        }
+
+        public void GetAmount()
+        {
+            if (purchaseVariant.ProductRate == 0 || purchaseVariant.Quantity == 0)
+                purchaseVariant.Amount = 0;
+            else
+                purchaseVariant.Amount = Math.Round(purchaseVariant.ProductRate.Value * purchaseVariant.Quantity.Value, 2);
             GetAmountAfterDiscount();
         }
 
@@ -166,11 +180,12 @@ namespace Inventory.Pages
         {
             if (purchaseVariant.Amount != 0 && purchaseVariant.Discount != 0)
             {
-                purchaseVariant.AmountAfterDiscount = purchaseVariant.Amount - (purchaseVariant.Amount * ((decimal)purchaseVariant.Discount / 100));
+                var amount = purchaseVariant.Amount - purchaseVariant.Amount * ((decimal)purchaseVariant.Discount / 100);
+                purchaseVariant.AmountAfterDiscount = Math.Round(amount.Value, 2);
             }
             else if (purchaseVariant.Amount != 0 && purchaseVariant.Discount == 0)
             {
-                purchaseVariant.AmountAfterDiscount = purchaseVariant.Amount;
+                purchaseVariant.AmountAfterDiscount = Math.Round(purchaseVariant.Amount.Value, 2);
             }
         }
 
@@ -323,5 +338,7 @@ namespace Inventory.Pages
                 }
             }
         }
+
+       
     }
 }

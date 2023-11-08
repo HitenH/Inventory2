@@ -62,15 +62,15 @@
         </div>
         <div class="col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>
-            <InputNumber @bind-Value="salesOrderVariantModel.Quantity" id="quantity" class="form-control text-center" />
+            <NumberInput TValue="int?" Value="salesOrderVariantModel.Quantity" id="quantity" class="form-control text-center" ValueChanged="(value)=>QuantityChanged(value)" ValueExpression="()=>salesOrderVariantModel.Quantity" />
         </div>
         <div class="col-1 text-center">
             <label for="rate" class="form-label">Rate</label>
-            <InputNumber @bind-Value="salesOrderVariantModel.ProductRate" id="rate" class="form-control text-center" />
+            <NumberInput TValue="decimal?" Value="salesOrderVariantModel.ProductRate" id="rate" class="form-control text-center" ValueChanged="(value)=>RateChanged(value)" ValueExpression="()=>salesOrderVariantModel.ProductRate" />
         </div>
         <div class="col-1 text-center">
             <label for="amount" class="form-label">Ammount</label>
-            <NumberInput TValue="decimal?" Value="salesOrderVariantModel.Amount" id="amount" class="form-control text-center" ValueChanged="(value)=>AmountChanged(value)" ValueExpression="()=>salesOrderVariantModel.Amount" />
+            <NumberInput @bind-Value="salesOrderVariantModel.Amount" id="amount" class="form-control text-center" disabled />
         </div>
         <div class="col-1 text-center">
             <label for="discount" class="form-label">Discount (%)</label>

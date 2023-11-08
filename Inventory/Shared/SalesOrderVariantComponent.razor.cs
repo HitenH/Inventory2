@@ -40,7 +40,7 @@ namespace Inventory.Shared
         protected override void OnAfterRender(bool firstRender)
         {
             GetSalesOrderVariants();
-            GetAmountAfterDiscount();
+            GetAmount();
         }
 
         public async Task AddVariant()
@@ -59,7 +59,6 @@ namespace Inventory.Shared
                     salesOrderVariantEntity.ProductRate = salesOrderVariantModel.ProductRate;
                     salesOrderVariantEntity.Remarks = salesOrderVariantModel.Remarks;
                     salesOrderVariantEntity.SalesOrderEntityId = SalesOrder.Id;
-
 
                     product.SalesOrderVariants.Add(salesOrderVariantEntity);
                     await ProductRepository.Update(product);
@@ -152,9 +151,24 @@ namespace Inventory.Shared
             }
         }
 
-        private void AmountChanged(decimal? value)
+        public void QuantityChanged(int? value)
         {
-            salesOrderVariantModel.Amount = value;
+            salesOrderVariantModel.Quantity = value;
+            GetAmount();
+        }
+
+        public void RateChanged(decimal? value)
+        {
+            salesOrderVariantModel.ProductRate = value;
+            GetAmount();
+        }
+
+        public void GetAmount()
+        {
+            if (salesOrderVariantModel.ProductRate == 0 || salesOrderVariantModel.Quantity == 0)
+                salesOrderVariantModel.Amount = 0;
+            else
+                salesOrderVariantModel.Amount = Math.Round(salesOrderVariantModel.ProductRate.Value * salesOrderVariantModel.Quantity.Value, 2);
             GetAmountAfterDiscount();
         }
 
@@ -168,11 +182,12 @@ namespace Inventory.Shared
         {
             if (salesOrderVariantModel.Amount != 0 && salesOrderVariantModel.Discount != 0)
             {
-                salesOrderVariantModel.AmountAfterDiscount = salesOrderVariantModel.Amount - (salesOrderVariantModel.Amount * ((decimal)salesOrderVariantModel.Discount / 100));
+                var amount =  salesOrderVariantModel.Amount - (salesOrderVariantModel.Amount * ((decimal)salesOrderVariantModel.Discount / 100));
+                salesOrderVariantModel.AmountAfterDiscount = Math.Round(amount.Value, 2);
             }
             else if (salesOrderVariantModel.Amount != 0 && salesOrderVariantModel.Discount == 0)
             {
-                salesOrderVariantModel.AmountAfterDiscount = salesOrderVariantModel.Amount;
+                salesOrderVariantModel.AmountAfterDiscount = Math.Round(salesOrderVariantModel.Amount.Value, 2);
             }
         }
 

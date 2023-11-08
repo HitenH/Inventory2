@@ -11,7 +11,6 @@ namespace Inventory.Pages
     {
         [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }
         [Inject] private ILogger<PurchaseOrder> Logger { get; set; }
-        [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
         private PurchaseOrderEntity purchaseOrderEntity = new();
@@ -36,7 +35,21 @@ namespace Inventory.Pages
             try
             {
                 ordersDb = await PurchaseOrderRepository.GetAll();
-                orders = ordersDb.Select(o => Mapper.Map<PurchaseOrderModel>(o)).ToList();
+                //orders = ordersDb.Select(o => Mapper.Map<PurchaseOrderModel>(o)).ToList();
+                orders = ordersDb.Select(o => new PurchaseOrderModel()
+                {
+                    Date = o.Date,
+                    DueDate= o.DueDate,
+                    Id= o.Id,
+                    OrderStatus= o.OrderStatus,
+                    ProductId= o.ProductId,
+                    ProductName= o.ProductName,
+                    ProductRate= o.ProductRate,
+                    Quantity= o.Quantity,
+                    Remarks= o.Remarks,
+                    SupplierId= o.SupplierId,
+                    VariantId= o.VariantId
+                }).ToList();
                 ordersAfterSearch = orders;
             }
             catch (Exception ex)
@@ -50,7 +63,18 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    await PurchaseOrderRepository.Create(Mapper.Map<PurchaseOrderEntity>(purchaseOrderModel));
+                    purchaseOrderEntity.Quantity = purchaseOrderModel.Quantity;
+                    purchaseOrderEntity.VariantId = purchaseOrderModel.VariantId;
+                    purchaseOrderEntity.ProductId = purchaseOrderModel.ProductId;
+                    purchaseOrderEntity.ProductName = purchaseOrderModel.ProductName;
+                    purchaseOrderEntity.OrderStatus = purchaseOrderModel.OrderStatus;
+                    purchaseOrderEntity.Date = purchaseOrderModel.Date;
+                    purchaseOrderEntity.DueDate = purchaseOrderModel.DueDate;
+                    purchaseOrderEntity.Remarks= purchaseOrderModel.Remarks;
+                    purchaseOrderEntity.ProductRate= purchaseOrderModel.ProductRate;
+                    purchaseOrderEntity.SupplierId = purchaseOrderModel.SupplierId;
+
+                    await PurchaseOrderRepository.Create(purchaseOrderEntity);
                     CancelOrder();
                     await GetOrders();
                 }
@@ -102,6 +126,7 @@ namespace Inventory.Pages
         public void CancelOrder()
         {
             purchaseOrderModel = new();
+            purchaseOrderEntity= new();
         }
 
         public void OpenSupplierPopup()

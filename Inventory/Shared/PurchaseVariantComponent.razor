@@ -29,10 +29,11 @@
             <div class="d-flex justify-content-between">
                 @if (purchaseVariant.Id == Guid.Empty)
                 {
-                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                        <img src="img/select.png" alt="select" class="select-img" />
-                    </button>
+                    
                 }
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
                 <InputText @bind-Value="purchaseVariant.ProductId" id="productid" class="form-control text-center" requared disabled />
             </div>
         </div>
@@ -62,15 +63,15 @@
         </div>
         <div class="col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>
-            <InputNumber @bind-Value="purchaseVariant.Quantity" id="quantity" class="form-control text-center" />
+            <NumberInput TValue="int?" Value="purchaseVariant.Quantity" id="quantity" class="form-control text-center" ValueChanged="(value)=>QuantityChanged(value)" ValueExpression="()=>purchaseVariant.Quantity" />
         </div>
         <div class="col-1 text-center">
             <label for="rate" class="form-label">Rate</label>
-            <InputNumber @bind-Value="purchaseVariant.ProductRate" id="rate" class="form-control text-center" />
+            <NumberInput TValue="decimal?" Value="purchaseVariant.ProductRate" id="rate" class="form-control text-center" ValueChanged="(value)=>RateChanged(value)" ValueExpression="()=>purchaseVariant.ProductRate" />
         </div>
         <div class="col-1 text-center">
-            <label for="amount" class="form-label">Ammount</label>
-            <NumberInput TValue="decimal?" Value="purchaseVariant.Amount" id="amount" class="form-control text-center" ValueChanged="(value)=>AmountChanged(value)" ValueExpression="()=>purchaseVariant.Amount" />
+            <label for="amount" class="form-label">Amount</label>
+            <NumberInput @bind-Value="purchaseVariant.Amount" id="amount" class="form-control text-center" disabled />
         </div>
         <div class="col-1 text-center">
             <label for="discount" class="form-label">Discount (%)</label>

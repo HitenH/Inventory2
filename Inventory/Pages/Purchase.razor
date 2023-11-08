@@ -20,10 +20,11 @@
             <div class="d-flex justify-content-between">
                 @if (PurchaseId == null)
                 {
-                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenSupplierPopup">
-                        <img src="img/select.png" alt="select" class="select-img" />
-                    </button>
+                   
                 }
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenSupplierPopup">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
                 <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled />
                 <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled />
             </div>
