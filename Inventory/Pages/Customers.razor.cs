@@ -14,7 +14,7 @@ namespace Inventory.Pages
         private List<CustomerModel> customers = new();
         private List<CustomerModel> customersAfterSearch = new();
         private bool isSortAscending = false;
-        private Dictionary<Guid, decimal> totalAmount = new();
+        //private Dictionary<Guid, decimal> totalAmount = new();
 
         protected async override Task OnInitializedAsync()
         {
@@ -26,7 +26,7 @@ namespace Inventory.Pages
                 {
                     customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
                     customersAfterSearch = customers;
-                    GetTotalAmount();
+                    //GetTotalAmount();
                 }
             }
             catch (Exception ex)
@@ -112,16 +112,16 @@ namespace Inventory.Pages
             }
         }
 
-        public void GetTotalAmount()
-        {
-            if (customersAfterSearch.Count != 0)
-            {
-                totalAmount = customersAfterSearch.Select(customer => new
-                {
-                    CustomerId = customer.Id,
-                    TotalAmount = customer.SalesOrders.Sum(order => order.TotalAmountProduct ?? 0)
-                }).ToDictionary(result => result.CustomerId, result => result.TotalAmount);
-            }
-        }
+        //public void GetTotalAmount()
+        //{
+        //    if (customersAfterSearch.Count != 0)
+        //    {
+        //        totalAmount = customersAfterSearch.Select(customer => new
+        //        {
+        //            CustomerId = customer.Id,
+        //            TotalAmount = customer.SalesOrders.Sum(order => order.TotalAmountProduct ?? 0)
+        //        }).ToDictionary(result => result.CustomerId, result => result.TotalAmount);
+        //    }
+        //}
     }
 }
