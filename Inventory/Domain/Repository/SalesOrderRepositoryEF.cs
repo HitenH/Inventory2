@@ -50,9 +50,9 @@ namespace Inventory.Domain.Repository
             return await context.SalesOrders.Include(p => p.Customer).Include(p => p.SalesOrderVariants).ThenInclude(p => p.ProductVariant).ThenInclude(p => p.Product).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
-        public async Task<int> GetLastVoucherId()
+        public async Task<int> GetLastVoucherIdByDate(DateOnly date)
         {
-            var order = await context.SalesOrders.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync();
+            var order = await context.SalesOrders.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync(s => s.Date == date);
             if (order != null)
             {
                 return order.VoucherId;
@@ -60,9 +60,9 @@ namespace Inventory.Domain.Repository
             return 0;
         }
 
-        public bool IsVoucherExist(int voucherId)
+        public bool IsVoucherExistByDate(int voucherId, DateOnly date)
         {
-            return context.SalesOrders.Any(p => p.VoucherId == voucherId);
+            return context.SalesOrders.Any(p => p.VoucherId == voucherId && p.Date == date);
         }
 
         public async Task<Guid> Update(SalesOrderEntity order)

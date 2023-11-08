@@ -53,7 +53,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var voucherIdDb = await PurchaseRepository.GetLastVoucherId();
+                    var voucherIdDb = await PurchaseRepository.GetLastVoucherIdByDate(purchaseModel.Date);
                     if (voucherIdDb == 0)
                         purchaseModel.VoucherId = 1;
                     else
@@ -86,22 +86,20 @@ namespace Inventory.Pages
                 {
                     var isVoucherExist = false;
                     if (purchaseEntity.VoucherId != purchaseModel.VoucherId)
-                        isVoucherExist = await PurchaseRepository.IsVoucherExist(purchaseModel.VoucherId);
+                        isVoucherExist = await PurchaseRepository.IsVoucherExistByDate(purchaseModel.VoucherId, purchaseModel.Date);
 
                     if (!isVoucherExist)
-                    {
-                        if (purchaseEntity.VoucherId != purchaseModel.VoucherId)
-                            purchaseEntity.VoucherId = purchaseModel.VoucherId;
-                        if (purchaseEntity.Supplier.Id != supplier.Id)
-                            purchaseEntity.Supplier = supplier;
-
-                        purchaseEntity.Remarks = purchaseModel.Remarks;
-                        purchaseEntity.Date = purchaseModel.Date;
-
-                        var id = await PurchaseRepository.Update(purchaseEntity);
-                    }
+                        purchaseEntity.VoucherId = purchaseModel.VoucherId;
                     else
                         purchaseModel.VoucherId = purchaseEntity.VoucherId;
+
+                    if (purchaseEntity.Supplier.Id != supplier.Id)
+                        purchaseEntity.Supplier = supplier;
+
+                    purchaseEntity.Remarks = purchaseModel.Remarks;
+                    purchaseEntity.Date = purchaseModel.Date;
+
+                    await PurchaseRepository.Update(purchaseEntity);
                 }
                 catch (Exception ex)
                 {

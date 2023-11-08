@@ -9,7 +9,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<PurchaseEntity>> GetAll();
         Task<Guid> Update(PurchaseEntity purchase);
         Task Delete(PurchaseEntity purchase);
-        Task<int> GetLastVoucherId();
-        Task<bool> IsVoucherExist(int voucherId);
+        Task<int> GetLastVoucherIdByDate(DateOnly date);
+        Task<bool> IsVoucherExistByDate(int voucherId, DateOnly date);
     }
 }

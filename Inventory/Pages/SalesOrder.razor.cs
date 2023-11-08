@@ -55,7 +55,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var voucherIdDb = await SalesOrderRepository.GetLastVoucherId();
+                    var voucherIdDb = await SalesOrderRepository.GetLastVoucherIdByDate(salesOrderModel.Date);
                     if (voucherIdDb == 0)
                         salesOrderModel.VoucherId = 1;
                     else
@@ -90,23 +90,21 @@ namespace Inventory.Pages
                 {
                     var isVoucherExist = false;
                     if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
-                        isVoucherExist = SalesOrderRepository.IsVoucherExist(salesOrderModel.VoucherId);
+                        isVoucherExist = SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
 
                     if (!isVoucherExist)
-                    {
-                        if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
-                            salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
-                        if (salesOrderEntity.Customer.Id != customer.Id)
-                            salesOrderEntity.Customer = customer;
-
-                        salesOrderEntity.Date = salesOrderModel.Date;
-                        salesOrderEntity.DueDate = salesOrderModel.DueDate;
-                        salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
-
-                        var id = await SalesOrderRepository.Update(salesOrderEntity);
-                    }
+                        salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
                     else
                         salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
+
+                    if (salesOrderEntity.Customer.Id != customer.Id)
+                        salesOrderEntity.Customer = customer;
+
+                    salesOrderEntity.Date = salesOrderModel.Date;
+                    salesOrderEntity.DueDate = salesOrderModel.DueDate;
+                    salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
+
+                    await SalesOrderRepository.Update(salesOrderEntity);
                 }
                 catch (Exception ex)
                 {
