@@ -123,10 +123,6 @@ namespace Inventory.Pages
                 navManager.NavigateTo("/purchases");
             }
         }
-        public void CancelPurchase()
-        {
-            purchaseModel = new();
-        }
 
         public async Task AddTotalAmount()
         {

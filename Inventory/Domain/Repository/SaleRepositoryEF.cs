@@ -14,10 +14,19 @@ namespace Inventory.Domain.Repository
             this.context = context;
         }
 
-        public async Task Create(SalesEntity sale)
+        public async Task<Guid> Create(SalesEntity sale)
         {
-            await context.Sales.AddAsync(sale);
-            await context.SaveChangesAsync();
+            try
+            {
+                await context.Sales.AddAsync(sale);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+      
+            return sale.Id;
         }
 
         public async Task Delete(SalesEntity sale)
@@ -39,13 +48,28 @@ namespace Inventory.Domain.Repository
 
         public async Task<SalesEntity> GetById(Guid id)
         {
-            return await context.Sales.FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Sales.Include(s => s.Customer).Include(s => s.SalesVariants).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(SalesEntity sale)
         {
             context.Sales.Update(sale);
             await context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetLastVoucherIdByDate(DateOnly date)
+        {
+            var order = await context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync(s => s.Date == date);
+            if (order != null)
+            {
+                return order.VoucherId;
+            }
+            return 0;
+        }
+
+        public bool IsVoucherExistByDate(int voucherId, DateOnly date)
+        {
+            return context.Sales.Any(p => p.VoucherId == voucherId && p.Date == date);
         }
     }
 }
