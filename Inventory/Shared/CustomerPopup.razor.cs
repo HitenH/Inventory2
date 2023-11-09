@@ -23,6 +23,7 @@ namespace Inventory.Shared
 
         protected async override Task OnParametersSetAsync()
         {
+            await Task.Delay(30);
             try
             {
                 var customersDb = await CustomerRepository.GetAll();

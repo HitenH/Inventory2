@@ -15,5 +15,6 @@ namespace Inventory.Domain.Entities
         public List<PurchaseVariant>? PurchaseVariants { get; set; } = new();
         public List<SalesOrderVariantEntity>? SalesOrderVariants { get; set; } = new();
         public List<SalesVariantEntity>? SalesVariants { get; set; } = new();
+        public List<SalesSummaryVariantEntity>? SalesSummaryVariants { get; set; } = new();
     }
 }

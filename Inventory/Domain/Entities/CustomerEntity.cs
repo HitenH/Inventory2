@@ -12,8 +12,9 @@ namespace Inventory.Domain.Entities
         public string? Address { get; set; }
         public string? Area { get; set; }
         public string? Remarks { get; set; }
-        public List<Mobile>? Mobiles { get; set; }
-        public List<SalesOrderEntity>? SalesOrders { get; set; }
-        public List<SalesEntity>? Sales { get; set; }
+        public List<Mobile>? Mobiles { get; set; } = new();
+        public List<SalesOrderEntity>? SalesOrders { get; set; } = new();
+        public List<SalesEntity>? Sales { get; set; } = new();
+        public List<SalesSummaryEntity> SalesSummaryList { get; set; } = new();
     }
 }

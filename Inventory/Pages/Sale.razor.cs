@@ -50,6 +50,7 @@ namespace Inventory.Pages
                         Variant = v.ProductVariant,
                         ProductId = v.Product.ProductId,
                         ProductName = v.Product.Name,
+                        VariantId = v.ProductVariant.VariantId,
                         Quantity = v.Quantity
                     }).ToList();
                     IsDisabled = false;
@@ -57,6 +58,7 @@ namespace Inventory.Pages
             }
             else
                 IsDisabled = true;
+
         }
 
         public async Task AddOrder()
@@ -95,7 +97,7 @@ namespace Inventory.Pages
                 catch (Exception ex)
                 {
                     Logger.LogError("Add new sale error: " + ex.Message);
-                    navManager.NavigateTo("/sales");
+                          navManager.NavigateTo("/sales");
                 }
             }
         }

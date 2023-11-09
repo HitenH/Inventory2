@@ -84,9 +84,9 @@
                                 <td class="text-center">@item.VariantId</td>
                                 <td class="text-center">@item.ProductName</td>
                                 <td class="text-center">
-                                    <input type="number" class="w-50 text-center border" @bind-value="item.Quantity" />
+                                    <input type="number" @bind-value="item.Quantity" />
                                 </td>
-                                <td class="text-center col-1">
+                                <td>
                                     <button type="button" class="btn btn-light btn-variant-delete">
                                         <img src="img/delete.png" alt="add" class="variant-delete-img" @onclick="()=>DeleteVariant(item)" />
                                     </button>

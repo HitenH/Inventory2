@@ -26,7 +26,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<CustomerEntity>> GetAll()
         {
-            return await context.Customers.Include(n => n.Mobiles).ToListAsync();
+            return await context.Customers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
         }
 
         public async Task<CustomerEntity> GetById(Guid id)
