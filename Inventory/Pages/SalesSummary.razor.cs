@@ -9,6 +9,8 @@ namespace Inventory.Pages
     {
         [Parameter] public string SalesId { get; set; }
         [Inject] public ISaleRepository SaleRepository { get; set; }
+        [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private ILogger<SalesSummary> Logger { get; set; }
 
         private SalesEntity salesEntity = new();
         private SalesSummaryEntity salesSummaryEntity = new();
@@ -21,7 +23,14 @@ namespace Inventory.Pages
         {
             if (SalesId != null)
             {
-                salesEntity = await SaleRepository.GetById(Guid.Parse(SalesId));
+                try
+                {
+                    salesEntity = await SaleRepository.GetById(Guid.Parse(SalesId));
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Sales summary error: " + ex.Message);
+                }
                 if (salesEntity != null)
                 {
                     salesSummaryModelList = salesEntity.SalesVariants.GroupBy(p => p.Product).Select(p => new SalesSummaryModel()
@@ -57,7 +66,38 @@ namespace Inventory.Pages
 
         public async Task AddSales()
         {
+            if (salesEntity != null)
+            {
+                try
+                {
+                    salesEntity.SalesSummaries = salesSummaryEntityList;
+                    salesEntity.TotalQuantity = SalesTotalData.TotalQuantity;
+                    salesEntity.Discoint = SalesTotalData.Discount;
+                    salesEntity.TotalAmountProduct = SalesTotalData.TotalAmount;
+                    await SaleRepository.Update(salesEntity);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Sales summary add: " + ex.Message);
+                }
+                navManager.NavigateTo("/sales");
+            }
+        }
 
+        public async Task DeleteSales()
+        {
+            if (salesEntity != null)
+            {
+                try
+                {
+                    await SaleRepository.Delete(salesEntity);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("Delete sales " + ex.Message);
+                }
+                navManager.NavigateTo("/sales");
+            }
         }
 
         public void RateChanged(ChangeEventArgs arg, Guid productId)

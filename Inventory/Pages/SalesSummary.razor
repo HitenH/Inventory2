@@ -1,7 +1,7 @@
 ﻿@page "/salessummary/{salesId?}";
 @attribute [Authorize]
 
-<EditForm Model="@salesEntity" class="card-header mt-5" Context="SalesModelForm"
+<EditForm Model="@salesEntity" class="card-header mt-1" Context="SalesModelForm"
           OnValidSubmit="AddSales">
     <DataAnnotationsValidator />
 
@@ -51,13 +51,13 @@
                                 <td class="text-center">@item.ProductName</td>
                                 <td class="text-center">@item.Quantity</td>
                                 <td class="text-center">
-                                    <input type="number" class="text-center" value="@item.ProductRate" @onchange="(e)=>RateChanged(e,item.ProductEntityId)"/>
+                                    <input type="number" class="text-center" value="@item.ProductRate" @onchange="(e)=>RateChanged(e,item.ProductEntityId)" />
                                 </td>
                                 <td class="text-center">
                                     <input type="number" class="text-center" @bind-value="item.Amount" disabled />
                                 </td>
                                 <td class="text-center">
-                                    <input type="number" class="text-center" value="@item.Discount" @onchange="(e)=>DiscountChanged(e,item.ProductEntityId)"/>
+                                    <input type="number" class="text-center" value="@item.Discount" @onchange="(e)=>DiscountChanged(e,item.ProductEntityId)" />
                                 </td>
                                 <td class="text-center">
                                     <input type="number" class="text-center" @bind-value="item.AmountAfterDiscount" disabled />
@@ -79,24 +79,34 @@
         </div>
     </div>
 
+    <div class="col-12 text-center">
+        <InputText @bind-Value="salesEntity.Remarks" id="remarks" class="form-control" placeholder="Remarks/Narration" />
+    </div>
+
+
+    <div class="d-flex justify-content-around mt-3">
+        <div class="d-flex col-3">
+            <label for="totalquantity" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Quantity</label>
+            <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+        </div>
+        <div class="text-center d-flex col-3">
+            <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
+            <NumberInput TValue="decimal" Value="SalesTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" ValueExpression="()=>SalesTotalData.Discount" />
+        </div>
+        <div class="text-center d-flex col-3">
+            <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>
+            <InputNumber @bind-Value="SalesTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
+        </div>
+    </div>
+
+    <div>
+
+        <div class="text-center d-flex mt-4">
+            <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+            <a class="btn btn-warning ms-3" href="sale/@SalesId">Back To Scanning Area</a>
+            <a class="btn btn-secondary ms-3" href="/sales">Close</a>
+            <button type="button" class="btn btn-danger ms-3" @onclick="DeleteSales">Delete</button>
+        </div>
+    </div>
+
 </EditForm>
-
-
-<div class="d-flex justify-content-around">
-    <div class="d-flex col-3">
-        <label for="totalquantity" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Quantity</label>
-        <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
-    </div>
-    <div class="text-center d-flex col-3">
-        <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
-        <NumberInput TValue="decimal" Value="SalesTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" ValueExpression="()=>SalesTotalData.Discount" />
-    </div>
-    <div class="text-center d-flex col-3">
-        <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>
-        <InputNumber @bind-Value="SalesTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
-    </div>
-    <div class="text-center d-flex col-2">
-        <button type="submit" id="button-submit" class="btn btn-success">Save</button>
-    </div>
-</div>
-
