@@ -4,6 +4,7 @@ using Inventory.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231110140405_AddSomeChanges7")]
+    partial class AddSomeChanges7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -274,18 +277,6 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("Discoint")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("TotalAmountProduct")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalQuantity")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("VoucherId")
                         .HasColumnType("int");
 
@@ -391,14 +382,6 @@ namespace Inventory.Migrations
 
                     b.Property<Guid>("ProductEntityId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("ProductRate")
                         .HasColumnType("decimal(18,2)");

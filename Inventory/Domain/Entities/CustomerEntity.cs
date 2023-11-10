@@ -15,6 +15,5 @@ namespace Inventory.Domain.Entities
         public List<Mobile>? Mobiles { get; set; } = new();
         public List<SalesOrderEntity>? SalesOrders { get; set; } = new();
         public List<SalesEntity>? Sales { get; set; } = new();
-        public List<SalesSummaryEntity> SalesSummaryList { get; set; } = new();
     }
 }

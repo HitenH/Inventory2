@@ -11,5 +11,10 @@ namespace Inventory.Domain.Entities
         public CustomerEntity Customer { get; set; } = new();
         public DateOnly Date { get; set; }
         public List<SalesVariantEntity>? SalesVariants { get; set; } = new();
+        public List<SalesSummaryEntity>? SalesSummaries { get; set; } = new();
+        public string? Remarks { get; set; }
+        public decimal TotalQuantity { get; set; }
+        public decimal Discoint { get; set; }
+        public decimal TotalAmountProduct { get; set; }
     }
 }

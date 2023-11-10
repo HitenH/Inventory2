@@ -6,9 +6,9 @@ using System;
 
 namespace Inventory.Domain
 {
-    public class AppDbContext:DbContext
+    public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options):base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<CustomerEntity> Customers { get; set; }
@@ -25,8 +25,7 @@ namespace Inventory.Domain
         public DbSet<SalesOrderVariantEntity> SalesOrderVariants { get; set; }
         public DbSet<SalesEntity> Sales { get; set; }
         public DbSet<SalesVariantEntity> SalesVariants { get; set; }
-        public DbSet<SalesSummaryEntity> SalesSummaries { get; set; }
-        public DbSet<SalesSummaryVariantEntity> SalesSummaryVariants { get; set; }
+        public DbSet<SalesSummaryEntity> SalesSummary { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -59,11 +58,6 @@ namespace Inventory.Domain
             modelBuilder.Entity<SalesEntity>()
                         .Property(p => p.Date)
                         .HasConversion<DateOnlyConverter>();
-
-            modelBuilder.Entity<SalesSummaryEntity>()
-                        .Property(p => p.Date)
-                        .HasConversion<DateOnlyConverter>();
-
 
             modelBuilder.Entity<CategoryEntity>()
                         .HasMany(p => p.Products)
@@ -147,6 +141,12 @@ namespace Inventory.Domain
                       .HasForeignKey(k => k.SalesEntityId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<SalesEntity>()
+                    .HasMany(s => s.SalesSummaries)
+                    .WithOne(v => v.Sale)
+                    .HasForeignKey(k => k.SalesEntityId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<ProductEntity>()
                        .HasMany(p => p.SalesVariants)
                        .WithOne(v => v.Product)
@@ -165,23 +165,6 @@ namespace Inventory.Domain
                         .HasForeignKey(k => k.CustomerEntityId)
                         .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<ProductEntity>()
-                       .HasMany(p => p.SalesSummaryVariants)
-                       .WithOne(v => v.Product)
-                       .HasForeignKey(k => k.ProductEntityId)
-                       .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<CustomerEntity>()
-                        .HasMany(c => c.SalesSummaryList)
-                        .WithOne(s => s.Customer)
-                        .HasForeignKey(k => k.CustomerEntityId)
-                        .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<SalesSummaryEntity>()
-                        .HasMany(s => s.SalesSummaryVariants)
-                        .WithOne(v => v.SalesSummary)
-                        .HasForeignKey(k => k.SalesSummaryEntityId)
-                        .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
