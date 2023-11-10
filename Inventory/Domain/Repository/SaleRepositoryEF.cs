@@ -43,7 +43,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SalesEntity>> GetAll()
         {
-            return await context.Sales.ToListAsync();
+            return await context.Sales.Include(c => c.Customer).ToListAsync();
         }
 
         public async Task<SalesEntity> GetById(Guid id)

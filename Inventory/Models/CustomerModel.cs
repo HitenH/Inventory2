@@ -16,6 +16,7 @@ namespace Inventory.Models
         public string Remarks { get; set; }
         public List<Mobile> Mobiles { get; set; } = new();
         public List<SalesOrderEntity>? SalesOrders { get; set; }
+        public List<SalesEntity>? Sales { get; set; } = new();
 
     }
 }

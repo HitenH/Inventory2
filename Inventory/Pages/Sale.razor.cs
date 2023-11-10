@@ -99,7 +99,7 @@ namespace Inventory.Pages
                     var id = await SaleRepository.Create(salesEntity);
                     SaleId = id.ToString();
                     salesModel.Id = id;
-                    salesEntity = await SaleRepository.GetById(id);
+                    //salesEntity = await SaleRepository.GetById(id);
                     IsDisabled = false;
                     navManager.NavigateTo($"/salessummary/{id}");
                 }
@@ -113,6 +113,7 @@ namespace Inventory.Pages
 
         public async Task EditOrder()
         {
+            salesEntity = await SaleRepository.GetById(salesModel.Id);
             if (salesModel != null)
             {
                 try

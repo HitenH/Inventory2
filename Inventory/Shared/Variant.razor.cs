@@ -2,7 +2,6 @@
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -62,16 +61,18 @@ namespace Inventory.Shared
                     if (image.Id != Guid.Empty)
                     {
                         var img = await ImageRepository.GetById(variantModel.Image.Id);
-                        if(img != null){
+                        if (img != null)
+                        {
                             img.ImageTitle = image.ImageTitle;
                             img.ImageData = image.ImageData;
                             variantModel.Image = img;
                         }
-                    } else if (image.ImageData != null)
+                    }
+                    else if (image.ImageData != null)
                     {
                         variantModel.Image = image;
                     }
-                        
+
                     var variant = Product.Variants.FirstOrDefault(v => v.Id == variantModel.Id);
                     if (variant != null)
                     {
@@ -176,11 +177,26 @@ namespace Inventory.Shared
         {
             if (variants.Count != 0)
             {
-                stockInHand = variants.Select(variant => new
+                var arrival = variants.Select(variant => new
                 {
                     VariantId = variant.Id,
                     Quantity = variant.PurchaseVariants.Sum(purchase => purchase.Quantity ?? 0)
                 }).ToDictionary(result => result.VariantId, result => result.Quantity);
+
+                var shipment = variants.Select(variant => new
+                {
+                    VariantId = variant.Id,
+                    Quantity = variant.SalesVariants.Sum(sale => sale.Quantity ?? 0)
+                }).ToDictionary(result => result.VariantId, result => result.Quantity);
+
+                stockInHand = arrival.Join(shipment,
+                    arrivalItem => arrivalItem.Key,
+                    shipmentItem => shipmentItem.Key,
+                    (arrivalItem, shipmentItem) => new
+                    {
+                        VariantId = arrivalItem.Key,
+                        Quantity = arrivalItem.Value - shipmentItem.Value
+                    }).ToDictionary(result => result.VariantId, result => result.Quantity);
             }
         }
         public void SortItem(string column)

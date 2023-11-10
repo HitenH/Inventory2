@@ -13,7 +13,6 @@ namespace Inventory.Pages
         [Inject] private ILogger<SalesSummary> Logger { get; set; }
 
         private SalesEntity salesEntity = new();
-        private SalesSummaryEntity salesSummaryEntity = new();
         public List<SalesSummaryEntity> salesSummaryEntityList = new();
         public List<SalesSummaryModel> salesSummaryModelList = new();
         private ComponentTotalData SalesTotalData = new();

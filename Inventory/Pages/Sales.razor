@@ -6,3 +6,44 @@
     <NavLink href="/sale" class="btn btn-secondary">Add New Sales</NavLink>
     <Search SearchItemCallBack="SearchItem"></Search>
 </div>
+
+
+@if (salesAfterSearch == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th class="text-center column-item" @onclick="@(()=>SortItem("VoucherId"))">Voucher ID</th>
+                <th class="text-center column-item" @onclick="@(()=>SortItem("CustomerName"))">Customer Name</th>
+                <th class="text-center column-item" @onclick="@(()=>SortItem("Date"))">Date</th>
+                <th class="text-center column-item"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (salesAfterSearch.Count != 0)
+            {
+                @foreach (var sale in salesAfterSearch.AsQueryable())
+                {
+                    <tr>
+                        <td class="text-center">@sale.VoucherId</td>
+                        <td class="text-center">@sale.CustomerName</td>
+                        <td class="text-center">@sale.Date</td>
+                        <td class="text-center"><a class="btn btn-secondary" href="salessummary/@sale.Id">Info</a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center">
+                        Not Found!
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
