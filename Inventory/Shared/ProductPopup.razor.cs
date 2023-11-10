@@ -23,6 +23,7 @@ namespace Inventory.Shared
 
         protected async override Task OnParametersSetAsync()
         {
+            await Task.Delay(200);
             try
             {
                 var productsDb = await ProductRepository.GetAll();
@@ -31,13 +32,14 @@ namespace Inventory.Shared
                     products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
                     productsAfterSearch = products;
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
                 Logger.LogError("Product popup error: " + ex.Message);
             }
         }
-      
+
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

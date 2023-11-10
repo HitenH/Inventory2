@@ -21,9 +21,9 @@ namespace Inventory.Shared
         private List<CustomerModel> customersAfterSearch = new();
         private bool isSortAscending = false;
 
+
         protected async override Task OnParametersSetAsync()
         {
-            await Task.Delay(30);
             try
             {
                 var customersDb = await CustomerRepository.GetAll();
@@ -32,6 +32,7 @@ namespace Inventory.Shared
                     customers = customersDb.Select(p => Mapper.Map<CustomerModel>(p)).ToList();
                     customersAfterSearch = customers;
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {

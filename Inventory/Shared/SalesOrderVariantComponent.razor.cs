@@ -26,7 +26,6 @@ namespace Inventory.Shared
         private List<SalesOrderVariantModel> salesOrderVariants = new();
         private SalesOrderVariantEntity salesOrderVariantEntity = new();
         private bool isSortAscending = false;
-        private (Guid, int) productVariantQuantity = new();
 
         protected override void OnParametersSet()
         {

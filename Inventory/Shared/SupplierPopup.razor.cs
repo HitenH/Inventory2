@@ -31,7 +31,8 @@ namespace Inventory.Shared
                         suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
                         suppliersAfterSearch = suppliers;
                     }
-                }
+                StateHasChanged();
+            }
                 catch (Exception ex)
                 {
                     Logger.LogError("Supplier popup error: " + ex.Message);
