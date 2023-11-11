@@ -24,5 +24,6 @@ namespace Inventory.Models
 
         public int? Discount { get; set; } = default(int);
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
+        public ProductEntity Product { get; set; }
     }
 }

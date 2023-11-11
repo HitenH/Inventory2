@@ -43,20 +43,24 @@
             {
                 <InputSelect @bind-Value="purchaseVariant.VariantEntytiId" class="form-control text-center" id="variantid" requred>
                     <option value="" class="text-center">-</option>
-                    @foreach (var item in product.Variants)
+                    @if (product.Variants.Count != 0)
                     {
-                        if (item.Id == purchaseVariant.VariantEntytiId)
+                        @foreach (var item in product.Variants)
                         {
-                            <option selected value="@item.Id" class="text-center">@item.VariantId</option>
-                        }
-                        else
-                        {
-                            <option value="@item.Id" class="text-center">@item.VariantId</option>
+                            if (item.Id == purchaseVariant.VariantEntytiId)
+                            {
+                                <option selected value="@item.Id" class="text-center">@item.VariantId</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Id" class="text-center">@item.VariantId</option>
+                            }
                         }
                     }
-
-            </InputSelect>
-            }else{
+                </InputSelect>
+            }
+            else
+            {
                 <input class="form-control text-center" value="@purchaseVariant.VariantEntytiId" disabled />
             }
 

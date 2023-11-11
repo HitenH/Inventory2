@@ -3,6 +3,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Pages;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 
@@ -12,12 +13,11 @@ namespace Inventory.Shared
     {
         [Parameter] public PurchaseEntity Purchase { get; set; }
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
-        [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
+        [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
         [Inject] private ProductService ProductService { get; set; }
         [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
 
         private bool isVisibleProductPopup = false;
         private ProductEntity product = new();
@@ -43,7 +43,7 @@ namespace Inventory.Shared
 
         public async Task AddPurchaseVariant()
         {
-            if (Purchase != null || purchaseVariant != null)
+            if (Purchase != null && purchaseVariant != null)
             {
                 try
                 {
@@ -57,8 +57,12 @@ namespace Inventory.Shared
                     purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
                     purchaseVariantEntity.PurchaseEntityId = Purchase.Id;
 
-                    product.PurchaseVariants.Add(purchaseVariantEntity);
-                    await ProductRepository.Update(product);
+                    purchaseVariantEntity.Product = product;
+                    Purchase.PurchaseVariants.Add(purchaseVariantEntity);
+                    await PurchaseRepository.Update(Purchase);
+
+                    //product.PurchaseVariants.Add(purchaseVariantEntity);
+                    //await ProductRepository.Update(product);
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;
@@ -88,6 +92,7 @@ namespace Inventory.Shared
                         purchaseVariantEntity.Discount = purchaseVariant.Discount;
                         purchaseVariantEntity.AmountAfterDiscount = purchaseVariant.AmountAfterDiscount;
                         purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
+                        purchaseVariantEntity.Product = product;
 
                         await PurchaseVariantRepository.Update(purchaseVariantEntity);
                     }
@@ -143,6 +148,7 @@ namespace Inventory.Shared
                 purchaseVariant.ProductRate = productFromPopup.Rate;
                 purchaseVariant.ProductId = productFromPopup.ProductId;
                 purchaseVariant.ProductName = productFromPopup.Name;
+                purchaseVariant.VariantEntytiId = null;
                 product = await ProductRepository.GetById(productFromPopup.Id);
             }
         }
@@ -203,7 +209,8 @@ namespace Inventory.Shared
                 SerialNumber = v.SerialNumber,
                 VariantEntytiId = v.VariantEntityId,
                 ProductVariantId = v.ProductVariant.VariantId,
-                ProductEntityId = v.Product.Id
+                ProductEntityId = v.Product.Id,
+                Product = v.Product
             }).ToList();
         }
 
@@ -211,7 +218,8 @@ namespace Inventory.Shared
         {
             CancelPurchaseVariant();
             purchaseVariant = model;
-            product = await ProductRepository.GetById(purchaseVariant.ProductEntityId);
+            serialnumber= model.SerialNumber;
+            product = model.Product;
         }
 
         public void SortItem(string column)
