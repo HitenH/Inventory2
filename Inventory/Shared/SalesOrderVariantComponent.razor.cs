@@ -13,6 +13,7 @@ namespace Inventory.Shared
     {
         [Parameter] public SalesOrderEntity SalesOrder { get; set; }
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
+        [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private ISalesOrderVariantRepository SalesOrderVariantRepository { get; set; }
         [Inject] private ILogger<SalesOrderVariantComponent> Logger { get; set; }
@@ -58,8 +59,12 @@ namespace Inventory.Shared
                     salesOrderVariantEntity.Remarks = salesOrderVariantModel.Remarks;
                     salesOrderVariantEntity.SalesOrderEntityId = SalesOrder.Id;
 
-                    product.SalesOrderVariants.Add(salesOrderVariantEntity);
-                    await ProductRepository.Update(product);
+                    salesOrderVariantEntity.Product = product;
+                    SalesOrder.SalesOrderVariants.Add(salesOrderVariantEntity);
+                    await SalesOrderRepository.Update(SalesOrder);
+
+                    //product.SalesOrderVariants.Add(salesOrderVariantEntity);
+                    //await ProductRepository.Update(product);
                     CancelSalesOrderVariant();
                     GetSalesOrderVariants();
                     serialnumber += 1;
@@ -90,6 +95,7 @@ namespace Inventory.Shared
                         salesOrderVariantEntity.AmountAfterDiscount = salesOrderVariantModel.AmountAfterDiscount;
                         salesOrderVariantEntity.ProductRate = salesOrderVariantModel.ProductRate;
                         salesOrderVariantEntity.Remarks = salesOrderVariantModel.Remarks;
+                        salesOrderVariantEntity.Product = product;
 
                         await SalesOrderVariantRepository.Update(salesOrderVariantEntity);
                     }
@@ -145,6 +151,7 @@ namespace Inventory.Shared
                 salesOrderVariantModel.ProductRate = productFromPopup.Rate;
                 salesOrderVariantModel.ProductId = productFromPopup.ProductId;
                 salesOrderVariantModel.ProductName = productFromPopup.Name;
+                salesOrderVariantModel.VariantEntityId = null;
                 product = await ProductRepository.GetById(productFromPopup.Id);
             }
         }
@@ -205,7 +212,8 @@ namespace Inventory.Shared
                 ProductVariantId = v.ProductVariant.VariantId,
                 ProductEntityId = v.Product.Id,
                 Remarks = v.Remarks,
-                VariantEntityId = v.VariantEntityId
+                VariantEntityId = v.VariantEntityId,
+                Product = v.Product
             }).ToList();
         }
 
@@ -213,7 +221,8 @@ namespace Inventory.Shared
         {
             CancelSalesOrderVariant();
             salesOrderVariantModel = model;
-            product = await ProductRepository.GetById(salesOrderVariantModel.ProductEntityId);
+            serialnumber = model.SerialNumber;
+            product = model.Product;
         }
 
         public void SortItem(string column)

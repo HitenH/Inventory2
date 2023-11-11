@@ -27,12 +27,9 @@
             <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                @if (salesOrderVariantModel.Id == Guid.Empty)
-                {
-                    <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                        <img src="img/select.png" alt="select" class="select-img" />
-                    </button>
-                }
+                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
+                    <img src="img/select.png" alt="select" class="select-img" />
+                </button>
                 <InputText @bind-Value="salesOrderVariantModel.ProductId" id="productid" class="form-control text-center" requared disabled />
             </div>
         </div>
