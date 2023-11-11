@@ -13,7 +13,6 @@ namespace Inventory.Pages
         [Inject] private ISaleRepository SaleRepository { get; set; }
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private ILogger<Sale> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
 
@@ -35,30 +34,29 @@ namespace Inventory.Pages
         {
             if (firstRender)
             {
-                //products = await ProductRepository.GetAll();
                 if (SaleId != null)
                 {
                     salesEntity = await SaleRepository.GetById(Guid.Parse(SaleId));
                     if (salesEntity != null)
                     {
                         salesModel.VoucherId = salesEntity.VoucherId;
-                        salesModel.SalesVariants = salesEntity.SalesVariants;
                         salesModel.CustomerId = salesEntity.Customer.CustomerId;
                         salesModel.CustomerName = salesEntity.Customer.Name;
                         salesModel.Date = salesEntity.Date;
+                        salesModel.Id= salesEntity.Id;
 
                         customer = salesEntity.Customer;
                         salesModelVariants = salesEntity.SalesVariants.Select(v => new SalesVariantModel()
                         {
                             Id = v.Id,
-                            ProductEntityId = v.Product.Id,
-                            VariantEntityId = v.VariantEntityId,
+                            ProductEntityId = v.ProductEntityId,
                             ProductId = v.Product.ProductId,
                             ProductName = v.Product.Name,
-                            VariantId = v.ProductVariant.VariantId,
-                            Quantity = v.Quantity,
                             Product = v.Product,
+                            VariantEntityId = v.VariantEntityId,
+                            VariantId = v.ProductVariant.VariantId,
                             Variant = v.ProductVariant,
+                            Quantity = v.Quantity,
                             IsCreated = true
                         }).ToList();
                         IsDisabled = false;
@@ -76,7 +74,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var voucherIdDb = await SaleRepository.GetLastVoucherIdByDate(salesModel.Date);
+                    var voucherIdDb = SaleRepository.GetLastVoucherIdByDate(salesModel.Date);
                     if (voucherIdDb == 0)
                         salesModel.VoucherId = 1;
                     else
@@ -89,7 +87,7 @@ namespace Inventory.Pages
                         Quantity = v.Quantity
                     }).ToList();
 
-                    salesEntity = new()
+                    salesEntity = new SalesEntity()
                     {
                         Date = salesModel.Date,
                         Customer = customer,
@@ -97,24 +95,22 @@ namespace Inventory.Pages
                         SalesVariants = salesEntityVariants
                     };
                     var id = await SaleRepository.Create(salesEntity);
-                    SaleId = id.ToString();
-                    salesModel.Id = id;
-                    //salesEntity = await SaleRepository.GetById(id);
                     IsDisabled = false;
                     navManager.NavigateTo($"/salessummary/{id}");
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError("Add new sale error: " + ex.Message);
-                          navManager.NavigateTo("/sales");
+                    navManager.NavigateTo("/sales");
                 }
             }
+            else
+                navManager.NavigateTo("/sales");
         }
 
         public async Task EditOrder()
         {
-            salesEntity = await SaleRepository.GetById(salesModel.Id);
-            if (salesModel != null)
+            if (salesModel != null && salesEntity != null)
             {
                 try
                 {
@@ -136,7 +132,6 @@ namespace Inventory.Pages
                         Product = v.Product,
                         ProductVariant = v.Variant,
                         Quantity = v.Quantity,
-                        Id = v.Id
                     }).ToList();
 
                     await SaleRepository.Update(salesEntity);
@@ -148,6 +143,8 @@ namespace Inventory.Pages
                     navManager.NavigateTo("/sales");
                 }
             }
+            else
+                navManager.NavigateTo("/sales");
         }
         public void OpenCustomerPopup()
         {
@@ -228,7 +225,8 @@ namespace Inventory.Pages
 
                 if (indexElement != -1)
                 {
-                    var productDb = await ProductRepository.GetByProductId(salesVariantModel.ProductId);
+                    //var productDb = await ProductRepository.GetByProductId(salesVariantModel.ProductId);
+                    var productDb = await ProductRepository.GetById(salesVariantModel.ProductEntityId);
                     if (productDb != null && productDb.Variants.Count != 0)
                     {
                         var productVariant = new VariantEntity();

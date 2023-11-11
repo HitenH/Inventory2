@@ -15,29 +15,33 @@ namespace Inventory.Pages
         private List<SalesModel> salesAfterSearch = new();
         private bool isSortAscending = false;
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            try
+            if (firstRender)
             {
-                var list = await SaleRepository.GetAll();
-                if (list.Count != 0)
+                try
                 {
-                    sales = list.Select(c =>
-                     new SalesModel()
-                     {
-                         CustomerId = c.Customer.CustomerId,
-                         CustomerName = c.Customer.Name,
-                         Date = c.Date,
-                         VoucherId = c.VoucherId,
-                         Id= c.Id
-                     }
-                    ).ToList();
-                    salesAfterSearch = sales;
+                    var list = await SaleRepository.GetAll();
+                    if (list.Count != 0)
+                    {
+                        sales = list.Select(c =>
+                         new SalesModel()
+                         {
+                             CustomerId = c.Customer.CustomerId,
+                             CustomerName = c.Customer.Name,
+                             Date = c.Date,
+                             VoucherId = c.VoucherId,
+                             Id = c.Id
+                         }
+                        ).ToList();
+                        salesAfterSearch = sales;
+                    }
+                    StateHasChanged();
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Sales error" + ex.Message);
+                catch (Exception ex)
+                {
+                    Logger.LogError("Sales error" + ex.Message);
+                }
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿@page "/salessummary/{salesId?}";
 @attribute [Authorize]
 
-<EditForm Model="@salesEntity" class="card-header mt-1" Context="SalesModelForm"
+<EditForm Model="@salesEntity" class="card-header mt-1"
           OnValidSubmit="AddSales">
     <DataAnnotationsValidator />
 

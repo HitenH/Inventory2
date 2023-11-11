@@ -13,30 +13,33 @@ namespace Inventory.Pages
         [Inject] private ILogger<Suppliers> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
-        private List<SupplierModel> suppliers;
-        private List<SupplierModel> suppliersAfterSearch;
+        private List<SupplierModel> suppliers = new();
+        private List<SupplierModel> suppliersAfterSearch = new();
         private bool isSortAscending = false;
         private Dictionary<Guid,decimal> totalAmount = new();
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            suppliers = new();
-            suppliersAfterSearch = new();
-            try
+            if (firstRender)
             {
-                var list = await SupplierRepository.GetAll();
-                if (list.Count != 0)
+                try
                 {
-                    suppliers = list.Select(c => Mapper.Map<SupplierModel>(c)).ToList();
-                    suppliersAfterSearch = suppliers;
-                    GetTotalAmount();
+                    var list = await SupplierRepository.GetAll();
+                    if (list.Count != 0)
+                    {
+                        suppliers = list.Select(c => Mapper.Map<SupplierModel>(c)).ToList();
+                        suppliersAfterSearch = suppliers;
+                        GetTotalAmount();
+                        StateHasChanged();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Suppliers page error" + ex.Message);
+                catch (Exception ex)
+                {
+                    Logger.LogError("Suppliers page error" + ex.Message);
+                } 
             }
         }
+
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

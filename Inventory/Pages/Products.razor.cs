@@ -15,23 +15,28 @@ namespace Inventory.Pages
         private List<ProductModel> productsAfterSearch = new();
         private bool isSortAscending = false;
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            products = new();
-            try
+            if (firstRender)
             {
-                var list = await ProductRepository.GetAll();
-                if (list.Count != 0)
+                products = new();
+                try
                 {
-                    products = list.Select(c => Mapper.Map<ProductModel>(c)).ToList();
-                    productsAfterSearch = products;
+                    var list = await ProductRepository.GetAll();
+                    if (list.Count != 0)
+                    {
+                        products = list.Select(c => Mapper.Map<ProductModel>(c)).ToList();
+                        productsAfterSearch = products;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Products error" + ex.Message);
+                catch (Exception ex)
+                {
+                    Logger.LogError("Products error" + ex.Message);
+                }
+                StateHasChanged();
             }
         }
+
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

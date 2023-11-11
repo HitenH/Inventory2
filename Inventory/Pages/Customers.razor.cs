@@ -16,22 +16,25 @@ namespace Inventory.Pages
         private bool isSortAscending = false;
         private Dictionary<Guid, decimal> totalAmount = new();
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            customers = new();
-            try
+            if (firstRender)
             {
-                var list = await CustomerRepository.GetAll();
-                if (list.Count != 0)
+                try
                 {
-                    customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
-                    customersAfterSearch = customers;
-                    GetTotalAmount();
+                    var list = await CustomerRepository.GetAll();
+                    if (list.Count != 0)
+                    {
+                        customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
+                        customersAfterSearch = customers;
+                        GetTotalAmount();
+                        StateHasChanged();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Customers page error" + ex.Message);
+                catch (Exception ex)
+                {
+                    Logger.LogError("Customers page error" + ex.Message);
+                }
             }
         }
         public void SearchItem(ChangeEventArgs e)

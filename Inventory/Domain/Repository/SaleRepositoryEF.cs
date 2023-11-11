@@ -57,9 +57,20 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
-        public async Task<int> GetLastVoucherIdByDate(DateOnly date)
+        //public async Task<int> GetLastVoucherIdByDate(DateOnly date)
+        //{
+        //    var order = await context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync(s => s.Date == date);
+        //    if (order != null)
+        //    {
+        //        return order.VoucherId;
+        //    }
+        //    return 0;
+        //}
+
+
+        public int GetLastVoucherIdByDate(DateOnly date)
         {
-            var order = await context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync(s => s.Date == date);
+            var order = context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefault(s => s.Date == date);
             if (order != null)
             {
                 return order.VoucherId;
