@@ -11,7 +11,7 @@ namespace Inventory.Domain.Entities
         public int? StockInHand { get; set; } = default(int);
         public Image? Image { get; set; }
         public Guid? ProductEntityId { get; set; }
-        public ProductEntity? Product { get; set; }
+        public ProductEntity Product { get; set; }
         public List<PurchaseVariant>? PurchaseVariants { get; set; }
         public List<SalesOrderVariantEntity>? SalesOrderVariants { get; set; }
         public List<SalesVariantEntity>? SalesVariants { get; set; }
