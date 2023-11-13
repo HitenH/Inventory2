@@ -9,5 +9,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<SupplierEntity>> GetAll();
         Task Update(SupplierEntity supplier);
         Task Delete(SupplierEntity supplier);
+        bool IsSupplierIdExist(string supplierId);
+        bool IsSupplierIdExist(string supplierId, Guid id);
     }
 }

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Inventory.Pages
 {
@@ -23,9 +25,15 @@ namespace Inventory.Pages
 
         private SupplierModel supplierModel = new();
         private SupplierEntity supplierEntity = new();
+        private EditContext? editContext;
+        private ValidationMessageStore? messageStore;
 
         protected override async Task OnInitializedAsync()
         {
+            editContext = new(supplierModel);
+            messageStore = new(editContext);
+            editContext.OnValidationStateChanged += HandleValidationRequested;
+
             if (SupplierId != null)
             {
                 try
@@ -52,55 +60,83 @@ namespace Inventory.Pages
             }
         }
 
+        private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
+        {
+            messageStore?.Clear();
+
+            if (String.IsNullOrEmpty(supplierModel.Name))
+                messageStore?.Add(() => supplierModel.Name!, "The Supplier name is required!");
+
+            if (String.IsNullOrEmpty(supplierModel.SupplierId))
+                messageStore?.Add(() => supplierModel.SupplierId!, "The SupplierID is required!");
+            else
+            {
+                var isExistSupplierId = false;
+                if (supplierModel.Id == Guid.Empty)
+                    isExistSupplierId = SupplierRepository.IsSupplierIdExist(supplierModel.SupplierId);
+                else
+                    isExistSupplierId = SupplierRepository.IsSupplierIdExist(supplierModel.SupplierId, supplierModel.Id);
+
+                if (isExistSupplierId)
+                    messageStore?.Add(() => supplierModel.SupplierId!, "The SupplierID exists in the database!");
+            }
+        }
+
         public async Task AddSupplier()
         {
-            if (supplierModel != null)
+            if (editContext != null && editContext.Validate())
             {
-                try
+                if (supplierModel != null)
                 {
-                    supplierEntity = Mapper.Map<SupplierEntity>(supplierModel);
-                    var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
-                    supplierEntity.Mobiles = new();
+                    try
+                    {
+                        supplierEntity = Mapper.Map<SupplierEntity>(supplierModel);
+                        var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
+                        supplierEntity.Mobiles = new();
 
-                    if (numbers != null)
-                        supplierEntity.Mobiles.AddRange(numbers);
+                        if (numbers != null)
+                            supplierEntity.Mobiles.AddRange(numbers);
 
-                    await SupplierRepository.Create(supplierEntity);
+                        await SupplierRepository.Create(supplierEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Create supplier error: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Create supplier error: " + ex.Message);
-                }
-            }
-            navManager.NavigateTo("/suppliers");
+                navManager.NavigateTo("/suppliers");
+            }  
         }
 
         public async Task UpdateSupplier()
         {
-            if (supplierModel != null)
+            if (editContext != null && editContext.Validate())
             {
-                try
+                if (supplierModel != null)
                 {
-                    supplierEntity.ContactPerson = supplierModel.ContactPerson;
-                    supplierEntity.Name = supplierModel.Name;
-                    supplierEntity.SupplierId = supplierModel.SupplierId;
-                    supplierEntity.Address = supplierModel.Address;
-                    supplierEntity.Area = supplierModel.Area;
-                    supplierEntity.Remarks = supplierModel.Remarks;
+                    try
+                    {
+                        supplierEntity.ContactPerson = supplierModel.ContactPerson;
+                        supplierEntity.Name = supplierModel.Name;
+                        supplierEntity.SupplierId = supplierModel.SupplierId;
+                        supplierEntity.Address = supplierModel.Address;
+                        supplierEntity.Area = supplierModel.Area;
+                        supplierEntity.Remarks = supplierModel.Remarks;
 
-                    var numbers = MobileService.GetMobiles(supplierModel.Mobiles);
-                    supplierEntity.Mobiles = new();
-                    supplierEntity.Mobiles.AddRange(numbers);
+                        var numbers = MobileService.GetMobiles(supplierModel.Mobiles);
+                        supplierEntity.Mobiles = new();
+                        supplierEntity.Mobiles.AddRange(numbers);
 
-                    await SupplierRepository.Update(supplierEntity);
-                    await MobileService.DeleteEmptyNumbers(context);
+                        await SupplierRepository.Update(supplierEntity);
+                        await MobileService.DeleteEmptyNumbers(context);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Update Supplier error: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Update Supplier error: " + ex.Message);
-                }
-            }
-            navManager.NavigateTo("/suppliers");
+                navManager.NavigateTo("/suppliers");
+            }   
         }
 
         public async void DeleteSupplier()
@@ -120,6 +156,12 @@ namespace Inventory.Pages
                 }
             }
             navManager.NavigateTo("/suppliers");
+        }
+
+        public void Dispose()
+        {
+            if (editContext != null)
+                editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
     }
 }

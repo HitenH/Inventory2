@@ -10,5 +10,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<ProductEntity>> GetAll();
         Task Update(ProductEntity product);
         Task Delete(ProductEntity product);
+        bool IsProductIdExist(string productId);
+        bool IsProductIdExist(string productId, Guid id);
     }
 }

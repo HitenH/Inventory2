@@ -6,9 +6,7 @@ namespace Inventory.Models
     public class SupplierModel
     {
         public Guid Id { get; set; }
-        [Required]
         public string SupplierId { get; set; }
-        [Required]
         public string Name { get; set; }
         public string ContactPerson { get; set; }
         public string Address { get; set; }

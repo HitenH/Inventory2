@@ -61,5 +61,18 @@ namespace Inventory.Domain.Repository
                 Console.WriteLine(ex.Message);
             }
         }
+
+        public bool IsProductIdExist(string productId)
+        {
+            return context.Products.Any(c => c.ProductId == productId);
+        }
+        public bool IsProductIdExist(string productId, Guid id)
+        {
+            var result = context.Products.Any(c => c.ProductId == productId && c.Id == id);
+            if (result)
+                return false;
+            else
+                return IsProductIdExist(productId);
+        }
     }
 }

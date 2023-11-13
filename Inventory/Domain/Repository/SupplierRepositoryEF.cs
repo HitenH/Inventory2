@@ -48,5 +48,18 @@ namespace Inventory.Domain.Repository
             context.Suppliers.Update(supplier);
             await context.SaveChangesAsync();
         }
+
+        public bool IsSupplierIdExist(string supplierId)
+        {
+            return context.Suppliers.Any(c => c.SupplierId == supplierId);
+        }
+        public bool IsSupplierIdExist(string supplierId, Guid id)
+        {
+            var result = context.Suppliers.Any(c => c.SupplierId == supplierId && c.Id == id);
+            if (result)
+                return false;
+            else
+                return IsSupplierIdExist(supplierId);
+        }
     }
 }

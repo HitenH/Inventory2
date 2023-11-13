@@ -3,8 +3,8 @@
 
 <h2 class="d-flex justify-content-center mb-5">Supplier</h2>
 
-<EditForm Model="@supplierModel" class="card-header mx-5"
-          OnValidSubmit="async ()=>
+<EditForm EditContext="editContext" class="card-header mx-5"
+          OnSubmit="async ()=>
                 {
                     if(SupplierId == null){
                         await AddSupplier();

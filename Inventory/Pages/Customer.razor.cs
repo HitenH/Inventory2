@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Inventory.Pages
 {
@@ -65,16 +62,19 @@ namespace Inventory.Pages
             if (String.IsNullOrEmpty(customerModel.Name))
                 messageStore?.Add(() => customerModel.Name!, "The Customer name is required!");
 
-            var isExistCustomerId = false;
-            if (customerModel.Id == Guid.Empty)
-                isExistCustomerId = CustomerRepository.IsCustomIdExist(customerModel.CustomerId);
-            else
-                isExistCustomerId = CustomerRepository.IsCustomIdExist(customerModel.CustomerId, customerModel.Id);
-
             if (String.IsNullOrEmpty(customerModel.CustomerId))
-                messageStore?.Add(() => customerModel.CustomerId!, "The Customer ID is required!");
-            else if (isExistCustomerId)
-                messageStore?.Add(() => customerModel.CustomerId!, "The CustomerId exists in the database!");
+                messageStore?.Add(() => customerModel.CustomerId!, "The CustomerID is required!");
+            else
+            {
+                var isExistCustomerId = false;
+                if (customerModel.Id == Guid.Empty)
+                    isExistCustomerId = CustomerRepository.IsCustomIdExist(customerModel.CustomerId);
+                else
+                    isExistCustomerId = CustomerRepository.IsCustomIdExist(customerModel.CustomerId, customerModel.Id);
+
+                if (isExistCustomerId)
+                    messageStore?.Add(() => customerModel.CustomerId!, "The CustomerID exists in the database!");
+            } 
         }
         public async Task AddCustomer()
         {
