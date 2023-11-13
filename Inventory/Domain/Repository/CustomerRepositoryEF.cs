@@ -41,5 +41,18 @@ namespace Inventory.Domain.Repository
             context.Customers.Update(customer);
             await context.SaveChangesAsync();
         }
+
+        public bool IsCustomIdExist(string customerId)
+        {
+            return context.Customers.Any(c => c.CustomerId == customerId);
+        }
+        public bool IsCustomIdExist(string customerId, Guid id)
+        {
+            var result = context.Customers.Any(c => c.CustomerId == customerId && c.Id == id);
+            if (result)
+                return false;
+            else
+                return IsCustomIdExist(customerId);
+        }
     }
 }

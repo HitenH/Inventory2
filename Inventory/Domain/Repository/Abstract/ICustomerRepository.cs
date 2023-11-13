@@ -9,6 +9,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<CustomerEntity>> GetAll();
         Task Update(CustomerEntity customer);
         Task Delete(CustomerEntity customer);
-
+        bool IsCustomIdExist(string customerId);
+        bool IsCustomIdExist(string customerId, Guid id);
     }
 }
