@@ -51,6 +51,7 @@ namespace Inventory.Pages
                     VariantId= o.VariantId
                 }).ToList();
                 ordersAfterSearch = orders;
+                StateHasChanged();
             }
             catch (Exception ex)
             {

@@ -13,9 +13,10 @@ namespace Inventory.Models
         public string? ProductId { get; set; }
         [Required]
         public string? ProductName { get; set; }
-        public decimal? ProductRate { get; set; } = default(decimal?);
+        public decimal? ProductRate { get; set; } = default(decimal);
+        [Required]
         public string? VariantId { get; set; } = default;
-        public int? Quantity { get; set; } = default;
+        public int? Quantity { get; set; } = default(int);
         public DateOnly? Date { get; set; } = default;
         public DateOnly? DueDate { get; set; } = default;
         public OrderStatus? OrderStatus { get; set; }
