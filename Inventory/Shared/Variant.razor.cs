@@ -81,7 +81,7 @@ namespace Inventory.Shared
                     {
                         variant.VariantId = variantModel.VariantId;
                         variant.Name = variantModel.Name;
-                        variant.StockInHand = variantModel.StockInHand;
+                        //variant.StockInHand = variantModel.StockInHand;
                         variant.Image = variantModel.Image;
                         await ProductRepository.Update(Product);
                         CancelVariant();

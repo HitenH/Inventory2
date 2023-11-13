@@ -13,29 +13,29 @@ namespace Inventory.Service
             this.variantRepository = variantRepository;
         }
 
-        public async Task AddProductVariantQuantity(ProductEntity product, Guid productVariantId, int productVariantQuantity)
-        {
-            if (product != null && product.Variants.Count >0)
-            {
-                productVariant = await variantRepository.GetById(productVariantId);
-                if (productVariant != null)
-                {
-                    productVariant.StockInHand += productVariantQuantity;
-                    await variantRepository.Update(productVariant);
-                }    
-            }
-        }
-        public async Task SubtractionProductVariantQuantity(ProductEntity product, Guid productVariantId, int productVariantQuantity)
-        {
-            if (product != null && product.Variants.Count > 0)
-            {
-                productVariant = await variantRepository.GetById(productVariantId);
-                if (productVariant != null)
-                {
-                    productVariant.StockInHand -= productVariantQuantity;
-                    await variantRepository.Update(productVariant);
-                }      
-            }
-        }
+        //public async Task AddProductVariantQuantity(ProductEntity product, Guid productVariantId, int productVariantQuantity)
+        //{
+        //    if (product != null && product.Variants.Count >0)
+        //    {
+        //        productVariant = await variantRepository.GetById(productVariantId);
+        //        if (productVariant != null)
+        //        {
+        //            productVariant.StockInHand += productVariantQuantity;
+        //            await variantRepository.Update(productVariant);
+        //        }    
+        //    }
+        //}
+        //public async Task SubtractionProductVariantQuantity(ProductEntity product, Guid productVariantId, int productVariantQuantity)
+        //{
+        //    if (product != null && product.Variants.Count > 0)
+        //    {
+        //        productVariant = await variantRepository.GetById(productVariantId);
+        //        if (productVariant != null)
+        //        {
+        //            productVariant.StockInHand -= productVariantQuantity;
+        //            await variantRepository.Update(productVariant);
+        //        }      
+        //    }
+        //}
     }
 }
