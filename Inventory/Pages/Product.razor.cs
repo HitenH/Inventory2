@@ -24,9 +24,15 @@ namespace Inventory.Pages
         private List<CategoryModel> categories = new();
         private Guid categoryId = Guid.Empty;
         public VariantModel variant = new();
+        private EditContext? editContext;
+        private ValidationMessageStore? messageStore;
 
         protected async override Task OnInitializedAsync()
         {
+            editContext = new(productModel);
+            messageStore = new(editContext);
+            editContext.OnValidationStateChanged += HandleValidationRequested;
+
             try
             {
                 if (ProductId != null)
@@ -49,44 +55,75 @@ namespace Inventory.Pages
 
         }
 
+        private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
+        {
+            messageStore?.Clear();
+
+            if (String.IsNullOrEmpty(productModel.Name))
+                messageStore?.Add(() => productModel.Name!, "The Product name is required!");
+
+            if (productModel.Rate == null)
+                messageStore?.Add(() => productModel.Rate!, "The Rate is required!");
+
+            if (String.IsNullOrEmpty(productModel.ProductId))
+                messageStore?.Add(() => productModel.ProductId!, "The ProductID is required!");
+            else
+            {
+                var isExistProductId = false;
+                if (productModel.Id == Guid.Empty)
+                    isExistProductId = ProductRepository.IsProductIdExist(productModel.ProductId);
+                else
+                    isExistProductId = ProductRepository.IsProductIdExist(productModel.ProductId, productModel.Id);
+
+                if (isExistProductId)
+                    messageStore?.Add(() => productModel.ProductId!, "The ProductID exists in the database!");
+            }
+        }
+
         public async Task AddProduct()
         {
-            if (productModel != null)
+            if (editContext != null && editContext.Validate())
             {
-                try
+                if (productModel != null)
                 {
-                    productEntity = Mapper.Map<ProductEntity>(productModel);
-                    productEntity.Category = await GetCategory(categoryId);
-                    await ProductRepository.Create(productEntity);
+                    try
+                    {
+                        productEntity = Mapper.Map<ProductEntity>(productModel);
+                        productEntity.Category = await GetCategory(categoryId);
+                        await ProductRepository.Create(productEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Create Product error: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Create Product error: " + ex.Message);
-                }
+                navManager.NavigateTo("/products");
             }
-            navManager.NavigateTo("/products");
         }
 
         public async Task UpdateProduct()
         {
-            if (productModel != null)
+            if (editContext != null && editContext.Validate())
             {
-                try
+                if (productModel != null)
                 {
-                    productEntity.ProductId = productModel.ProductId;
-                    productEntity.Name = productModel.Name;
-                    productEntity.Category = await GetCategory(categoryId);
-                    productEntity.Description = productModel.Description;
-                    productEntity.Rate = productModel.Rate;
+                    try
+                    {
+                        productEntity.ProductId = productModel.ProductId;
+                        productEntity.Name = productModel.Name;
+                        productEntity.Category = await GetCategory(categoryId);
+                        productEntity.Description = productModel.Description;
+                        productEntity.Rate = productModel.Rate;
 
-                    await ProductRepository.Update(productEntity);
+                        await ProductRepository.Update(productEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Update Product error: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Update Product error: " + ex.Message);
-                }
-            }
-            navManager.NavigateTo("/products");
+                navManager.NavigateTo("/products");
+            }     
         }
 
         public async void DeleteProduct()
@@ -113,6 +150,12 @@ namespace Inventory.Pages
         public void GetVariant(VariantModel model)
         {
             variant = model;
+        }
+
+        public void Dispose()
+        {
+            if (editContext != null)
+                editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
     }
 }
