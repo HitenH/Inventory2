@@ -58,7 +58,7 @@
             {
                 <tr>
                     <td class="text-center col-1">
-                        <div >
+                        <div>
                             <button class="btn btn-light btn-variant-edit">
                                 <img src="img/edit.png" alt="add" class="variant-edit-img" @onclick="()=>UpdateVariant(variant)" />
                             </button>
@@ -71,14 +71,24 @@
                     <td class="text-center">@variant.Name</td>
                     <td class="text-center">@stockInHand[variant.Id]</td>
                     <td class="text-center">
-                        @if (variant.Image != null){
-                            <img src="@GetImage(@variant.Image)" style="height:50px; width:40px;" />
+                        @if (variant.Image != null)
+                        {
+                            <Modal @ref="modal" Title="@variant.Image.ImageTitle">
+                                <BodyTemplate>
+                                    <img src="@GetImage(@variant.Image)" style="height:300px; width:300px;" />
+                                </BodyTemplate>
+                                <FooterTemplate>
+                                    <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Close</Button>
+                                </FooterTemplate>
+                            </Modal>
+                            <Button Color="ButtonColor.Light" @onclick="OnShowModalClick">
+                                <img src="@GetImage(@variant.Image)" style="height:50px; width:50px;" />
+                            </Button>
                             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="async ()=> await DeleteFile(variant.Image)">
                                 <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
                             </button>
                         }
-
-                        </td>
+                    </td>
                 </tr>
             }
         }

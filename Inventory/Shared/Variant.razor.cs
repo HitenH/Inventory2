@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using BlazorBootstrap;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 
 namespace Inventory.Shared
 {
@@ -22,6 +24,7 @@ namespace Inventory.Shared
         private List<VariantModel> variants = new();
         private bool isSortAscending = false;
         private Dictionary<Guid, int> stockInHand = new();
+        private Modal? modal = new();
 
         protected override void OnParametersSet()
         {
@@ -112,7 +115,6 @@ namespace Inventory.Shared
                 var variant = await VariantRepository.GetById(id);
                 if (variant != null)
                 {
-                    await DeleteFile(variant.Image); //////////////????????????????????????
                     await VariantRepository.Delete(variant);
                     GetVariants();
                     GetStockInHandAmount();
@@ -173,6 +175,11 @@ namespace Inventory.Shared
             return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
         }
 
+        private async Task OpenImageModal(byte[]? imageBytes)
+        {
+
+        }
+
         public void GetStockInHandAmount()
         {
             if (variants.Count != 0)
@@ -198,6 +205,16 @@ namespace Inventory.Shared
                         Quantity = arrivalItem.Value - shipmentItem.Value
                     }).ToDictionary(result => result.VariantId, result => result.Quantity);
             }
+        }
+
+        private async Task OnShowModalClick()
+        {
+            await modal?.ShowAsync();
+        }
+
+        private async Task OnHideModalClick()
+        {
+            await modal?.HideAsync();
         }
         public void SortItem(string column)
         {

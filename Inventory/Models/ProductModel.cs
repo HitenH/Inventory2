@@ -11,7 +11,7 @@ namespace Inventory.Models
         [Required]
         public string? Name { get; set; }
         [Required]
-        public decimal? Rate { get; set; }
+        public decimal? Rate { get; set; } = default(decimal);
         public string? Description { get; set; }
         public Guid? CategoryEntityId { get; set; }
         public CategoryEntity? Category { get; set; } = new();
