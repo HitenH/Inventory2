@@ -1,7 +1,7 @@
 ﻿
 <h3 class="d-flex justify-content-center mb-2 mt-4">Variants</h3>
-<EditForm Model="@variantModel" class="card-header"
-          OnValidSubmit="async ()=>
+<EditForm EditContext="editContext" class="card-header"
+          OnSubmit="async ()=>
                 {
                     if(variantModel.Id == Guid.Empty){
                         await AddVariant();
@@ -33,7 +33,10 @@
         </div>
         <div class="mb-2 col-2">
             <label for="image" class="form-label">Image (jpeg)</label>
-            <InputFile OnChange="UploadFile" accept=".jpg, jpeg" class="form-control" />
+            @if (!bclearinputfile)
+            {
+                <InputFile OnChange="UploadFile" accept=".jpg, jpeg" class="form-control" />
+            }
         </div>
     </div>
 

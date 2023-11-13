@@ -47,5 +47,18 @@ namespace Inventory.Domain.Repository
             context.Variants.Update(variant);
             await context.SaveChangesAsync();
         }
+
+        public bool IVariantIdExist(string variantId, Guid productEntityId)
+        {
+            return context.Variants.Any(c => c.VariantId == variantId && c.ProductEntityId == productEntityId);
+        }
+        public bool IVariantIdExist(string variantId, Guid productEntityId, Guid id)
+        {
+            var result = context.Variants.Any(c => c.VariantId == variantId && c.Id == id && c.ProductEntityId == productEntityId);
+            if (result)
+                return false;
+            else
+                return IVariantIdExist(variantId, productEntityId);
+        }
     }
 }

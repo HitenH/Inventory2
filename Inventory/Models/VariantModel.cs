@@ -6,9 +6,7 @@ namespace Inventory.Models
     public class VariantModel
     {
         public Guid Id { get; set; }
-        [Required]
         public string? VariantId { get; set; }
-        [Required]
         public string? Name { get; set; }
         public int? StockInHand { get; set; }
         public Image? Image { get; set; } = new();

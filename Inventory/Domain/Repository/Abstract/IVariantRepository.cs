@@ -9,5 +9,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<VariantEntity>> GetAll();
         Task Update(VariantEntity variant);
         Task Delete(VariantEntity variant);
+        bool IVariantIdExist(string variantId, Guid productEntityId);
+        bool IVariantIdExist(string variantId, Guid productEntityId, Guid id);
     }
 }

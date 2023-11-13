@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BlazorBootstrap;
 using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
@@ -25,81 +26,125 @@ namespace Inventory.Shared
         private bool isSortAscending = false;
         private Dictionary<Guid, int> stockInHand = new();
         private Modal? modal = new();
+        private EditContext? editContext;
+        private ValidationMessageStore? messageStore;
+        private bool bclearinputfile = false;
 
+        protected override void OnInitialized()
+        {
+            editContext = new(variantModel);
+            messageStore = new(editContext);
+            editContext.OnValidationStateChanged += HandleValidationRequested;
+        }
         protected override void OnParametersSet()
         {
             GetVariants();
             GetStockInHandAmount();
         }
-        public async Task AddVariant()
-        {
-            if (variantModel != null)
-            {
-                try
-                {
-                    if (image.ImageData != null)
-                        variantModel.Image = image;
-                    else
-                        variantModel.Image = null;
 
-                    Product.Variants.Add(Mapper.Map<VariantEntity>(variantModel));
-                    await ProductRepository.Update(Product);
-                    CancelVariant();
-                    GetVariants();
-                    GetStockInHandAmount();
-                }
-                catch (Exception ex)
+        private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
+        {
+            messageStore?.Clear();
+
+            if (String.IsNullOrEmpty(variantModel.Name))
+                messageStore?.Add(() => variantModel.Name!, "The Variant name is required!");
+
+            if (String.IsNullOrEmpty(variantModel.VariantId))
+                messageStore?.Add(() => variantModel.VariantId!, "The VariantID is required!");
+            else
+            {
+                if(Product.Id != Guid.Empty)
                 {
-                    Logger.LogError("Create variant: " + ex.Message);
+                    var isExistVariantId = false;
+                    if (variantModel.Id == Guid.Empty)
+                        isExistVariantId = VariantRepository.IVariantIdExist(variantModel.VariantId, Product.Id);
+                    else
+                        isExistVariantId = VariantRepository.IVariantIdExist(variantModel.VariantId, Product.Id, variantModel.Id);
+
+                    if (isExistVariantId)
+                        messageStore?.Add(() => variantModel.VariantId!, "For this Product the VariantID exists in the database!");
                 }
+                
             }
         }
 
-        public async Task EditVariant()
+        public async Task AddVariant()
         {
-            if (variantModel != null)
+            if (editContext != null && editContext.Validate())
             {
-                try
+                if (variantModel != null)
                 {
-                    if (image.Id != Guid.Empty)
+                    try
                     {
-                        var img = await ImageRepository.GetById(variantModel.Image.Id);
-                        if (img != null)
-                        {
-                            img.ImageTitle = image.ImageTitle;
-                            img.ImageData = image.ImageData;
-                            variantModel.Image = img;
-                        }
-                    }
-                    else if (image.ImageData != null)
-                    {
-                        variantModel.Image = image;
-                    }
+                        if (image.ImageData != null)
+                            variantModel.Image = image;
+                        else
+                            variantModel.Image = null;
 
-                    var variant = Product.Variants.FirstOrDefault(v => v.Id == variantModel.Id);
-                    if (variant != null)
-                    {
-                        variant.VariantId = variantModel.VariantId;
-                        variant.Name = variantModel.Name;
-                        //variant.StockInHand = variantModel.StockInHand;
-                        variant.Image = variantModel.Image;
+                        Product.Variants.Add(Mapper.Map<VariantEntity>(variantModel));
                         await ProductRepository.Update(Product);
                         CancelVariant();
                         GetVariants();
                         GetStockInHandAmount();
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Create variant: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
+            }   
+        }
+
+        public async Task EditVariant()
+        {
+            if (editContext != null && editContext.Validate())
+            {
+                if (variantModel != null)
                 {
-                    Logger.LogError("Create variant: " + ex.Message);
+                    try
+                    {
+                        if (image.Id != Guid.Empty)
+                        {
+                            var img = await ImageRepository.GetById(variantModel.Image.Id);
+                            if (img != null)
+                            {
+                                img.ImageTitle = image.ImageTitle;
+                                img.ImageData = image.ImageData;
+                                variantModel.Image = img;
+                            }
+                        }
+                        else if (image.ImageData != null)
+                        {
+                            variantModel.Image = image;
+                        }
+
+                        var variant = Product.Variants.FirstOrDefault(v => v.Id == variantModel.Id);
+                        if (variant != null)
+                        {
+                            variant.VariantId = variantModel.VariantId;
+                            variant.Name = variantModel.Name;
+                            //variant.StockInHand = variantModel.StockInHand;
+                            variant.Image = variantModel.Image;
+                            await ProductRepository.Update(Product);
+                            CancelVariant();
+                            GetVariants();
+                            GetStockInHandAmount();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Create variant: " + ex.Message);
+                    }
                 }
             }
         }
 
         public void CancelVariant()
         {
+            messageStore?.Clear();
             variantModel = new();
             image = new();
+            ClearInputFile();
         }
 
         public async Task UpdateVariant(VariantModel model)
@@ -124,7 +169,6 @@ namespace Inventory.Shared
             {
                 Logger.LogError("Delete variant error: " + ex.Message);
             }
-
         }
 
         public async Task UploadFile(InputFileChangeEventArgs eventArgs)
@@ -146,6 +190,14 @@ namespace Inventory.Shared
             {
                 Logger.LogError("Upload file error: " + ex.Message);
             }
+        }
+
+        private void ClearInputFile()
+        {
+            bclearinputfile = true;
+            StateHasChanged();
+            bclearinputfile = false;
+            StateHasChanged();
         }
 
         public async Task DeleteFile(Image image)
@@ -260,6 +312,12 @@ namespace Inventory.Shared
                     }
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            if (editContext != null)
+                editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
     }
 }
