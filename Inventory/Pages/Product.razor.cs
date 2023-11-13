@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BlazorBootstrap;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
@@ -26,6 +27,11 @@ namespace Inventory.Pages
         public VariantModel variant = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
+        private Modal? modal = new();
+        private string errorMessageShort = string.Empty;
+        private string errorMessageFull = string.Empty;
+        private bool isHideErrorMessage = true;
+
 
         protected async override Task OnInitializedAsync()
         {
@@ -133,13 +139,17 @@ namespace Inventory.Pages
                 try
                 {
                     await ProductRepository.Delete(productEntity);
+                    navManager.NavigateTo("/products");
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Product error: " + ex.Message);
+                    errorMessageShort = "Cannot delete Product";
+                    errorMessageFull = ex.Message;
+                    await OnShowModalClick();
                 }
             }
-            navManager.NavigateTo("/products");
+           
         }
 
         public async Task<CategoryEntity> GetCategory(Guid id)
@@ -156,6 +166,24 @@ namespace Inventory.Pages
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
+        }
+
+        private async Task OnShowModalClick()
+        {
+            await modal?.ShowAsync();
+        }
+
+        private async Task OnHideModalClick()
+        {
+            await modal?.HideAsync();
+            ClearErrorMessage();
+            isHideErrorMessage = true;
+    }
+
+        private void ClearErrorMessage()
+        {
+            errorMessageShort= string.Empty;
+            errorMessageFull= string.Empty;
         }
     }
 }

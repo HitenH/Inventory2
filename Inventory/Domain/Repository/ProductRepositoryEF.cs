@@ -22,15 +22,34 @@ namespace Inventory.Domain.Repository
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                throw new Exception(ex.ToString());
             }
             
         }
 
         public async Task Delete(ProductEntity product)
         {
-            context.Products.Remove(product);
-            await context.SaveChangesAsync();
+            try
+            {
+                var hasRelatedSalesVariant = context.SalesVariants.Any(s => s.ProductEntityId == product.Id);
+                var hasRelatedPurchases = context.PurchaseVariant.Any(p => p.ProductEntityId == product.Id);
+                var hasRelatedSalesOrder = context.SalesOrderVariants.Any(p => p.ProductEntityId == product.Id);
+                if (hasRelatedSalesVariant || hasRelatedPurchases || hasRelatedSalesOrder)
+                {
+                    throw new Exception("The Product cannot be deleted due to association with other entities");
+                }
+                else
+                {
+                    context.Products.Remove(product);
+                    await context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
+            }
+            
+           
         }
 
         public async Task<List<ProductEntity>> GetAll()
