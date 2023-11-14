@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Shared

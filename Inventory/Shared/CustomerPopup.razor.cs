@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Shared
@@ -21,7 +19,6 @@ namespace Inventory.Shared
         private List<CustomerModel> customersAfterSearch = new();
         private bool isSortAscending = false;
 
-
         protected async override Task OnParametersSetAsync()
         {
             try
@@ -39,6 +36,7 @@ namespace Inventory.Shared
                 Logger.LogError("Customer popup error: " + ex.Message);
             }
         }
+
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

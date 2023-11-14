@@ -11,6 +11,7 @@ namespace Inventory.Domain.Entities
         public SupplierEntity Supplier { get; set; } = new();
         public DateOnly Date { get; set; }
         public string? Remarks { get; set; }
+        public decimal? Discount { get; set; }
         public decimal? TotalAmountProduct { get; set; }
         public List<PurchaseVariant>? PurchaseVariants { get; set; } = new();
     }

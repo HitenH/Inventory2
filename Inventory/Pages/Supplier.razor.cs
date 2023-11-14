@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using BlazorBootstrap;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
@@ -17,7 +15,6 @@ namespace Inventory.Pages
         [Parameter] public string SupplierId { get; set; }
 
         [Inject] private ISupplierRepository SupplierRepository { get; set; }
-        [Inject] private IMobileRepository MobileRepository { get; set; }
         [Inject] private ILogger<Supplier> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
@@ -32,7 +29,7 @@ namespace Inventory.Pages
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
 
-        private ModalWindow modalWindowComponenRef;
+        private ModalWindow? modalWindowComponenRef;
         private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;

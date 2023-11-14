@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Shared
@@ -23,20 +22,20 @@ namespace Inventory.Shared
 
         protected async override Task OnParametersSetAsync()
         {
-                try
+            try
+            {
+                var suppliersDb = await SupplierRepository.GetAll();
+                if (suppliersDb.Count != 0)
                 {
-                    var suppliersDb = await SupplierRepository.GetAll();
-                    if (suppliersDb.Count != 0)
-                    {
-                        suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
-                        suppliersAfterSearch = suppliers;
-                    }
+                    suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
+                    suppliersAfterSearch = suppliers;
+                }
                 StateHasChanged();
             }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Supplier popup error: " + ex.Message);
-                }
+            catch (Exception ex)
+            {
+                Logger.LogError("Supplier popup error: " + ex.Message);
+            }
         }
         public void SearchItem(ChangeEventArgs e)
         {

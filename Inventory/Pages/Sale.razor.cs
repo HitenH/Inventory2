@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
@@ -225,8 +224,6 @@ namespace Inventory.Pages
 
                 if (indexElement != -1)
                 {
-                    //var productDb = await ProductRepository.GetByProductId(salesVariantModel.ProductId);
-                    //var productDb = await ProductRepository.GetById(salesVariantModel.ProductEntityId);
                     if (productEntity != null && productEntity.Variants.Count != 0)
                     {
                         var productVariant = new VariantEntity();
@@ -295,6 +292,5 @@ namespace Inventory.Pages
             salesVariantModel = model;
             productEntity = model.Product;
         }
-
     }
 }

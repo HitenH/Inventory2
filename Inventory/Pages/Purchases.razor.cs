@@ -47,34 +47,7 @@ namespace Inventory.Pages
                 }
             }
         }
-        //protected async override Task OnInitializedAsync()
-        //{
-        //    try
-        //    {
-        //        var list = await PurchaseRepository.GetAll();
-        //        if (list.Count != 0)
-        //        {
-        //            purchases = list.Select(c => 
-        //             new PurchaseModel()
-        //             {
-        //                 Date = c.Date,
-        //                 Id= c.Id,
-        //                 Remarks = c.Remarks,
-        //                 SupplierId = c.Supplier.SupplierId,
-        //                 SupplierName = c.Supplier.Name,
-        //                 VoucherId = c.VoucherId,
-        //                 TotalAmountProduct = c.TotalAmountProduct
-        //             }
-        //            ).ToList();
-        //            purchasesAfterSearch = purchases;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError("Purchases error" + ex.Message);
-        //    }
-        //}
-
+       
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();

@@ -14,7 +14,6 @@ namespace Inventory.Pages
         [Inject] private ISupplierRepository SuplierRepository { get; set; }
         [Inject] private ILogger<Purchase> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
 
         private bool isVisibleSupplierPopup = false;
         private SupplierEntity supplier = new();
@@ -37,11 +36,9 @@ namespace Inventory.Pages
                     purchaseModel.TotalAmountProduct = purchaseEntity.TotalAmountProduct;
                     purchaseModel.VoucherId = purchaseEntity.VoucherId;
                     supplier = purchaseEntity.Supplier;
+                    PurchaseTotalData.Discount = purchaseEntity.Discount.GetValueOrDefault(0);
                     IsDisabled = false;
                     GetTotalAmount();
-
-                    if(purchaseEntity.TotalAmountProduct > 0)
-                        PurchaseTotalData.Discount = purchaseEntity.PurchaseVariants.Select(v => v.AmountAfterDiscount).Sum().Value - purchaseEntity.TotalAmountProduct.Value;
                 } 
             }
             else
@@ -129,6 +126,7 @@ namespace Inventory.Pages
             try
             {
                 purchaseEntity.TotalAmountProduct = PurchaseTotalData.TotalAmount;
+                purchaseEntity.Discount = PurchaseTotalData.Discount;
                 await PurchaseRepository.Update(purchaseEntity);
                 navManager.NavigateTo("/purchases");
             }

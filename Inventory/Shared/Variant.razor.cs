@@ -30,7 +30,7 @@ namespace Inventory.Shared
         private bool bclearinputfile = false;
         private Dictionary<Guid, ModalWindowShowImage> modalWindowShowImageRefs = new Dictionary<Guid, ModalWindowShowImage>();
 
-        private ModalWindow modalWindowComponenRef;
+        private ModalWindow? modalWindowComponenRef;
         private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;

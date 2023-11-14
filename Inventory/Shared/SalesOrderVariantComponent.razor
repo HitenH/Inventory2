@@ -84,6 +84,10 @@
             <label for="amountafterdiscount" class="form-label">Amount</label>
             <InputNumber @bind-Value="salesOrderVariantModel.AmountAfterDiscount" id="amountafterdiscount" class="form-control text-center" disabled />
         </div>
+        <div class="col-1 text-center">
+            <label for="remarks" class="form-label">Remarks</label>
+            <InputText @bind-Value="salesOrderVariantModel.Remarks" id="remarks" class="form-control text-center" />
+        </div>
     </div>
     <ValidationSummary />
 </EditForm>

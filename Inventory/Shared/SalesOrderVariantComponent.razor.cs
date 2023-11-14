@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
-using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Shared
@@ -63,8 +60,6 @@ namespace Inventory.Shared
                     SalesOrder.SalesOrderVariants.Add(salesOrderVariantEntity);
                     await SalesOrderRepository.Update(SalesOrder);
 
-                    //product.SalesOrderVariants.Add(salesOrderVariantEntity);
-                    //await ProductRepository.Update(product);
                     CancelSalesOrderVariant();
                     GetSalesOrderVariants();
                     serialnumber += 1;

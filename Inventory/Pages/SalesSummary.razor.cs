@@ -17,7 +17,6 @@ namespace Inventory.Pages
         public List<SalesSummaryModel> salesSummaryModelList = new();
         private ComponentTotalData SalesTotalData = new();
 
-
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -68,52 +67,6 @@ namespace Inventory.Pages
             }
           
         }
-
-        //protected async override Task OnInitializedAsync()
-        //{
-        //    if (SalesId != null)
-        //    {
-        //        try
-        //        {
-        //            salesEntity = await SaleRepository.GetById(Guid.Parse(SalesId));
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Logger.LogError("Sales summary error: " + ex.Message);
-        //        }
-        //        if (salesEntity != null)
-        //        {
-        //            salesSummaryModelList = salesEntity.SalesVariants.GroupBy(p => p.Product).Select(p => new SalesSummaryModel()
-        //            {
-        //                Product = p.Key,
-        //                Quantity = p.Sum(p => p.Quantity.Value),
-        //            }).ToList();
-        //            if (salesSummaryModelList.Count != 0)
-        //            {
-        //                salesSummaryEntityList = salesSummaryModelList.Select(p => new SalesSummaryEntity()
-        //                {
-        //                    ProductEntityId = p.Product.Id,
-        //                    ProductName = p.Product.Name,
-        //                    ProductId = p.Product.ProductId,
-        //                    Quantity = p.Quantity,
-        //                    ProductRate = p.Product.Rate.Value
-        //                }).ToList();
-
-        //                for (int i = 0; i < salesSummaryEntityList.Count; i++)
-        //                {
-        //                    salesSummaryEntityList[i].SerialNumber = i + 1;
-        //                    if (salesSummaryEntityList[i].ProductRate == 0 || salesSummaryEntityList[0].Quantity == 0)
-        //                        salesSummaryEntityList[i].Amount = 0;
-        //                    else
-        //                        salesSummaryEntityList[i].Amount = Math.Round(salesSummaryEntityList[i].ProductRate * salesSummaryEntityList[i].Quantity, 2);
-        //                    salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount;
-        //                }
-        //                GetTotalAmount();
-        //                StateHasChanged();
-        //            }
-        //        }
-        //    }
-        //}
 
         public async Task AddSales()
         {

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components;
 using Inventory.Authentication;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace Inventory.Shared
 {

@@ -2,8 +2,6 @@
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Inventory.Pages
 {

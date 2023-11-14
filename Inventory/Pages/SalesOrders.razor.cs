@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
@@ -40,6 +38,7 @@ namespace Inventory.Pages
                     TotalAmountProduct = o.TotalAmountProduct
                 }).ToList();
                 salesOrdersAfterSearch = salesOrders;
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -129,7 +128,7 @@ namespace Inventory.Pages
             }
         }
 
-        public async void SelectAllItems()
+        public void SelectAllItems()
         {
             isSelected = !isSelected;
             if (isSelected)

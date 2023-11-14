@@ -1,10 +1,6 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Pages;
-using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Shared
@@ -16,7 +12,6 @@ namespace Inventory.Shared
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
-        [Inject] private ProductService ProductService { get; set; }
         [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
 
         private bool isVisibleProductPopup = false;
@@ -61,8 +56,6 @@ namespace Inventory.Shared
                     Purchase.PurchaseVariants.Add(purchaseVariantEntity);
                     await PurchaseRepository.Update(Purchase);
 
-                    //product.PurchaseVariants.Add(purchaseVariantEntity);
-                    //await ProductRepository.Update(product);
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;

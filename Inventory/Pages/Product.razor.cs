@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using BlazorBootstrap;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
-using Inventory.Service;
 using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -29,7 +26,7 @@ namespace Inventory.Pages
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
 
-        private ModalWindow modalWindowComponenRef;
+        private ModalWindow? modalWindowComponenRef;
         private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;
@@ -60,7 +57,6 @@ namespace Inventory.Pages
             {
                 Logger.LogError("Product error:" + ex.Message);
             }
-
         }
 
         private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
@@ -113,7 +109,7 @@ namespace Inventory.Pages
         {
             if (editContext != null && editContext.Validate())
             {
-                if (productModel != null)
+                if (productModel != null && productEntity != null)
                 {
                     try
                     {

@@ -21,15 +21,8 @@ namespace Inventory.Pages
 
         protected override void OnInitialized()
         {
-            //////DELETE
-            loginModel = new LoginModel()
-            {
-                Name = "Admin",
-                Password = "admin"
-            };
-            ////////////
+            loginModel = new();
             editContext = new EditContext(loginModel);
-
             messageStore = new(editContext);
         }
         public async Task SignIn()
@@ -59,7 +52,6 @@ namespace Inventory.Pages
             {
                 Logger.LogError("Login error: " + ex.Message);
             }
-           
         }
     }
 }

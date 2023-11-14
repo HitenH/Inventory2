@@ -11,7 +11,6 @@ namespace Inventory.Pages
     {
         [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }
         [Inject] private ILogger<PurchaseOrder> Logger { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
 
         private PurchaseOrderEntity purchaseOrderEntity = new();
         private PurchaseOrderModel purchaseOrderModel = new();
@@ -35,7 +34,6 @@ namespace Inventory.Pages
             try
             {
                 ordersDb = await PurchaseOrderRepository.GetAll();
-                //orders = ordersDb.Select(o => Mapper.Map<PurchaseOrderModel>(o)).ToList();
                 orders = ordersDb.Select(o => new PurchaseOrderModel()
                 {
                     Date = o.Date,
