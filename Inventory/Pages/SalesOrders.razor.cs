@@ -16,9 +16,12 @@ namespace Inventory.Pages
         private bool isSortAscending = false;
         private bool isSelected = false;
 
-        protected async override Task OnInitializedAsync()
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
-            await GetOrders();
+            if (firstRender)
+            {
+                await GetOrders();
+            }
         }
 
         public async Task GetOrders()

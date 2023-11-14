@@ -119,6 +119,51 @@ namespace Inventory.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Sales",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VoucherId = table.Column<int>(type: "int", nullable: false),
+                    CustomerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TotalQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Discoint = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sales", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Sales_Customers_CustomerEntityId",
+                        column: x => x.CustomerEntityId,
+                        principalTable: "Customers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalesOrders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VoucherId = table.Column<int>(type: "int", nullable: false),
+                    CustomerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OrderStatus = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesOrders_Customers_CustomerEntityId",
+                        column: x => x.CustomerEntityId,
+                        principalTable: "Customers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Mobiles",
                 columns: table => new
                 {
@@ -154,6 +199,7 @@ namespace Inventory.Migrations
                     SupplierEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Discount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
                 },
                 constraints: table =>
@@ -173,8 +219,7 @@ namespace Inventory.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    StockInHand = table.Column<int>(type: "int", nullable: true),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -183,6 +228,33 @@ namespace Inventory.Migrations
                         name: "FK_Variants_Products_ProductEntityId",
                         column: x => x.ProductEntityId,
                         principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalesSummary",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SerialNumber = table.Column<int>(type: "int", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Discount = table.Column<int>(type: "int", nullable: false),
+                    AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SalesEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesSummary", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesSummary_Sales_SalesEntityId",
+                        column: x => x.SalesEntityId,
+                        principalTable: "Sales",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -243,6 +315,74 @@ namespace Inventory.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "SalesOrderVariants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SerialNumber = table.Column<int>(type: "int", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: true),
+                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Discount = table.Column<int>(type: "int", nullable: true),
+                    AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SalesOrderEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesOrderVariants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderVariants_Products_ProductEntityId",
+                        column: x => x.ProductEntityId,
+                        principalTable: "Products",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SalesOrderVariants_SalesOrders_SalesOrderEntityId",
+                        column: x => x.SalesOrderEntityId,
+                        principalTable: "SalesOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SalesOrderVariants_Variants_VariantEntityId",
+                        column: x => x.VariantEntityId,
+                        principalTable: "Variants",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SalesVariants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: true),
+                    SalesEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SalesVariants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SalesVariants_Products_ProductEntityId",
+                        column: x => x.ProductEntityId,
+                        principalTable: "Products",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SalesVariants_Sales_SalesEntityId",
+                        column: x => x.SalesEntityId,
+                        principalTable: "Sales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SalesVariants_Variants_VariantEntityId",
+                        column: x => x.VariantEntityId,
+                        principalTable: "Variants",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "Name", "Password", "Role" },
@@ -294,6 +434,51 @@ namespace Inventory.Migrations
                 column: "VariantEntityId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Sales_CustomerEntityId",
+                table: "Sales",
+                column: "CustomerEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrders_CustomerEntityId",
+                table: "SalesOrders",
+                column: "CustomerEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderVariants_ProductEntityId",
+                table: "SalesOrderVariants",
+                column: "ProductEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderVariants_SalesOrderEntityId",
+                table: "SalesOrderVariants",
+                column: "SalesOrderEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesOrderVariants_VariantEntityId",
+                table: "SalesOrderVariants",
+                column: "VariantEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesSummary_SalesEntityId",
+                table: "SalesSummary",
+                column: "SalesEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesVariants_ProductEntityId",
+                table: "SalesVariants",
+                column: "ProductEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesVariants_SalesEntityId",
+                table: "SalesVariants",
+                column: "SalesEntityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SalesVariants_VariantEntityId",
+                table: "SalesVariants",
+                column: "VariantEntityId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Variants_ProductEntityId",
                 table: "Variants",
                 column: "ProductEntityId");
@@ -315,19 +500,34 @@ namespace Inventory.Migrations
                 name: "PurchaseVariant");
 
             migrationBuilder.DropTable(
+                name: "SalesOrderVariants");
+
+            migrationBuilder.DropTable(
+                name: "SalesSummary");
+
+            migrationBuilder.DropTable(
+                name: "SalesVariants");
+
+            migrationBuilder.DropTable(
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Customers");
+                name: "Purchases");
 
             migrationBuilder.DropTable(
-                name: "Purchases");
+                name: "SalesOrders");
+
+            migrationBuilder.DropTable(
+                name: "Sales");
 
             migrationBuilder.DropTable(
                 name: "Variants");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");
+
+            migrationBuilder.DropTable(
+                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "Products");

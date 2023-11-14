@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231109144930_AddSomeChanges4")]
-    partial class AddSomeChanges4
+    [Migration("20231114142025_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -161,6 +161,9 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
@@ -277,6 +280,18 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("Discoint")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalAmountProduct")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalQuantity")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("VoucherId")
                         .HasColumnType("int");
 
@@ -371,48 +386,25 @@ namespace Inventory.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CustomerEntityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Discount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("TotalAmountAfterDiscount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("VoucherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerEntityId");
-
-                    b.ToTable("SalesSummaries");
-                });
-
-            modelBuilder.Entity("Inventory.Domain.Entities.SalesSummaryVariantEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("AmountAfterDiscount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("Discount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Discount")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("ProductEntityId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("ProductRate")
                         .HasColumnType("decimal(18,2)");
@@ -420,10 +412,7 @@ namespace Inventory.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("SalesId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SalesSummaryEntityId")
+                    b.Property<Guid>("SalesEntityId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("SerialNumber")
@@ -431,11 +420,9 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductEntityId");
+                    b.HasIndex("SalesEntityId");
 
-                    b.HasIndex("SalesSummaryEntityId");
-
-                    b.ToTable("SalesSummaryVariants");
+                    b.ToTable("SalesSummary");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesVariantEntity", b =>
@@ -547,10 +534,8 @@ namespace Inventory.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ProductEntityId")
+                        .IsRequired()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("StockInHand")
-                        .HasColumnType("int");
 
                     b.Property<string>("VariantId")
                         .HasColumnType("nvarchar(max)");
@@ -688,32 +673,13 @@ namespace Inventory.Migrations
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesSummaryEntity", b =>
                 {
-                    b.HasOne("Inventory.Domain.Entities.CustomerEntity", "Customer")
-                        .WithMany("SalesSummaryList")
-                        .HasForeignKey("CustomerEntityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("Inventory.Domain.Entities.SalesSummaryVariantEntity", b =>
-                {
-                    b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
-                        .WithMany("SalesSummaryVariants")
-                        .HasForeignKey("ProductEntityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Inventory.Domain.Entities.SalesSummaryEntity", "SalesSummary")
-                        .WithMany("SalesSummaryVariants")
-                        .HasForeignKey("SalesSummaryEntityId")
+                    b.HasOne("Inventory.Domain.Entities.SalesEntity", "Sale")
+                        .WithMany("SalesSummaries")
+                        .HasForeignKey("SalesEntityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
-
-                    b.Navigation("SalesSummary");
+                    b.Navigation("Sale");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesVariantEntity", b =>
@@ -748,7 +714,8 @@ namespace Inventory.Migrations
                     b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
                         .WithMany("Variants")
                         .HasForeignKey("ProductEntityId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Product");
                 });
@@ -765,8 +732,6 @@ namespace Inventory.Migrations
                     b.Navigation("Sales");
 
                     b.Navigation("SalesOrders");
-
-                    b.Navigation("SalesSummaryList");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
@@ -774,8 +739,6 @@ namespace Inventory.Migrations
                     b.Navigation("PurchaseVariants");
 
                     b.Navigation("SalesOrderVariants");
-
-                    b.Navigation("SalesSummaryVariants");
 
                     b.Navigation("SalesVariants");
 
@@ -789,17 +752,14 @@ namespace Inventory.Migrations
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesEntity", b =>
                 {
+                    b.Navigation("SalesSummaries");
+
                     b.Navigation("SalesVariants");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesOrderEntity", b =>
                 {
                     b.Navigation("SalesOrderVariants");
-                });
-
-            modelBuilder.Entity("Inventory.Domain.Entities.SalesSummaryEntity", b =>
-                {
-                    b.Navigation("SalesSummaryVariants");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
