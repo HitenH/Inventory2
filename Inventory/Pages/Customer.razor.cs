@@ -5,6 +5,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
+using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -26,14 +27,16 @@ namespace Inventory.Pages
         private CustomerEntity customerEntity;
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
-        private Modal? modal = new();
+
+        private ModalWindow modalWindowComponenRef;
+        private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;
-        private bool isHideErrorMessage = true;
 
         protected override async Task OnInitializedAsync()
         {
-            NumberPhone = int.Parse(Config.GetSection("CustomerNumberMobile").Value);
+            NumberPhone = Config.GetSection("CustomerNumberMobile").Value != null? int.Parse(Config.GetSection("CustomerNumberMobile").Value) : 0;
+
             editContext = new(customerModel);
             messageStore = new(editContext);
             editContext.OnValidationStateChanged += HandleValidationRequested;
@@ -155,9 +158,12 @@ namespace Inventory.Pages
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Customer error: " + ex.Message);
+                    titleMessage = "Error Message";
                     errorMessageShort = "Cannot delete Customer";
                     errorMessageFull = ex.Message;
-                    await OnShowModalClick();
+
+                    if (modalWindowComponenRef != null)
+                        await modalWindowComponenRef.OnShowModalClick();
                 }
             }
         }
@@ -166,21 +172,16 @@ namespace Inventory.Pages
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
-
-        private async Task OnShowModalClick()
+        
+        public void CloseModalWindow(bool isClosed)
         {
-            await modal?.ShowAsync();
-        }
-
-        private async Task OnHideModalClick()
-        {
-            await modal?.HideAsync();
-            ClearErrorMessage();
-            isHideErrorMessage = true;
+            if (isClosed)
+                ClearErrorMessage();
         }
 
         private void ClearErrorMessage()
         {
+            titleMessage= string.Empty;
             errorMessageShort = string.Empty;
             errorMessageFull = string.Empty;
         }

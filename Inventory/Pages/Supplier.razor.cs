@@ -6,6 +6,7 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
+using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -30,14 +31,16 @@ namespace Inventory.Pages
         private int NumberPhone;
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
-        private Modal? modal = new();
+
+        private ModalWindow modalWindowComponenRef;
+        private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;
-        private bool isHideErrorMessage = true;
 
         protected override async Task OnInitializedAsync()
         {
-            NumberPhone = int.Parse(Config.GetSection("SupplierNumberMobile").Value);
+            NumberPhone = Config.GetSection("SupplierNumberMobile").Value != null ? int.Parse(Config.GetSection("SupplierNumberMobile").Value) : 0;
+            
             editContext = new(supplierModel);
             messageStore = new(editContext);
             editContext.OnValidationStateChanged += HandleValidationRequested;
@@ -153,16 +156,18 @@ namespace Inventory.Pages
             {
                 try
                 {
-
                     await SupplierRepository.Delete(supplierEntity);
                     navManager.NavigateTo("/suppliers");
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Supplier error: " + ex.Message);
+                    titleMessage = "Error Message";
                     errorMessageShort = "Cannot delete Supplier";
                     errorMessageFull = ex.Message;
-                    await OnShowModalClick();
+
+                    if (modalWindowComponenRef != null)
+                        await modalWindowComponenRef.OnShowModalClick();
                 }
             }
             
@@ -174,20 +179,15 @@ namespace Inventory.Pages
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
 
-        private async Task OnShowModalClick()
+        public void CloseModalWindow(bool isClosed)
         {
-            await modal?.ShowAsync();
-        }
-
-        private async Task OnHideModalClick()
-        {
-            await modal?.HideAsync();
-            ClearErrorMessage();
-            isHideErrorMessage = true;
+            if (isClosed)
+                ClearErrorMessage();
         }
 
         private void ClearErrorMessage()
         {
+            titleMessage = string.Empty;
             errorMessageShort = string.Empty;
             errorMessageFull = string.Empty;
         }

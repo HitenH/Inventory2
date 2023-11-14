@@ -5,6 +5,7 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
+using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -27,10 +28,11 @@ namespace Inventory.Pages
         public VariantModel variant = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
-        private Modal? modal = new();
+
+        private ModalWindow modalWindowComponenRef;
+        private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;
-        private bool isHideErrorMessage = true;
 
 
         protected async override Task OnInitializedAsync()
@@ -144,9 +146,12 @@ namespace Inventory.Pages
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Product error: " + ex.Message);
+                    titleMessage = "Error Message";
                     errorMessageShort = "Cannot delete Product";
                     errorMessageFull = ex.Message;
-                    await OnShowModalClick();
+
+                    if (modalWindowComponenRef != null)
+                        await modalWindowComponenRef.OnShowModalClick();
                 }
             }
            
@@ -168,22 +173,17 @@ namespace Inventory.Pages
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
 
-        private async Task OnShowModalClick()
+        public void CloseModalWindow(bool isClosed)
         {
-            await modal?.ShowAsync();
+            if (isClosed)
+                ClearErrorMessage();
         }
-
-        private async Task OnHideModalClick()
-        {
-            await modal?.HideAsync();
-            ClearErrorMessage();
-            isHideErrorMessage = true;
-    }
 
         private void ClearErrorMessage()
         {
-            errorMessageShort= string.Empty;
-            errorMessageFull= string.Empty;
+            titleMessage = string.Empty;
+            errorMessageShort = string.Empty;
+            errorMessageFull = string.Empty;
         }
     }
 }

@@ -1,0 +1,27 @@
+﻿
+<Modal @ref="modal" Title="@ImageTitle">
+    <BodyTemplate>
+        <img src="@ImageData" style="height:300px; width:300px;" />
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Close</Button>
+    </FooterTemplate>
+</Modal>
+
+@code {
+    [Parameter] public string ImageTitle { get; set; }
+    [Parameter] public string ImageData { get; set; }
+
+    private Modal? modal = new();
+
+
+    public async Task OnShowModalClick()
+    {
+        await modal?.ShowAsync();
+    }
+
+    public async Task OnHideModalClick()
+    {
+        await modal?.HideAsync();
+    }
+}

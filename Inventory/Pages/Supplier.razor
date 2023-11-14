@@ -56,25 +56,4 @@
     <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
 </EditForm>
 
-<Modal @ref="modal" Title="Error Message">
-    <BodyTemplate>
-        <div class="card">
-            <div class="card-body">
-                @errorMessageShort
-            </div>
-            <button class="btn btn-light bg-white border border-secondary me-4" type="button"
-                    @onclick="(e => isHideErrorMessage = !isHideErrorMessage)">
-                @(isHideErrorMessage ? "Show Full" : "Hide")
-            </button>
-            @if (!isHideErrorMessage)
-            {
-                <div class="card-body bg-white mx-3 mb-1 mt-3">
-                    @errorMessageFull
-                </div>
-            }
-        </div>
-    </BodyTemplate>
-    <FooterTemplate>
-        <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Close</Button>
-    </FooterTemplate>
-</Modal>
+<ModalWindow TitleMessage="@titleMessage" MessageShort="@errorMessageShort" MessageLong="@errorMessageFull" CloseModalWindow="CloseModalWindow" @ref="modalWindowComponenRef" />

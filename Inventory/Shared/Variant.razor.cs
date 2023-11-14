@@ -25,14 +25,15 @@ namespace Inventory.Shared
         private List<VariantModel> variants = new();
         private bool isSortAscending = false;
         private Dictionary<Guid, int> stockInHand = new();
-        private Modal? modal = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
         private bool bclearinputfile = false;
-        private Modal? modalError = new();
+        private Dictionary<Guid, ModalWindowShowImage> modalWindowShowImageRefs = new Dictionary<Guid, ModalWindowShowImage>();
+
+        private ModalWindow modalWindowComponenRef;
+        private string titleMessage = string.Empty;
         private string errorMessageShort = string.Empty;
         private string errorMessageFull = string.Empty;
-        private bool isHideErrorMessage = true;
 
         protected override void OnInitialized()
         {
@@ -171,9 +172,12 @@ namespace Inventory.Shared
             catch (Exception ex)
             {
                 Logger.LogError("Delete variant error: " + ex.Message);
+                titleMessage = "Error Message";
                 errorMessageShort = "Cannot delete Product Variant";
                 errorMessageFull = ex.Message;
-                await OnShowModalErrorClick();
+
+                if (modalWindowComponenRef != null)
+                    await modalWindowComponenRef.OnShowModalClick();
             }
         }
 
@@ -233,10 +237,6 @@ namespace Inventory.Shared
             return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
         }
 
-        private async Task OpenImageModal(byte[]? imageBytes)
-        {
-
-        }
 
         public void GetStockInHandAmount()
         {
@@ -265,15 +265,14 @@ namespace Inventory.Shared
             }
         }
 
-        private async Task OnShowModalClick()
+        private async Task OnShowModalClick(Guid variantId)
         {
-            await modal?.ShowAsync();
+            if (modalWindowShowImageRefs.ContainsKey(variantId))
+            {
+                await modalWindowShowImageRefs[variantId]?.OnShowModalClick();
+            }
         }
 
-        private async Task OnHideModalClick()
-        {
-            await modal?.HideAsync();
-        }
         public void SortItem(string column)
         {
             if (variants.Count != 0)
@@ -325,20 +324,15 @@ namespace Inventory.Shared
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
         }
-        private async Task OnShowModalErrorClick()
+        public void CloseModalWindow(bool isClosed)
         {
-            await modalError?.ShowAsync();
-        }
-
-        private async Task OnHideModalErrorClick()
-        {
-            await modalError?.HideAsync();
-            ClearErrorMessage();
-            isHideErrorMessage = true;
+            if (isClosed)
+                ClearErrorMessage();
         }
 
         private void ClearErrorMessage()
         {
+            titleMessage = string.Empty;
             errorMessageShort = string.Empty;
             errorMessageFull = string.Empty;
         }

@@ -1,0 +1,45 @@
+﻿
+<Modal @ref="modal" Title="@TitleMessage">
+    <BodyTemplate>
+        <div class="card">
+            <div class="card-body">
+                @MessageShort
+            </div>
+            <button class="btn btn-light bg-white border border-secondary me-4" type="button"
+                    @onclick="(e => isHideErrorMessage = !isHideErrorMessage)">
+                @(isHideErrorMessage ? "Show Full" : "Hide")
+            </button>
+            @if (!isHideErrorMessage)
+            {
+                <div class="card-body bg-white mx-3 mb-1 mt-3">
+                    @MessageLong
+                </div>
+            }
+        </div>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Close</Button>
+    </FooterTemplate>
+</Modal>
+
+
+@code {
+    [Parameter] public string MessageShort { get; set; }
+    [Parameter] public string MessageLong { get; set; }
+    [Parameter] public string TitleMessage { get; set; }
+    [Parameter] public EventCallback<bool> CloseModalWindow { get; set; }
+    private Modal? modal = new();
+    private bool isHideErrorMessage = true;
+
+    public async Task OnShowModalClick()
+    {
+        await modal?.ShowAsync();   
+    }
+
+    public async Task OnHideModalClick()
+    {
+        await modal?.HideAsync();
+        isHideErrorMessage = true;
+        await CloseModalWindow.InvokeAsync(true);
+    }
+}
