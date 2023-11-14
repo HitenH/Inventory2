@@ -1,5 +1,6 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
+using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -20,15 +21,30 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(CustomerEntity customer)
         {
-            context.Customers.Remove(customer);
-            await context.SaveChangesAsync();
+            try
+            {
+                var hasRelatedSalesOrder = context.SalesOrders.Any(p => p.CustomerEntityId == customer.Id);
+                var hasRelatedSales = context.Sales.Any(p => p.CustomerEntityId == customer.Id);
+
+                if (hasRelatedSalesOrder || hasRelatedSales)
+                {
+                    throw new Exception("The Customer cannot be deleted due to association with other entities");
+                }
+                else
+                {
+                    context.Customers.Remove(customer);
+                    await context.SaveChangesAsync();
+                }  
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
+            }
         }
 
         public async Task<List<CustomerEntity>> GetAll()
         {
-            //return await context.Customers.Include(n => n.Mobiles).AsNoTracking().ToListAsync();
             return await context.Customers.Include(n => n.Mobiles).Include(c => c.Sales).AsNoTracking().ToListAsync();
-
         }
 
         public async Task<CustomerEntity> GetById(Guid id)

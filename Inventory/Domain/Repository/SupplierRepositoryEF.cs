@@ -1,5 +1,6 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
+using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -23,14 +24,21 @@ namespace Inventory.Domain.Repository
         {
             try
             {
-                context.Suppliers.Remove(supplier);
-                await context.SaveChangesAsync();
+                var hasRelatedPurchases = context.Purchases.Any(p => p.SupplierEntityId == supplier.Id);  
+                if (hasRelatedPurchases)
+                {
+                    throw new Exception("The Supplier cannot be deleted due to association with other entities");
+                }
+                else
+                {
+                    context.Suppliers.Remove(supplier);
+                    await context.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("delete supplier: " + ex.Message);
+                throw new Exception(ex.ToString());
             }
-           
         }
 
         public async Task<List<SupplierEntity>> GetAll()

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BlazorBootstrap;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
@@ -27,6 +28,10 @@ namespace Inventory.Pages
         private SupplierEntity supplierEntity = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
+        private Modal? modal = new();
+        private string errorMessageShort = string.Empty;
+        private string errorMessageFull = string.Empty;
+        private bool isHideErrorMessage = true;
 
         protected override async Task OnInitializedAsync()
         {
@@ -145,23 +150,43 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    //if (supplierEntity.Mobiles.Count > 0)
-                    //    await MobileRepository.DeleteRange(supplierEntity.Mobiles);
 
                     await SupplierRepository.Delete(supplierEntity);
+                    navManager.NavigateTo("/suppliers");
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Supplier error: " + ex.Message);
+                    errorMessageShort = "Cannot delete Supplier";
+                    errorMessageFull = ex.Message;
+                    await OnShowModalClick();
                 }
             }
-            navManager.NavigateTo("/suppliers");
+            
         }
 
         public void Dispose()
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
+        }
+
+        private async Task OnShowModalClick()
+        {
+            await modal?.ShowAsync();
+        }
+
+        private async Task OnHideModalClick()
+        {
+            await modal?.HideAsync();
+            ClearErrorMessage();
+            isHideErrorMessage = true;
+        }
+
+        private void ClearErrorMessage()
+        {
+            errorMessageShort = string.Empty;
+            errorMessageFull = string.Empty;
         }
     }
 }

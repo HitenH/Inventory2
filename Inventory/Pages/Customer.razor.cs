@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BlazorBootstrap;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
@@ -23,6 +24,10 @@ namespace Inventory.Pages
         private CustomerEntity customerEntity;
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
+        private Modal? modal = new();
+        private string errorMessageShort = string.Empty;
+        private string errorMessageFull = string.Empty;
+        private bool isHideErrorMessage = true;
 
         protected override async Task OnInitializedAsync()
         {
@@ -142,18 +147,39 @@ namespace Inventory.Pages
                 try
                 {
                     await CustomerRepository.Delete(customerEntity);
+                    navManager.NavigateTo("/customers");
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError("Delete Customer error: " + ex.Message);
+                    errorMessageShort = "Cannot delete Customer";
+                    errorMessageFull = ex.Message;
+                    await OnShowModalClick();
                 }
             }
-            navManager.NavigateTo("/customers");
         }
         public void Dispose()
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
+        }
+
+        private async Task OnShowModalClick()
+        {
+            await modal?.ShowAsync();
+        }
+
+        private async Task OnHideModalClick()
+        {
+            await modal?.HideAsync();
+            ClearErrorMessage();
+            isHideErrorMessage = true;
+        }
+
+        private void ClearErrorMessage()
+        {
+            errorMessageShort = string.Empty;
+            errorMessageFull = string.Empty;
         }
     }
 }

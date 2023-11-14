@@ -48,8 +48,6 @@ namespace Inventory.Domain.Repository
             {
                 throw new Exception(ex.ToString());
             }
-            
-           
         }
 
         public async Task<List<ProductEntity>> GetAll()
