@@ -226,24 +226,24 @@ namespace Inventory.Pages
                 if (indexElement != -1)
                 {
                     //var productDb = await ProductRepository.GetByProductId(salesVariantModel.ProductId);
-                    var productDb = await ProductRepository.GetById(salesVariantModel.ProductEntityId);
-                    if (productDb != null && productDb.Variants.Count != 0)
+                    //var productDb = await ProductRepository.GetById(salesVariantModel.ProductEntityId);
+                    if (productEntity != null && productEntity.Variants.Count != 0)
                     {
                         var productVariant = new VariantEntity();
                         if (salesVariantModel.VariantEntityId != null)
-                            productVariant = productDb.Variants.FirstOrDefault(v => v.Id == salesVariantModel.VariantEntityId);
+                            productVariant = productEntity.Variants.FirstOrDefault(v => v.Id == salesVariantModel.VariantEntityId);
                         else
-                            productVariant = productDb.Variants.FirstOrDefault(v => v.VariantId == salesVariantModel.VariantId);
+                            productVariant = productEntity.Variants.FirstOrDefault(v => v.VariantId == salesVariantModel.VariantId);
 
                         if (productVariant != null)
                         {
                             salesModelVariants[indexElement].VariantId = productVariant.VariantId;
 
-                            salesModelVariants[indexElement].ProductId = productDb.ProductId;
-                            salesModelVariants[indexElement].ProductName = productDb.Name;
-                            salesModelVariants[indexElement].ProductEntityId = productDb.Id;
+                            salesModelVariants[indexElement].ProductId = productEntity.ProductId;
+                            salesModelVariants[indexElement].ProductName = productEntity.Name;
+                            salesModelVariants[indexElement].ProductEntityId = productEntity.Id;
                             salesModelVariants[indexElement].VariantEntityId = productVariant.Id;
-                            salesModelVariants[indexElement].Product = productDb;
+                            salesModelVariants[indexElement].Product = productEntity;
                             salesModelVariants[indexElement].Variant = productVariant;
                             salesVariantModel.IsCreated = true;
                         }
