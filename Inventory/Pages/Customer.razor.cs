@@ -18,9 +18,11 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
+        [Inject] private IConfiguration Config { get; set; }
         [Inject] private AppDbContext context { get; set; }
 
         private CustomerModel customerModel = new CustomerModel();
+        private int NumberPhone;
         private CustomerEntity customerEntity;
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
@@ -31,6 +33,7 @@ namespace Inventory.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            NumberPhone = int.Parse(Config.GetSection("CustomerNumberMobile").Value);
             editContext = new(customerModel);
             messageStore = new(editContext);
             editContext.OnValidationStateChanged += HandleValidationRequested;
@@ -51,9 +54,9 @@ namespace Inventory.Pages
                     Logger.LogError("GetCustomer error: " + ex.Message);
                 }
             }
-            if (customerModel.Mobiles.Count < 3)
+            if (customerModel.Mobiles.Count < NumberPhone)
             {
-                var count = 3 - customerModel.Mobiles.Count;
+                var count = NumberPhone - customerModel.Mobiles.Count;
                 for (int i = 0; i < count; i++)
                 {
                     customerModel.Mobiles.Add(new Mobile() { Phone = "" });

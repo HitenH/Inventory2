@@ -21,11 +21,13 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
+        [Inject] private IConfiguration Config { get; set; }
         [Inject] private AppDbContext context { get; set; }
 
 
         private SupplierModel supplierModel = new();
         private SupplierEntity supplierEntity = new();
+        private int NumberPhone;
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
         private Modal? modal = new();
@@ -35,6 +37,7 @@ namespace Inventory.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            NumberPhone = int.Parse(Config.GetSection("SupplierNumberMobile").Value);
             editContext = new(supplierModel);
             messageStore = new(editContext);
             editContext.OnValidationStateChanged += HandleValidationRequested;
@@ -55,9 +58,9 @@ namespace Inventory.Pages
                     Logger.LogError("GetSupplier error: " + ex.Message);
                 }
             }
-            if (supplierModel.Mobiles.Count < 3)
+            if (supplierModel.Mobiles.Count < NumberPhone)
             {
-                var count = 3 - supplierModel.Mobiles.Count;
+                var count = NumberPhone - supplierModel.Mobiles.Count;
                 for (int i = 0; i < count; i++)
                 {
                     supplierModel.Mobiles.Add(new Mobile() { Phone = "" });
