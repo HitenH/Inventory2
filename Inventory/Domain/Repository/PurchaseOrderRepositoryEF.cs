@@ -1,6 +1,5 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
-using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -19,20 +18,17 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
-
         public async Task Delete(PurchaseOrderEntity model)
         {
             context.PurchaseOrders.Remove(model);
             await context.SaveChangesAsync();
         }
 
-
         public async Task DeleteRange(List<PurchaseOrderEntity> models)
         {
             context.PurchaseOrders.RemoveRange(models);
             await context.SaveChangesAsync();
         }
-
 
         public async Task<List<PurchaseOrderEntity>> GetAll()
         {
@@ -49,6 +45,5 @@ namespace Inventory.Domain.Repository
             context.PurchaseOrders.Update(model);
             await context.SaveChangesAsync();
         }
-
     }
 }

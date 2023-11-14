@@ -1,6 +1,5 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
-using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository

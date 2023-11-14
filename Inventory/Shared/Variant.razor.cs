@@ -29,6 +29,10 @@ namespace Inventory.Shared
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
         private bool bclearinputfile = false;
+        private Modal? modalError = new();
+        private string errorMessageShort = string.Empty;
+        private string errorMessageFull = string.Empty;
+        private bool isHideErrorMessage = true;
 
         protected override void OnInitialized()
         {
@@ -123,7 +127,6 @@ namespace Inventory.Shared
                         {
                             variant.VariantId = variantModel.VariantId;
                             variant.Name = variantModel.Name;
-                            //variant.StockInHand = variantModel.StockInHand;
                             variant.Image = variantModel.Image;
                             await ProductRepository.Update(Product);
                             CancelVariant();
@@ -168,6 +171,9 @@ namespace Inventory.Shared
             catch (Exception ex)
             {
                 Logger.LogError("Delete variant error: " + ex.Message);
+                errorMessageShort = "Cannot delete Product Variant";
+                errorMessageFull = ex.Message;
+                await OnShowModalErrorClick();
             }
         }
 
@@ -318,6 +324,23 @@ namespace Inventory.Shared
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
+        }
+        private async Task OnShowModalErrorClick()
+        {
+            await modalError?.ShowAsync();
+        }
+
+        private async Task OnHideModalErrorClick()
+        {
+            await modalError?.HideAsync();
+            ClearErrorMessage();
+            isHideErrorMessage = true;
+        }
+
+        private void ClearErrorMessage()
+        {
+            errorMessageShort = string.Empty;
+            errorMessageFull = string.Empty;
         }
     }
 }

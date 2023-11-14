@@ -16,15 +16,8 @@ namespace Inventory.Domain.Repository
 
         public async Task<Guid> Create(SalesOrderEntity order)
         {
-            try
-            {
-                await context.SalesOrders.AddAsync(order);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            await context.SalesOrders.AddAsync(order);
+            await context.SaveChangesAsync();
             return order.Id;
         }
 
@@ -67,15 +60,8 @@ namespace Inventory.Domain.Repository
 
         public async Task<Guid> Update(SalesOrderEntity order)
         {
-            try
-            {
-                context.SalesOrders.Update(order);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            context.SalesOrders.Update(order);
+            await context.SaveChangesAsync();
             return order.Id;
         }
     }

@@ -16,16 +16,8 @@ namespace Inventory.Domain.Repository
 
         public async Task<Guid> Create(SalesEntity sale)
         {
-            try
-            {
-                await context.Sales.AddAsync(sale);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-      
+            await context.Sales.AddAsync(sale);
+            await context.SaveChangesAsync();
             return sale.Id;
         }
 
@@ -56,17 +48,6 @@ namespace Inventory.Domain.Repository
             context.Sales.Update(sale);
             await context.SaveChangesAsync();
         }
-
-        //public async Task<int> GetLastVoucherIdByDate(DateOnly date)
-        //{
-        //    var order = await context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefaultAsync(s => s.Date == date);
-        //    if (order != null)
-        //    {
-        //        return order.VoucherId;
-        //    }
-        //    return 0;
-        //}
-
 
         public int GetLastVoucherIdByDate(DateOnly date)
         {

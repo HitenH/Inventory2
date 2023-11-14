@@ -14,15 +14,8 @@ namespace Inventory.Domain.Repository
         }
         public async Task<Guid> Create(PurchaseEntity purchase)
         {
-            try
-            {
-                await context.Purchases.AddAsync(purchase);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            await context.Purchases.AddAsync(purchase);
+            await context.SaveChangesAsync();
             return purchase.Id;
         }
 

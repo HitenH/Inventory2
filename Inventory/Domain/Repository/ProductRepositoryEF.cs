@@ -15,16 +15,8 @@ namespace Inventory.Domain.Repository
 
         public async Task Create(ProductEntity product)
         {
-            try
-            {
-                await context.Products.AddAsync(product);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.ToString());
-            }
-            
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
         }
 
         public async Task Delete(ProductEntity product)
@@ -58,7 +50,6 @@ namespace Inventory.Domain.Repository
         public async Task<ProductEntity> GetById(Guid id)
         {
             return await context.Products.Include(p => p.Category).Include(p => p.Variants).ThenInclude(v => v.Image).Include(p => p.PurchaseVariants).Include(p=>p.SalesVariants).FirstOrDefaultAsync(c => c.Id == id, default);
-            //return await context.Products.Include(p => p.Category).Include(p => p.Variants).ThenInclude(v => v.Image).Include(p => p.PurchaseVariants).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task<ProductEntity> GetByProductId(string productId)
@@ -68,15 +59,8 @@ namespace Inventory.Domain.Repository
 
         public async Task Update(ProductEntity product)
         {
-            try
-            {
-                context.Products.Update(product);
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            context.Products.Update(product);
+            await context.SaveChangesAsync();
         }
 
         public bool IsProductIdExist(string productId)

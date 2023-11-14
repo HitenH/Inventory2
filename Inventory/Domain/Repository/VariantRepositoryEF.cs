@@ -1,5 +1,6 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
+using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -22,12 +23,22 @@ namespace Inventory.Domain.Repository
         {
             try
             {
-                context.Variants.Remove(variant);
-                await context.SaveChangesAsync();
+                var hasRelatedPurchaseVariant = context.PurchaseVariant.Any(s => s.VariantEntityId == variant.Id);
+                var hasRelatedSalesOrderVariants = context.SalesOrderVariants.Any(s => s.VariantEntityId == variant.Id);
+                var hasRelatedSalesVariants = context.SalesVariants.Any(s => s.VariantEntityId == variant.Id);
+                if (hasRelatedPurchaseVariant || hasRelatedSalesOrderVariants || hasRelatedSalesVariants)
+                {
+                    throw new Exception("The Product Variant cannot be deleted due to association with other entities");
+                }
+                else
+                {
+                    context.Variants.Remove(variant);
+                    await context.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                throw new Exception(ex.ToString());
             }
            
         }
