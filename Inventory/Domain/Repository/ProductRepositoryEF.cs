@@ -13,10 +13,11 @@ namespace Inventory.Domain.Repository
             this.context = context;
         }
 
-        public async Task Create(ProductEntity product)
+        public async Task<Guid> Create(ProductEntity product)
         {
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
+            return product.Id;
         }
 
         public async Task Delete(ProductEntity product)

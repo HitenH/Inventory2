@@ -55,7 +55,14 @@
         <InputTextArea @bind-Value="productModel.Description" id="description" class="form-control" rows="2" />
     </div>
     <ValidationSummary />
-    <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+    @if (ProductId == null)
+    {
+        <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+    }
+    else
+    {
+        <button type="submit" id="button-submit" class="btn btn-warning">Update</button>
+    }
     <NavLink type="button" href="/products" id="button-close" class="btn btn-info ms-3">Close</NavLink>
     @if (ProductId != null)
     {
@@ -69,5 +76,5 @@
     <Variant Product="productEntity" />
 }
 
-<ModalWindow TitleMessage="@titleMessage" MessageShort="@errorMessageShort" MessageLong="@errorMessageFull" CloseModalWindow="CloseModalWindow" @ref="modalWindowComponenRef" />
+<ModalWindow TitleMessage="@titleMessage" MessageShort="@messageShort" MessageLong="@messageFull" CloseModalWindow="CloseModalWindow" @ref="modalWindowComponenRef" />
 

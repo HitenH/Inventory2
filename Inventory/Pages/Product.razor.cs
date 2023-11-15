@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Shared;
@@ -28,8 +29,8 @@ namespace Inventory.Pages
 
         private ModalWindow? modalWindowComponenRef;
         private string titleMessage = string.Empty;
-        private string errorMessageShort = string.Empty;
-        private string errorMessageFull = string.Empty;
+        private string messageShort = string.Empty;
+        private string messageFull = string.Empty;
 
 
         protected async override Task OnInitializedAsync()
@@ -94,14 +95,16 @@ namespace Inventory.Pages
                     {
                         productEntity = Mapper.Map<ProductEntity>(productModel);
                         productEntity.Category = await GetCategory(categoryId);
-                        await ProductRepository.Create(productEntity);
+                        var id = await ProductRepository.Create(productEntity);
+                        ProductId = id.ToString();
+                        productModel.Id = id;
+                        productEntity = await ProductRepository.GetById(id);
                     }
                     catch (Exception ex)
                     {
                         Logger.LogError("Create Product error: " + ex.Message);
                     }
                 }
-                navManager.NavigateTo("/products");
             }
         }
 
@@ -120,13 +123,18 @@ namespace Inventory.Pages
                         productEntity.Rate = productModel.Rate;
 
                         await ProductRepository.Update(productEntity);
+                        titleMessage = "Update Message";
+                        messageShort = "The Product was updated!";
+                        messageFull = $"ProductId: {productEntity.ProductId}; Name: {productEntity.Name}; Rate: {productEntity.Rate}";
+
+                        if (modalWindowComponenRef != null)
+                            await modalWindowComponenRef.OnShowModalClick();
                     }
                     catch (Exception ex)
                     {
                         Logger.LogError("Update Product error: " + ex.Message);
                     }
                 }
-                navManager.NavigateTo("/products");
             }     
         }
 
@@ -143,8 +151,8 @@ namespace Inventory.Pages
                 {
                     Logger.LogError("Delete Product error: " + ex.Message);
                     titleMessage = "Error Message";
-                    errorMessageShort = "Cannot delete Product";
-                    errorMessageFull = ex.Message;
+                    messageShort = "Cannot delete Product";
+                    messageFull = ex.Message;
 
                     if (modalWindowComponenRef != null)
                         await modalWindowComponenRef.OnShowModalClick();
@@ -178,8 +186,8 @@ namespace Inventory.Pages
         private void ClearErrorMessage()
         {
             titleMessage = string.Empty;
-            errorMessageShort = string.Empty;
-            errorMessageFull = string.Empty;
+            messageShort = string.Empty;
+            messageFull = string.Empty;
         }
     }
 }

@@ -4,7 +4,7 @@ namespace Inventory.Domain.Repository.Abstract
 {
     public interface IProductRepository
     {
-        Task Create(ProductEntity product);
+        Task<Guid> Create(ProductEntity product);
         Task<ProductEntity> GetById(Guid id);
         Task<ProductEntity> GetByProductId(string productId);
         Task<List<ProductEntity>> GetAll();
