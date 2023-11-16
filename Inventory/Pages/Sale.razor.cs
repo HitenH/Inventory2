@@ -3,6 +3,7 @@ using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 
 namespace Inventory.Pages
 {
@@ -14,6 +15,8 @@ namespace Inventory.Pages
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private ILogger<Sale> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private IJSRuntime JSRuntime { get; set; }
+
 
         private bool isVisibleCustomerPopup = false;
         private bool IsDisabled { get; set; }
@@ -28,11 +31,13 @@ namespace Inventory.Pages
         private ProductEntity productEntity = new();
         private List<ProductEntity> products = new();
         private bool isVisibleProductPopup = false;
+        private ElementReference productInput;
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
+
                 if (SaleId != null)
                 {
                     salesEntity = await SaleRepository.GetById(Guid.Parse(SaleId));
@@ -58,15 +63,21 @@ namespace Inventory.Pages
                             Quantity = v.Quantity,
                             IsCreated = true
                         }).ToList();
-                        IsDisabled = false;
+                        IsDisabled = false;  
                     }
                 }
                 else
                     IsDisabled = true;
+                await FocusInput();
                 StateHasChanged();
             }
         }
-  
+
+        private async Task FocusInput()
+        {
+            await JSRuntime.InvokeVoidAsync("setFocus", productInput);
+        }
+
         public async Task AddOrder()
         {
             if (salesModel != null && salesModelVariants.Count != 0)
@@ -207,6 +218,7 @@ namespace Inventory.Pages
             }
             CancelSalesVariant();
             StateHasChanged();
+            await FocusInput();
         }
 
         public async Task EditVariant()

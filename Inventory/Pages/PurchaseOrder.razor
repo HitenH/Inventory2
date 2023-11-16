@@ -74,7 +74,7 @@
             <InputNumber @bind-Value="purchaseOrderModel.Quantity" id="quantity" class="form-control text-center" />
         </div>
         <div class="mb-2 col-1 text-center">
-            <label for="duedate" class="form-label">DueDate</label>
+            <label for="duedate" class="form-label">Due Date</label>
             <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" id="variantid" class="form-control text-center" />
         </div>
         <div class="mb-2 col-1 text-center">
@@ -82,7 +82,7 @@
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
         <div class="mb-2 col-1 text-center">
-            <label for="orderstatus" class="form-label text-center">OrderStatus</label>
+            <label for="orderstatus" class="form-label text-center">Order Status</label>
             <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
                 <option value="@OrderStatus.None" class="text-center">None</option>
                 <option value="@OrderStatus.Open" class="text-center">Open</option>
@@ -121,7 +121,7 @@
             <th class="text-center column-item" @onclick="@(()=>SortItem("ProductName"))">Product Name</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("Quantity"))">Quantity</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("DueDate"))">DueDate</th>
+            <th class="text-center column-item" @onclick="@(()=>SortItem("DueDate"))">Due Date</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("OrderStatus"))">Order Status</th>
             <th class="text-center column-item" @onclick="@(()=>SortItem("Remarks"))">Remarks</th>
