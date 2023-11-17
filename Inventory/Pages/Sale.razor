@@ -52,11 +52,11 @@
 
                 <div class="mb-2 col-5 d-flex justify-content-center flex-column">
                     <label for="productid" class="form-label text-center">Product ID</label>
-                    <input type="text" @bind-value="salesVariantModel.ProductId" id="productid" class="form-control" required @ref="productInput" />
+                    <input type="text" @bind-value="salesVariantModel.ProductId" id="productid" class="form-control" required @ref="productInput" autocomplete="off"/>
                 </div>
                 <div class="mb-2 col-5 d-flex justify-content-center flex-column">
                     <label for="variantid" class="form-label text-center">Variant ID</label>
-                    <input type="text" @bind-value="salesVariantModel.VariantId" id="variantid" class="form-control" required @onkeyup="(k) => CheckIfClickEnter(k)" />
+                    <input type="text" @bind-value="salesVariantModel.VariantId" id="variantid" class="form-control" required @onkeyup="(k) => CheckIfClickEnter(k)" autocomplete="off" />
                 </div>
             </div>
             <ValidationSummary />

@@ -16,7 +16,7 @@
     <div class="d-flex justify-content-between">
         <div class="mb-2 col-5">
             <label for="name" class="form-label">Name</label>
-            <InputText @bind-Value="productModel.Name" id="name" class="form-control" />
+            <InputText @bind-Value="productModel.Name" id="name" class="form-control" autocomplete="off" />
         </div>
         <div class="mb-2 col-5">
             <label for="rate" class="form-label">Rate</label>
@@ -26,7 +26,7 @@
     <div class="d-flex justify-content-between">
         <div class="mb-2 col-5">
             <label for="prodid" class="form-label">Product ID</label>
-            <InputText @bind-Value="productModel.ProductId" id="prodid" class="form-control" rows="3" />
+            <InputText @bind-Value="productModel.ProductId" id="prodid" class="form-control" rows="3" autocomplete="off" />
         </div>
         <div class="mb-2 col-5">
             <label for="category" class="form-label">Category</label>
@@ -52,7 +52,7 @@
     </div>
     <div class="mb-3">
         <label for="description" class="form-label">Description</label>
-        <InputTextArea @bind-Value="productModel.Description" id="description" class="form-control" rows="2" />
+        <InputTextArea @bind-Value="productModel.Description" id="description" class="form-control" rows="2" autocomplete="off" />
     </div>
     <ValidationSummary />
     @if (ProductId == null)

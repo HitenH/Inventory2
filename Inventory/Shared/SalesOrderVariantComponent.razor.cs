@@ -95,6 +95,7 @@ namespace Inventory.Shared
                         await SalesOrderVariantRepository.Update(salesOrderVariantEntity);
                     }
                     CancelSalesOrderVariant();
+                    GetSalesOrderVariants();
                     await ChangeState.InvokeAsync(true);
                 }
             }

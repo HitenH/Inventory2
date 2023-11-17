@@ -509,14 +509,14 @@ namespace Inventory.Migrations
                         {
                             Id = 1,
                             Name = "Hiten",
-                            Password = "Hiten",
+                            Password = "J031289",
                             Role = "User"
                         },
                         new
                         {
                             Id = 2,
                             Name = "Admin",
-                            Password = "admin",
+                            Password = "Admin@",
                             Role = "Admin"
                         });
                 });

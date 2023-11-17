@@ -31,8 +31,8 @@ namespace Inventory.Domain
         {
             modelBuilder.Entity<UserEntity>().HasData(new List<UserEntity>()
             {
-                new UserEntity(){ Id = 1, Name = "Hiten", Password = "Hiten", Role = "User"},
-                new UserEntity(){ Id = 2, Name = "Admin", Password = "admin", Role = "Admin"}
+                new UserEntity(){ Id = 1, Name = "Hiten", Password = "J031289", Role = "User"},
+                new UserEntity(){ Id = 2, Name = "Admin", Password = "Admin@", Role = "Admin"}
             });
 
             modelBuilder.Entity<PurchaseOrderEntity>()

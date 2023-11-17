@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231114142025_Init")]
+    [Migration("20231117141401_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -512,14 +512,14 @@ namespace Inventory.Migrations
                         {
                             Id = 1,
                             Name = "Hiten",
-                            Password = "Hiten",
+                            Password = "J031289",
                             Role = "User"
                         },
                         new
                         {
                             Id = 2,
                             Name = "Admin",
-                            Password = "admin",
+                            Password = "Admin@",
                             Role = "Admin"
                         });
                 });

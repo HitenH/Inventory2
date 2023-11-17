@@ -37,6 +37,7 @@ namespace Inventory.Pages
                         {
                             Product = p.Key,
                             Quantity = p.Sum(p => p.Quantity.Value),
+                            
                         }).ToList();
                         if (salesSummaryModelList.Count != 0)
                         {
@@ -110,6 +111,7 @@ namespace Inventory.Pages
             var value = decimal.Parse(arg.Value.ToString());
             salesSummaryEntityList[index].ProductRate = value;
             AmountChanged(index);
+            GetTotalAmount();
         }
 
         public void AmountChanged(int index)
@@ -127,6 +129,7 @@ namespace Inventory.Pages
             var value = int.Parse(arg.Value.ToString());
             salesSummaryEntityList[index].Discount = value;
             AmountAfterDiscountChanged(index);
+            GetTotalAmount();
         }
 
         public void AmountAfterDiscountChanged(int index)

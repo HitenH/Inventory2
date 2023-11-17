@@ -388,8 +388,8 @@ namespace Inventory.Migrations
                 columns: new[] { "Id", "Name", "Password", "Role" },
                 values: new object[,]
                 {
-                    { 1, "Hiten", "Hiten", "User" },
-                    { 2, "Admin", "admin", "Admin" }
+                    { 1, "Hiten", "J031289", "User" },
+                    { 2, "Admin", "Admin@", "Admin" }
                 });
 
             migrationBuilder.CreateIndex(

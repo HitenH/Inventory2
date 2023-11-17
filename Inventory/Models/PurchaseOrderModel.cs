@@ -17,8 +17,8 @@ namespace Inventory.Models
         [Required]
         public string? VariantId { get; set; } = default;
         public int? Quantity { get; set; } = default(int);
-        public DateOnly? Date { get; set; } = default;
-        public DateOnly? DueDate { get; set; } = default;
+        public DateOnly? Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public DateOnly? DueDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public OrderStatus? OrderStatus { get; set; }
         public string? Remarks { get; set; } = default;
         public bool IsChecked { get; set; } = default;
