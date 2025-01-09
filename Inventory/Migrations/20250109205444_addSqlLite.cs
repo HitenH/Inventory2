@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Inventory.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class addSqlLite : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,10 +17,10 @@ namespace Inventory.Migrations
                 name: "Categories",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CategoryId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CategoryId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -31,13 +31,13 @@ namespace Inventory.Migrations
                 name: "Customers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ContactPerson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Area = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CustomerId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    ContactPerson = table.Column<string>(type: "TEXT", nullable: true),
+                    Address = table.Column<string>(type: "TEXT", nullable: true),
+                    Area = table.Column<string>(type: "TEXT", nullable: true),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,17 +48,17 @@ namespace Inventory.Migrations
                 name: "PurchaseOrders",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SupplierId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Quantity = table.Column<int>(type: "int", nullable: true),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    OrderStatus = table.Column<int>(type: "int", nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SupplierId = table.Column<string>(type: "TEXT", nullable: true),
+                    ProductId = table.Column<string>(type: "TEXT", nullable: true),
+                    ProductName = table.Column<string>(type: "TEXT", nullable: true),
+                    ProductRate = table.Column<decimal>(type: "TEXT", nullable: true),
+                    VariantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: true),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    OrderStatus = table.Column<int>(type: "INTEGER", nullable: true),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -69,13 +69,13 @@ namespace Inventory.Migrations
                 name: "Suppliers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SupplierId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ContactPerson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Area = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SupplierId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    ContactPerson = table.Column<string>(type: "TEXT", nullable: true),
+                    Address = table.Column<string>(type: "TEXT", nullable: true),
+                    Area = table.Column<string>(type: "TEXT", nullable: true),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -86,11 +86,11 @@ namespace Inventory.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Password = table.Column<string>(type: "TEXT", nullable: false),
+                    Role = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -101,12 +101,12 @@ namespace Inventory.Migrations
                 name: "Products",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Rate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ProductId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Rate = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    CategoryId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -122,14 +122,14 @@ namespace Inventory.Migrations
                 name: "Sales",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VoucherId = table.Column<int>(type: "int", nullable: false),
-                    CustomerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TotalQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Discoint = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VoucherId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CustomerEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true),
+                    TotalQuantity = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Discoint = table.Column<decimal>(type: "TEXT", nullable: false),
+                    TotalAmountProduct = table.Column<decimal>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -145,13 +145,13 @@ namespace Inventory.Migrations
                 name: "SalesOrders",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VoucherId = table.Column<int>(type: "int", nullable: false),
-                    CustomerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    OrderStatus = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VoucherId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CustomerEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    TotalAmountProduct = table.Column<decimal>(type: "TEXT", nullable: true),
+                    OrderStatus = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -167,11 +167,11 @@ namespace Inventory.Migrations
                 name: "Mobiles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CustomerEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    SupplierEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Phone = table.Column<string>(type: "TEXT", nullable: true),
+                    CustomerEntityId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    SupplierEntityId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -194,13 +194,13 @@ namespace Inventory.Migrations
                 name: "Purchases",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VoucherId = table.Column<int>(type: "int", nullable: false),
-                    SupplierEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Discount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    TotalAmountProduct = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VoucherId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SupplierEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true),
+                    Discount = table.Column<decimal>(type: "TEXT", nullable: true),
+                    TotalAmountProduct = table.Column<decimal>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -216,10 +216,10 @@ namespace Inventory.Migrations
                 name: "Variants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VariantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VariantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    ProductEntityId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -236,17 +236,17 @@ namespace Inventory.Migrations
                 name: "SalesSummary",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SerialNumber = table.Column<int>(type: "int", nullable: false),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Discount = table.Column<int>(type: "int", nullable: false),
-                    AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    SalesEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SerialNumber = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ProductId = table.Column<string>(type: "TEXT", nullable: false),
+                    ProductName = table.Column<string>(type: "TEXT", nullable: false),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductRate = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Discount = table.Column<int>(type: "INTEGER", nullable: false),
+                    AmountAfterDiscount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    SalesEntityId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -263,10 +263,10 @@ namespace Inventory.Migrations
                 name: "Images",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ImageTitle = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ImageTitle = table.Column<string>(type: "TEXT", nullable: true),
+                    ImageData = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    VariantEntityId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -283,16 +283,16 @@ namespace Inventory.Migrations
                 name: "PurchaseVariant",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SerialNumber = table.Column<int>(type: "int", nullable: false),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: true),
-                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Discount = table.Column<int>(type: "int", nullable: true),
-                    AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    PurchaseEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SerialNumber = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VariantEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: true),
+                    ProductRate = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Discount = table.Column<int>(type: "INTEGER", nullable: true),
+                    AmountAfterDiscount = table.Column<decimal>(type: "TEXT", nullable: true),
+                    PurchaseEntityId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -319,17 +319,17 @@ namespace Inventory.Migrations
                 name: "SalesOrderVariants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SerialNumber = table.Column<int>(type: "int", nullable: false),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: true),
-                    ProductRate = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Discount = table.Column<int>(type: "int", nullable: true),
-                    AmountAfterDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SalesOrderEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SerialNumber = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VariantEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: true),
+                    ProductRate = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Discount = table.Column<int>(type: "INTEGER", nullable: true),
+                    AmountAfterDiscount = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Remarks = table.Column<string>(type: "TEXT", nullable: true),
+                    SalesOrderEntityId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -356,11 +356,11 @@ namespace Inventory.Migrations
                 name: "SalesVariants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    VariantEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: true),
-                    SalesEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ProductEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    VariantEntityId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Quantity = table.Column<int>(type: "INTEGER", nullable: true),
+                    SalesEntityId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
