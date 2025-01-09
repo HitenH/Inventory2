@@ -15,7 +15,7 @@ namespace Inventory.Domain.Entities
         public int? Quantity { get; set; }
         public DateOnly? Date { get; set; }
         public DateOnly? DueDate { get; set; }
-        public OrderStatus? OrderStatus { get; set; }
+        public OrderStatus OrderStatus { get; set; }
         public string? Remarks { get; set; }
     }
 }

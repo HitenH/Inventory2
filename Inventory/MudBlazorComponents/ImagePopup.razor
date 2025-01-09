@@ -1,0 +1,22 @@
+﻿@using Inventory.Domain.Entities
+<MudDialog>
+    <DialogContent>
+        <img src="@GetImage(ImageHere)" style="height:300px; width:300px;" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Close()">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+    [Parameter] public Image ImageHere { get; set; }
+
+
+    public string GetImage(Image image)
+    {
+        return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
+    }
+}

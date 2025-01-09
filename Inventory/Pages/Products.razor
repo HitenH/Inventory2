@@ -1,49 +1,114 @@
 ﻿@page "/products"
+@using Inventory.MudBlazorComponents
 
 
-
-<div class="d-flex justify-content-lg-between mb-3">
-    <NavLink href="/product" class="btn btn-secondary">Add New Product</NavLink>
-    <NavLink href="/category" class="btn btn-secondary">Add New Category</NavLink>
-    <Search SearchItemCallBack="SearchItem"></Search>
-</div>
 
 @if (productsAfterSearch == null)
 {
-    <p><em>Loading...</em></p>
+    <LoadingComponent />
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("ProductId"))">Product ID</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Name"))">Name</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Rate"))">Rate</th>
-                <th class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (productsAfterSearch.Count != 0)
-            {
-                @foreach (var product in productsAfterSearch.AsQueryable())
-                {
-                    <tr>
-                        <td class="text-center">@product.ProductId</td>
-                        <td class="text-center">@product.Name</td>
-                        <td class="text-center">@product.Rate</td>
-                        <td class="text-center"><a class="btn btn-secondary" href="product/@product.Id">Info</a></td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6" class="text-center">
-                        Not Found!
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudTable Items="@productsAfterSearch" FixedHeader="true" Dense="true" Bordered="true" Striped="true"
+                >
+        <ToolBarContent>
+            <MudButton Class="ma-1" Href="/product" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                Add New Product
+            </MudButton>
+            <MudButton Class="ma-1" Href="/category" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                Add New Category
+            </MudButton>
+            <MudFileUpload T="IBrowserFile" Accept=".csv, .xlsx" AppendMultipleFiles="false" FilesChanged="HandleFilesChanged">
+                <ActivatorContent>
+                    <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
+                        Import Products
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+            <MudTooltip>
+                <ChildContent>
+                    <MudIconButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Icon="@Icons.Material.Filled.QuestionMark" Color="Color.Secondary">
+                    </MudIconButton>
+                </ChildContent>
+                <TooltipContent>
+                    Accepted formats: .csv, .xlsx (Max: 1 MB)
+                    <div>
+                        <h2 id="products">Products</h2>
+                        <p>Your product data should be formatted with the following columns:</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>ProductId</code></td>
+                                    <td>Unique identifier for the product.</td>
+                                    <td><code>PROD001</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>Name</code></td>
+                                    <td>Product name.</td>
+                                    <td><code>Laptop</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>Rate</code></td>
+                                    <td>Product price (decimal).</td>
+                                    <td><code>500.00</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>Description</code></td>
+                                    <td>Product description (optional).</td>
+                                    <td><code>High-performance laptop</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>CategoryEntityId</code></td>
+                                    <td>Unique identifier for the product category (optional).</td>
+                                    <td><code>CAT001</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h3 id="example-csv-format-">Example CSV format:</h3>
+    <pre><code><span class="hljs-selector-tag">ProductId</span>, <span class="hljs-selector-tag">Name</span>, <span class="hljs-selector-tag">Rate</span>, <span class="hljs-selector-tag">Description</span>, <span class="hljs-selector-tag">CategoryEntityId</span>
+    <span class="hljs-selector-tag">PROD001</span>, <span class="hljs-selector-tag">Laptop</span>, 500<span class="hljs-selector-class">.00</span>, <span class="hljs-selector-tag">High-performance</span> <span class="hljs-selector-tag">laptop</span>, <span class="hljs-selector-tag">CAT001</span>
+    </code></pre><hr>
+                        <p>Once formatted, you can upload your CSV or XLSX files to import customer and product data into the system. Make sure to verify the data format for accurate import.</p>
+
+
+                    </div>
+                </TooltipContent>
+            </MudTooltip>
+            
+            <Search SearchItemCallBack="SearchItem"/>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.ProductId)">Product ID</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Name)">Name</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Rate)">Rate</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                Actions
+            </MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.ProductId</MudTd>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.Rate</MudTd>
+            <MudTd>
+                <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"product/{context.Id}")">Info</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
 }

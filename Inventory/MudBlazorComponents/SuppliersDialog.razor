@@ -1,0 +1,91 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Repository.Abstract
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (suppliersAfterSearch == null)
+        {
+            <LoadingComponent />
+        }
+        else
+        {
+            <MudTable T="SupplierModel" Items="suppliersAfterSearch" Bordered="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.SupplierId)">
+                            Supplier ID
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Name)">
+                            Supplier Name
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        Actions
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Supplier ID">@context.SupplierId</MudTd>
+                    <MudTd DataLabel="Supplier Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Primary" OnClick="@(async () => await SelectSupplier(@context))">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+                </NoRecordsContent>
+            </MudTable>
+
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+    private Snackbar snackbar;
+
+    [Inject] private ISupplierRepository SupplierRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+
+    private List<SupplierModel> suppliers = new();
+    private List<SupplierModel> suppliersAfterSearch = new();
+
+
+    protected async override Task OnParametersSetAsync()
+    {
+        try
+        {
+            var suppliersDb = await SupplierRepository.GetAll();
+            if (suppliersDb.Count != 0)
+            {
+                suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
+                suppliersAfterSearch = suppliers;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar = Snackbar.Add("Something went wrong", Severity.Warning);
+        }
+    }
+    public void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value.ToString().ToLower();
+        suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+    }
+
+    public async Task SelectSupplier(SupplierModel supplier)
+    {
+        MudDialog.Close(DialogResult.Ok(supplier));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

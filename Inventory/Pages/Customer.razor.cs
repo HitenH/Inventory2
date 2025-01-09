@@ -4,10 +4,12 @@ using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Inventory.Service;
 using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -21,6 +23,8 @@ namespace Inventory.Pages
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
         [Inject] private AppDbContext context { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
 
         private CustomerModel customerModel = new CustomerModel();
         private int NumberPhone;
@@ -152,8 +156,22 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    await CustomerRepository.Delete(customerEntity);
-                    navManager.NavigateTo("/customers");
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                    {
+                        { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                        { x => x.ButtonText, "Delete" },
+                        { x => x.Color, Color.Error }
+                    };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        await CustomerRepository.Delete(customerEntity);
+                        navManager.NavigateTo("/customers");
+                    }
                 }
                 catch (Exception ex)
                 {

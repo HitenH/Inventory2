@@ -1,0 +1,79 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Repository.Abstract
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (productsAfterSearch == null)
+        {
+            <LoadingComponent />
+        }
+        else
+        {
+            <MudTable Items="productsAfterSearch" Striped="true" Bordered="true" Class="my-mudtable">
+                <HeaderContent>
+                    <MudTh>Product ID</MudTh>
+                    <MudTh>Product Name</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Product ID">@context.ProductId</MudTd>
+                    <MudTd DataLabel="Product Name">@context.Name</MudTd>
+                    <MudTd>
+                        <MudButton Variant="MudBlazor.Variant.Text" Color="Color.Primary" OnClick="@(async () => await SelectProduct(context))">
+                            <MudIcon Icon="@Icons.Material.Filled.Check" />
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+                </NoRecordsContent>
+            </MudTable>
+
+
+        }
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+    private Snackbar snackbar;
+
+    [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+
+    private List<ProductModel> products = new();
+    private List<ProductModel> productsAfterSearch = new();
+
+    protected async override Task OnParametersSetAsync()
+    {
+        try
+        {
+            var productsDb = await ProductRepository.GetAll();
+            if (productsDb.Count != 0)
+            {
+                products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
+                productsAfterSearch = products;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar = Snackbar.Add("Something went wrong", Severity.Error);
+        }
+    }
+
+    public void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value.ToString().ToLower();
+        productsAfterSearch = products.Where(n => n.ProductId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+    }
+
+    public async Task SelectProduct(ProductModel product)
+    {
+        MudDialog.Close(DialogResult.Ok(product));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

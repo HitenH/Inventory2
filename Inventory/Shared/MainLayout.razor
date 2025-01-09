@@ -1,71 +1,54 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>Inventory</PageTitle>
+<MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-<div class="page">
-
-    <main>
-        <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-header">
-            <div class="container-fluid">
-                <AuthorizeView>
-                    <Authorized>
-                        <div class="" id="navbarSupportedContent">
-                            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                                <li class="nav-item">
-                                    <a class="nav-link active" aria-current="page" href="/">Home</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link active" aria-current="page" href="#">File</a>
-                                </li>
-                                <li class="nav-item dropdown">
-                                    <Dropdown>
-                                        <DropdownToggleButton Color="ButtonColor.Light">Masters</DropdownToggleButton>
-                                        <DropdownMenu>
-                                            <DropdownItem href="/customers"  Type="ButtonType.Link">Customers</DropdownItem>
-                                            <DropdownItem href="/suppliers" Type="ButtonType.Link">Suppliers</DropdownItem>
-                                            <DropdownItem href="/products" Type="ButtonType.Link">Products</DropdownItem>
-                                        </DropdownMenu>
-                                    </Dropdown>
-                                </li>
-                                <li class="nav-item dropdown">
-                                    <Dropdown>
-                                        <DropdownToggleButton Color="ButtonColor.Light">Transactions</DropdownToggleButton>
-                                        <DropdownMenu>
-                                            <DropdownItem href="/purchaseorder" Type="ButtonType.Link">Purchase Order</DropdownItem>
-                                            <DropdownItem href="/purchases" Type="ButtonType.Link">Purchases</DropdownItem>
-                                            <DropdownItem href="/salesorders" Type="ButtonType.Link">Sales Order</DropdownItem>
-                                            <DropdownItem href="/sales" Type="ButtonType.Link">Sales</DropdownItem>
-                                        </DropdownMenu>
-                                    </Dropdown>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link active" aria-current="page" href="#">Reports</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link active" aria-current="page" href="#">Utilities</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </Authorized>
-                </AuthorizeView>
-
-                <div class="px-4">
-                    <AuthorizeView>
-                        <Authorized>
-                            <button class="btn btn-outline-secondary" @onclick="Logout">Logout</button>
-                        </Authorized>
-                        <NotAuthorized>
-                            <NavLink class="btn btn-outline-secondary" href="/login">Login</NavLink>
-                        </NotAuthorized>
-                    </AuthorizeView>
-
-                </div>
-            </div>
-        </nav>
-
-
-        <article class="content px-4">
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <MudSwitch @bind-Value="_isDarkMode" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Class="px-4">Inventory Store</MudText>
+        </MudDrawerHeader>
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.ExtraExtraLarge">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            StateHasChanged();
+        }
+    }
+
+    private Task OnSystemPreferenceChanged(bool newValue)
+    {
+        _isDarkMode = newValue;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

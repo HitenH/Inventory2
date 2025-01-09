@@ -3,9 +3,11 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -18,6 +20,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Product> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
+        [Inject] private IDialogService DialogService { get; set; }
 
         private ProductModel productModel = new();
         private ProductEntity productEntity = new();
@@ -144,8 +147,22 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    await ProductRepository.Delete(productEntity);
-                    navManager.NavigateTo("/products");
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                {
+                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                    { x => x.ButtonText, "Delete" },
+                    { x => x.Color, Color.Error }
+                };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        await ProductRepository.Delete(productEntity);
+                        navManager.NavigateTo("/products");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -158,7 +175,7 @@ namespace Inventory.Pages
                         await modalWindowComponenRef.OnShowModalClick();
                 }
             }
-           
+
         }
 
         public async Task<CategoryEntity> GetCategory(Guid id)

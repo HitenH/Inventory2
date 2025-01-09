@@ -1,63 +1,61 @@
 ﻿@page "/suppliers"
 
 @using Inventory.Models;
-
-<div class="d-flex justify-content-lg-between mb-3">
-    <NavLink href="/supplier" class="btn btn-secondary">Add New Supplier</NavLink>
-    <Search SearchItemCallBack="SearchItem"></Search>
-</div>
+@using Inventory.MudBlazorComponents
 
 @if (suppliersAfterSearch == null)
 {
-    <p><em>Loading...</em></p>
+    <LoadingComponent />
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("SuptomerId"))">Supplier ID</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Name"))">Name</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Mobile"))">Mobile</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Area"))">Area</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Amount"))">Amount</th>
-                <th class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (suppliersAfterSearch.Count != 0)
-            {
-                @foreach (var supplier in suppliersAfterSearch.AsQueryable())
-                {
-                    <tr>
-                        <td class="text-center">@supplier.SupplierId</td>
-                        <td class="text-center">@supplier.Name</td>
+    <MudTable Items="suppliersAfterSearch" FixedHeader="true" 
+        Dense="true" Bordered="true" Striped="true"
+              OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SupplierModel>>(this, RowClickEvent))">
+    <ToolBarContent>
 
-                        @if (supplier.Mobiles.Count == 0)
-                        {
-                            <td class="text-center">-</td>
-                        }
-                        else
-                        {
-                            <td class="text-center">@supplier.Mobiles.First().Phone</td>
-                        }
+            <MudButton Class="ma-1" Href="/supplier" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">Add New Supplier</MudButton>
 
-                        <td class="text-center">@supplier.Area</td>
-                        <td class="text-center">@totalAmount[supplier.Id]</td>
-                        <td class="text-center"><a class="btn btn-secondary" href="supplier/@supplier.Id">Info</a></td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6" class="text-center">
-                        Not Found!
-                    </td>
-                </tr>
-            }
+            <Search SearchItemCallBack="SearchItem" />
+    </ToolBarContent>
+        <HeaderContent>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.SupplierId)">
+                Supplier ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Name)">
+                Name
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Mobiles.FirstOrDefault().Phone)">
+                Mobile
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Area)">
+                Area
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(f => totalAmount[f.Id])">
+                Amount
+            </MudTableSortLabel>
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+            <MudTd>@context.SupplierId</MudTd>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@(context.Mobiles?.Count > 0 ? context.Mobiles.First().Phone : "-")</MudTd>
+            <MudTd>@context.Area</MudTd>
+            <MudTd>@totalAmount[context.Id]</MudTd>
+    </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+    </NoRecordsContent>
+</MudTable>
 
-        </tbody>
-    </table>
 }
 

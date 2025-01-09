@@ -1,8 +1,5 @@
 ﻿@page "/purchaseorder"
-
-
-<SupplierPopup IsVisible="isVisibleSupplierPopup" CloseCallBack="CloseSupplierPopup" SupplierCallBack="GetSupplierFromPopup" />
-<ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
+@using Variant = MudBlazor.Variant
 
 <EditForm Model="@purchaseOrderModel" class="card-header"
           OnValidSubmit="async ()=>
@@ -30,44 +27,53 @@
         <div class="mb-2 col-2 text-center">
             <label for="supplierid" class="form-label">Supplier ID</label>
             <div class="d-flex justify-content-between">
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenSupplierPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
-                <InputText @bind-Value="purchaseOrderModel.SupplierId" id="supplierid" class="form-control text-center" disabled />
+
+                <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenSupplierDialogAsync"
+                               Icon="@Icons.Material.Filled.AdsClick">
+                </MudIconButton>
+
+
+                <MudAutocomplete T="SupplierModel" Label="Supplier ID"
+                                 Value="selectedSupplier"
+                                 ValueChanged="OnSupplierSelected"
+                                 SearchFunc="SearchSupplierEntities"
+                                 ToStringFunc="@(e => e == null ? "Supplier" : $"{e.Name} ({e.SupplierId})")"
+                                 Clearable="true"
+                                 ClearIcon="@Icons.Material.Filled.Clear"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="true" CoerceValue="true" />
             </div>
         </div>
         <div class="mb-2 col-2 text-center">
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
-                <InputText @bind-Value="purchaseOrderModel.ProductId" id="productid" class="form-control text-center" disabled />
+                <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenProductDialogAsync"
+                               Icon="@Icons.Material.Filled.AdsClick">
+                </MudIconButton>
+                <MudAutocomplete T="ProductModel" Label="Product"
+                                 Placeholder="Product"
+                                 Value="selectedProduct"
+                                 ValueChanged="OnProductSelected"
+                                 Clearable="true"
+                                 ClearIcon="@Icons.Material.Filled.Clear"
+                                 SearchFunc="SearchProductEntities"
+                                 ToStringFunc="@(e => e == null ? "Product" : $"{e.Name} ({e.ProductId})")"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="true" CoerceValue="true" />
             </div>
         </div>
         <div class="mb-2 col-1 text-center">
-            <label for="productname" class="form-label">Product Name</label>
-            <InputText @bind-Value="purchaseOrderModel.ProductName" id="productname" class="form-control text-center" disabled />
-        </div>
-        <div class="mb-2 col-1 text-center">
-            <label for="variantid" class="form-label">Variant ID</label>
-            <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control text-center" id="variantid">
-                <option value="@purchaseOrderModel.VariantId" class="text-center">-</option>
-                @if (product.Variants.Count != 0)
+            <MudSelect @bind-Value="purchaseOrderModel.VariantId"
+                       Variant="MudBlazor.Variant.Filled"
+                       Label="Variant">
+                @if (selectedProduct != null && selectedProduct.Variants.Count != 0)
                 {
-                    @foreach (var item in product.Variants)
+                    @foreach (var item in selectedProduct.Variants)
                     {
-                        if (item.VariantId == purchaseOrderModel.VariantId)
-                        {
-                            <option selected value="@item.VariantId" class="text-center">@item.VariantId</option>
-                        }
-                        else
-                        {
-                            <option value="@item.VariantId" class="text-center">@item.VariantId</option>
-                        }
+                        <MudSelectItem Value="@item.VariantId">@item.Name</MudSelectItem>
                     }
                 }
-            </InputSelect>
+            </MudSelect>
         </div>
         <div class="mb-2 col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>
@@ -82,13 +88,14 @@
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
         <div class="mb-2 col-1 text-center">
-            <label for="orderstatus" class="form-label text-center">Order Status</label>
-            <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
-                <option value="@OrderStatus.None" class="text-center">None</option>
-                <option value="@OrderStatus.Open" class="text-center">Open</option>
-                <option value="@OrderStatus.Completed" class="text-center">Completed</option>
-                <option value="@OrderStatus.Partly" class="text-center">Partly</option>
-            </InputSelect>
+            <MudSelect @bind-Value="purchaseOrderModel.OrderStatus"
+                       Label="Order Status"
+                       T="OrderStatus">
+                @foreach (OrderStatus item in orderStatuses)
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
         </div>
        
     </div>
@@ -99,68 +106,142 @@
     <ValidationSummary />
 </EditForm>
 
-<div class="d-flex justify-content-lg-between mt-5">
-    <button type="button" class="btn btn-outline-danger col-2" @onclick="DeleteSelectedOrders">Delete Selected Orders</button>
-    <button type="button" class="btn btn-outline-danger col-2" @onclick="DeleteCompletedOrders">Delete Completed Orders</button>
-    <div class="col-7 text-end">
-        <Search SearchItemCallBack="SearchItem"></Search>
-    </div>
-   
-</div>
-<table class="table table-striped table-bordered mt-2">
-    <thead>
-        <tr>
-            <th class="text-center">
-                <button class="btn btn-select" @onclick="SelectAllItems">
-                    <InputCheckbox @bind-Value="@isSelected" />
-                </button>
-            </th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Date"))">Date</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("SupplierId"))">Supplier ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductId"))">Product ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductName"))">Product Name</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Quantity"))">Quantity</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("DueDate"))">Due Date</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("OrderStatus"))">Order Status</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Remarks"))">Remarks</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (ordersAfterSearch.Count != 0)
-        {
-            @foreach (var order in ordersAfterSearch.AsQueryable())
-            {
-                <tr>
-                    <td class="text-center d-flex justify-content-around">
-                        <InputCheckbox @bind-Value="order.IsChecked" />
-                        <div>
-                            <button class="btn btn-light btn-variant-edit">
-                                <img src="img/edit.png" alt="add" class="order-edit-img" @onclick="()=>UpdateOrder(order)" />
-                            </button>
-                        </div>
-                    </td>
-                    <td class="text-center">@order.Date</td>
-                    <td class="text-center">@order.SupplierId</td>
-                    <td class="text-center">@order.ProductId</td>
-                    <td class="text-center">@order.ProductName</td>
-                    <td class="text-center">@order.VariantId</td>
-                    <td class="text-center">@order.Quantity</td>
-                    <td class="text-center">@order.DueDate</td>
-                    <td class="text-center">@order.ProductRate</td>
-                    <td class="text-center">@order.OrderStatus</td>
-                    <td class="text-center">@order.Remarks</td>                               
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="12" class="text-center">
-                    Not Found!
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+        
+<!-- Table Panel -->
+
+<MudTable Items="ordersAfterSearch"
+          Hover="true"
+          Class="mt-2"
+          Bordered="true"
+          Striped="true"
+          Dense="true"
+          CanCancelEdit="true"
+          MultiSelection="true"
+          SelectionChangeable="true"
+          @bind-SelectedItems="selectedOrders"
+          SelectOnRowClick="true"
+          EditTrigger="TableEditTrigger.RowClick"
+          EditButtonPosition="TableEditButtonPosition.End"
+          ApplyButtonPosition="TableApplyButtonPosition.End"
+          IsEditRowSwitchingBlocked="true"
+          RowEditPreview="BackupItem"
+          RowEditCancel="ResetItemToOriginalValues"
+          RowEditCommit="EditRowPurchaseOrder">
+    <ToolBarContent>
+        <MudButton Class="ms-1 me-1" Variant="Variant.Filled" Color="Color.Tertiary" OnClick="DeleteSelectedOrders">Delete Selected Orders</MudButton>
+        <MudButton Class="ms-1 me-1" Variant="Variant.Filled" Color="Color.Tertiary" OnClick="DeleteCompletedOrders">Delete Completed Orders</MudButton>
+
+
+        <Search SearchItemCallBack="SearchItem" />
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Date)">
+                Date
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.SupplierId)">
+                Supplier ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductId)">
+                Product ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductName)">
+                Product Name
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.VariantId)">
+                Variant ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Quantity)">
+                Quantity
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.DueDate)">
+                Due Date
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductRate)">
+                Rate
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.OrderStatus)">
+                Order Status
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Remarks)">
+                Remarks
+            </MudTableSortLabel>
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Date</MudTd>
+        <MudTd>@context.SupplierId</MudTd>
+        <MudTd>@context.ProductId</MudTd>
+        <MudTd>@context.ProductName</MudTd>
+        <MudTd>@context.VariantId</MudTd>
+        <MudTd>@context.Quantity</MudTd>
+        <MudTd>@context.DueDate</MudTd>
+        <MudTd>@context.ProductRate</MudTd>
+        <MudTd>@context.OrderStatus</MudTd>
+        <MudTd>@context.Remarks</MudTd>
+    </RowTemplate>
+    <RowEditingTemplate>
+        <MudTd>
+
+            <DateInput TValue="DateOnly?" @bind-Value="context.Date" id="date" class="form-control text-center" />
+        </MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="context.SupplierId" />
+        </MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="context.ProductId" />
+        </MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="context.ProductName" />
+        </MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="context.VariantId" />
+        </MudTd>
+        <MudTd>
+            <MudNumericField @bind-Value="context.Quantity" />
+        </MudTd>
+        <MudTd>
+
+            <DateInput TValue="DateOnly?" @bind-Value="context.DueDate" id="date" class="form-control text-center" />
+        </MudTd>
+        <MudTd>
+            <MudNumericField @bind-Value="context.ProductRate" />
+        </MudTd>
+        <MudTd>
+            <MudSelect @bind-Value="context.OrderStatus"
+                       Variant="MudBlazor.Variant.Filled"
+                       Label="Order Status"
+                       T="OrderStatus">
+                @foreach (OrderStatus item in orderStatuses)
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
+        </MudTd>
+        <MudTd>
+            <MudTextField @bind-Value="context.Remarks" />
+        </MudTd>
+    </RowEditingTemplate>
+
+    <NoRecordsContent>
+        <MudText Align="Align.Center">Not Found!</MudText>
+    </NoRecordsContent>
+</MudTable>

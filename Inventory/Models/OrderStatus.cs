@@ -1,10 +1,9 @@
-﻿namespace Inventory.Models
+﻿namespace Inventory.Models;
+
+public enum OrderStatus
 {
-    public enum OrderStatus
-    {
-        None,
-        Open,
-        Completed,
-        Partly
-    }
+    None,
+    Open,
+    Completed,
+    Partly
 }

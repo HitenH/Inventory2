@@ -1,0 +1,71 @@
+﻿@using Inventory.Authentication
+@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<MudNavMenu>
+
+    <MudDivider Class="my-2" />
+    <MudNavGroup Icon="@Icons.Material.Filled.ManageAccounts" Title="Your Profile" Expanded="true">
+        <MudNavLink Href="/">Dashboard</MudNavLink>
+        <AuthorizeView>
+            <Authorized>
+                <MudNavLink Icon="@Icons.Material.Filled.AccountCircle">
+                    @context.User.Identity?.Name
+                </MudNavLink>
+
+                <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">
+                    Logout
+                </MudNavLink>
+                <MudDivider/>
+                <MudNavGroup Title="Masters" Expanded="true">
+                    <MudNavLink Icon="@Icons.Material.Filled.People" Href="/customers">Customers</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.Support" Href="/suppliers">Suppliers</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products">Products</MudNavLink>
+                </MudNavGroup>
+                <MudNavGroup Title="Transactions" Expanded="true">
+                    <MudNavLink Icon="@Icons.Material.Filled.BorderTop" Href="/purchaseorder">Purchase Orders</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.Shop" Href="/purchases">Purchases</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.Money" Href="/salesorders">Sale Orders</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales">Sales</MudNavLink>
+                </MudNavGroup>
+            </Authorized>
+            <NotAuthorized>
+                <MudNavLink Icon="@Icons.Material.Filled.Login" Href="/login">
+                    Login
+                </MudNavLink>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudNavGroup>    
+</MudNavMenu>
+@code {
+
+    [Inject] private AuthenticationStateProvider authStateProvider { get; set; }
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+
+    public async Task Logout()
+    {
+        var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(null);
+        NavigationManager.NavigateTo("/", true);
+    }
+
+}

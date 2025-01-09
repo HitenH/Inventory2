@@ -3,10 +3,12 @@ using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Inventory.Service;
 using Inventory.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -21,6 +23,8 @@ namespace Inventory.Pages
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
         [Inject] private AppDbContext context { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
 
 
         private SupplierModel supplierModel = new();
@@ -147,27 +151,36 @@ namespace Inventory.Pages
             }   
         }
 
+
         public async void DeleteSupplier()
         {
             if (supplierEntity != null)
             {
                 try
                 {
-                    await SupplierRepository.Delete(supplierEntity);
-                    navManager.NavigateTo("/suppliers");
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                {
+                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                    { x => x.ButtonText, "Delete" },
+                    { x => x.Color, Color.Error }
+                };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        await SupplierRepository.Delete(supplierEntity);
+                        navManager.NavigateTo("/suppliers");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Delete Supplier error: " + ex.Message);
-                    titleMessage = "Error Message";
-                    errorMessageShort = "Cannot delete Supplier";
-                    errorMessageFull = ex.Message;
-
-                    if (modalWindowComponenRef != null)
-                        await modalWindowComponenRef.OnShowModalClick();
+                    Snackbar.Add("GetSupplier error: " + ex.Message, Severity.Error);
                 }
             }
-            
+
         }
 
         public void Dispose()

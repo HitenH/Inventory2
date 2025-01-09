@@ -1,0 +1,113 @@
+﻿@inject ISnackbar Snackbar
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">Scan Products</MudText>
+
+        <EditForm Model="ScannedItem" OnSubmit="HandleScan">
+            <div class="d-flex flex-row justify-content-between align-items-end">
+
+                <div class="mb-2 col-5 d-flex justify-content-center flex-column">
+                    <label for="productid" class="form-label text-center">Product ID</label>
+                    <input type="text" @bind-value="ScannedItem.ProductId" id="productid" class="form-control" required @ref="anotherInput" autocomplete="off" />
+                </div>
+                <div class="mb-2 col-5 d-flex justify-content-center flex-column">
+                    <label for="variantid" class="form-label text-center">Variant ID</label>
+                    <input type="text" @bind-value="ScannedItem.VariantId" id="variantid" class="form-control" required @onkeyup="(k) => CheckIfClickEnter(k)" autocomplete="off" />
+                </div>
+            </div>
+        </EditForm>
+
+
+        <MudTable Items="@scannedItems" Dense="true">
+            <HeaderContent>
+                <MudTh>Product ID</MudTh>
+                <MudTh>Variant ID</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="item">
+                <MudTd>@item.ProductId</MudTd>
+                <MudTd>@item.VariantId</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                    OnClick="() => RemoveItem(item)" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.h5">Nothing here yet!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Success" OnClick="SubmitData">
+            Done
+        </MudButton>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="CloseDialog">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    private List<ScannedItem> scannedItems = new();
+    private ScannedItem ScannedItem = new();
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+    private Snackbar snackbar;
+    private ElementReference anotherInput;
+    [Inject] private IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await FocusInput();
+        }
+    }
+
+    // Handle the scan
+    private async Task HandleScan()
+    {
+        if (ScannedItem != null)
+        {
+            scannedItems.Add(ScannedItem);
+            ScannedItem = new();
+
+            // Optionally, log the added item or provide feedback
+            snackbar = Snackbar.Add($"Scanned: {ScannedItem.ProductId} - {ScannedItem.VariantId}", Severity.Success);
+        }
+        await anotherInput.FocusAsync();
+        await FocusInput();
+    }
+
+
+    private async Task FocusInput()
+    {
+        await JSRuntime.InvokeVoidAsync("setFocus", anotherInput);
+        StateHasChanged();
+    }
+    public async Task CheckIfClickEnter(KeyboardEventArgs keyBoard)
+    {
+        if (keyBoard.Key == "Enter")
+        {
+            await HandleScan();
+        }
+    }
+
+    private void RemoveItem(ScannedItem item)
+    {
+        scannedItems.Remove(item);
+        // Optionally, log the removed item or provide feedback
+        snackbar = Snackbar.Add($"Removed: {item.ProductId} - {item.VariantId}", Severity.Info);
+    }
+
+    private void SubmitData()
+    {
+        MudDialog.Close(DialogResult.Ok(scannedItems));
+    }
+
+    private void CloseDialog()
+    {
+        MudDialog.Cancel();
+    }
+}
+

@@ -1,0 +1,92 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Repository.Abstract
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (customersAfterSearch == null)
+        {
+            <LoadingComponent/>
+        }
+        else
+        {
+            <MudTable Items="customersAfterSearch" Dense="true" Hover="true" Bordered="true">
+                <ToolBarContent>
+                    <MudTextField Label="Search"
+                                  T="string"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Adornment="Adornment.Start"
+                                  Placeholder="Search Customers"
+                                  ValueChanged="@(s=>SearchItem(s))"
+                                  Variant="MudBlazor.Variant.Outlined"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>Customer ID</MudTh>
+                    <MudTh>Customer Name</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Customer ID">@context.CustomerId</MudTd>
+                    <MudTd DataLabel="Customer Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButton Class="mx-2" OnClick="@(() => SelectCustomer(@context))">
+                            Select
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center">
+                        Not Found!
+                    </MudText>
+                </NoRecordsContent>
+            </MudTable>
+
+        }
+    </DialogContent>
+    <DialogActions>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+    public Snackbar snackbar;
+    [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+
+    private List<CustomerModel> customers = new();
+    private List<CustomerModel> customersAfterSearch = new();
+
+    private string search = "";
+
+    protected async override Task OnParametersSetAsync()
+    {
+        try
+        {
+            var customersDb = await CustomerRepository.GetAll();
+            if (customersDb.Count != 0)
+            {
+                customers = customersDb.Select(p => Mapper.Map<CustomerModel>(p)).ToList();
+                customersAfterSearch = customers;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            snackbar = Snackbar.Add("Something went wrong", Severity.Warning);
+        }
+    }
+
+    public void SearchItem(string e)
+    {
+        var search = e.ToLower();
+        customersAfterSearch = customers.Where(n => n.CustomerId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+    }
+
+    public async Task SelectCustomer(CustomerModel customer)
+    {
+        MudDialog.Close(DialogResult.Ok(customer));
+    }
+    private void Cancel() => MudDialog.Cancel();
+}

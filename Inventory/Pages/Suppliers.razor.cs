@@ -2,6 +2,7 @@
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -10,6 +11,7 @@ namespace Inventory.Pages
         [Inject] private ISupplierRepository SupplierRepository { get; set; }
         [Inject] private ILogger<Suppliers> Logger { get; set; }
         [Inject] private IMapper Mapper { get; set; }
+        [Inject] private NavigationManager navManager { get; set; }
 
         private List<SupplierModel> suppliers = new();
         private List<SupplierModel> suppliersAfterSearch = new();
@@ -37,11 +39,13 @@ namespace Inventory.Pages
                 } 
             }
         }
-
         public void SearchItem(ChangeEventArgs e)
         {
             var search = e.Value.ToString().ToLower();
-            suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+            suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search)
+                        || n.Name.ToLower().Contains(search)
+                        || n.Area.ToLower().Contains(search)
+                        || n.Mobiles.Any(p => p.Phone.ToLower().Contains(search))).ToList();
         }
 
         public void GetTotalAmount()
@@ -55,77 +59,12 @@ namespace Inventory.Pages
                 }).ToDictionary(result => result.SupplierId, result => result.TotalAmount);
             }
         }
-        public void SortItem(string column)
+
+        private void RowClickEvent(TableRowClickEventArgs<SupplierModel> tableRowClickEventArgs)
         {
-            if (suppliersAfterSearch.Count != 0)
-            {
-                if (column == "SuptomerId")
-                {
-                    if (isSortAscending)
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.SupplierId).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.SupplierId).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Name")
-                {
-                    if (isSortAscending)
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Mobile")
-                {
-                    if (isSortAscending)
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Area")
-                {
-                    if (isSortAscending)
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Amount")
-                {
-                    if (isSortAscending)
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderBy(c => c.Name).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        suppliersAfterSearch = suppliersAfterSearch.OrderByDescending(c => c.Name).ToList();
-                        isSortAscending = true;
-                    }
-                }
-            }
+            navManager.NavigateTo($"supplier/{tableRowClickEventArgs.Item.Id}");
         }
+
     }
 }
 

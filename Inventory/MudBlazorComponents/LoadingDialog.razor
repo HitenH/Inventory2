@@ -1,0 +1,19 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@LoadingMessage</MudText>
+        @if (HasProgressBar)
+        {
+            <MudProgressLinear Indeterminate="true"/>
+        }
+    </DialogContent>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+    [Parameter] 
+    public string LoadingMessage { get; set; } = "Loading...";
+    [Parameter]
+    public bool HasProgressBar { get; set; } = false;
+}
