@@ -1,18 +1,28 @@
 ﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
     public partial class SalesOrders
     {
         [Inject] public ISalesOrderRepository SalesOrderRepository { get; set; }
+        [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] public ILogger<SalesOrders> Logger { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
 
         private List<SalesOrderModel> salesOrders = new();
+        //Get enums list to populate order status
+        private List<OrderStatus> orderStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
         private List<SalesOrderModel> salesOrdersAfterSearch = new();
         private List<SalesOrderEntity> salesOrdersDb = new();
+        private HashSet<SalesOrderModel> selectedSalesOrders = new();
+        private SalesOrderModel salesOrderModelBackup = new();
+        private Snackbar snackbar;
         private bool isSortAscending = false;
         private bool isSelected = false;
 
@@ -49,105 +59,14 @@ namespace Inventory.Pages
             }
         }
 
-        public void SearchItem(ChangeEventArgs e)
+        public void SearchItem(string e)
         {
-            var search = e.Value.ToString().ToLower();
+            var search = e.ToLower();
             salesOrdersAfterSearch = salesOrders.Where(n => n.CustomerName.ToLower().Contains(search)
                                                || n.VoucherId.ToString().Contains(search)
                                                || n.Date.ToString().Contains(search)
                                                || n.DueDate.ToString().Contains(search)
                                                || n.OrderStatus.ToString().ToLower().Contains(search)).ToList();
-        }
-
-        public void SortItem(string column)
-        {
-            if (salesOrdersAfterSearch.Count != 0)
-            {
-                if (column == "VoucherId")
-                {
-                    if (isSortAscending)
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderBy(c => c.VoucherId).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderByDescending(c => c.VoucherId).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "CustomerName")
-                {
-                    if (isSortAscending)
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderBy(c => c.CustomerName).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderByDescending(c => c.CustomerName).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Date")
-                {
-                    if (isSortAscending)
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderBy(c => c.Date).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderByDescending(c => c.Date).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "DueDate")
-                {
-                    if (isSortAscending)
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderBy(c => c.DueDate).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderByDescending(c => c.DueDate).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Satus")
-                {
-                    if (isSortAscending)
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderBy(c => c.OrderStatus).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesOrdersAfterSearch = salesOrdersAfterSearch.OrderByDescending(c => c.OrderStatus).ToList();
-                        isSortAscending = true;
-                    }
-                }
-            }
-        }
-
-        public void SelectAllItems()
-        {
-            isSelected = !isSelected;
-            if (isSelected)
-            {
-                foreach (var order in salesOrdersAfterSearch)
-                {
-                    order.IsChecked = true;
-                }
-            }
-            else
-            {
-                foreach (var order in salesOrdersAfterSearch)
-                {
-                    order.IsChecked = false;
-                }
-            }
         }
         public async Task DeleteSelectedOrders()
         {
@@ -155,10 +74,26 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    salesOrdersDb = salesOrdersDb.Where(o => salesOrdersAfterSearch.Where(or => or.IsChecked == true).Any(p => p.Id == o.Id)).ToList();
-                    await SalesOrderRepository.DeleteRange(salesOrdersDb);
-                    await GetOrders();
-                    isSelected = false;
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                {
+                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                    { x => x.ButtonText, "Delete" },
+                    { x => x.Color, Color.Error }
+                };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        salesOrdersDb = salesOrdersDb.Where(q => selectedSalesOrders.Any(p => p.Id == q.Id)).ToList();
+                        await SalesOrderRepository.DeleteRange(salesOrdersDb);
+                        //Snackbar to inform user of process
+                        snackbar = Snackbar.Add($"Deleted records successfully.", Severity.Success);
+
+                        await GetOrders();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -173,9 +108,23 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    salesOrdersDb = salesOrdersDb.Where(o => salesOrdersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
-                    await SalesOrderRepository.DeleteRange(salesOrdersDb);
-                    await GetOrders();
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                {
+                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                    { x => x.ButtonText, "Delete" },
+                    { x => x.Color, Color.Error }
+                };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        salesOrdersDb = salesOrdersDb.Where(o => salesOrdersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
+                        await SalesOrderRepository.DeleteRange(salesOrdersDb);
+                        await GetOrders();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -184,5 +133,48 @@ namespace Inventory.Pages
             }
         }
 
+        //Edit row methods
+        private void BackupItem(object item)
+        {
+            salesOrderModelBackup = (SalesOrderModel)item;
+        }
+        private void ResetItemToOriginalValues(object item)
+        {
+            var index = salesOrdersAfterSearch.IndexOf((SalesOrderModel)item);
+            salesOrdersAfterSearch[index] = salesOrderModelBackup;
+        }
+        public async void EditOrder(object e)
+        {
+            SalesOrderEntity salesOrderEntity = new();
+            SalesOrderModel salesOrderModel = ((SalesOrderModel)e);
+
+            if (salesOrderModel != null)
+            {
+                try
+                {
+                    var isVoucherExist = false;
+                    if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
+                        isVoucherExist = SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
+
+                    if (!isVoucherExist)
+                        salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
+                    else
+                        salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
+
+                    //salesOrderEntity.Customer = await CustomerRepository.GetByCustomId(salesOrderModel.CustomerId);
+                    salesOrderEntity.Date = salesOrderModel.Date;
+                    salesOrderEntity.DueDate = salesOrderModel.DueDate;
+                    salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
+
+                    await SalesOrderRepository.Update(salesOrderEntity);
+                    await GetOrders();
+                    snackbar = Snackbar.Add($"Updated {salesOrderModel.Id} successfully.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    snackbar = Snackbar.Add($"Something went wrong: {ex.Message}", Severity.Warning);
+                }
+            }
+        }
     }
 }

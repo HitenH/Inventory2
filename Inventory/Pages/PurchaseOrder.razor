@@ -42,6 +42,8 @@
                                  ClearIcon="@Icons.Material.Filled.Clear"
                                  ResetValueOnEmptyText="true"
                                  CoerceText="true" CoerceValue="true" />
+
+                <InputText @bind-Value="purchaseOrderModel.SupplierId" class="form-control text-center" disabled hidden />
             </div>
         </div>
         <div class="mb-2 col-2 text-center">
@@ -60,6 +62,8 @@
                                  ToStringFunc="@(e => e == null ? "Product" : $"{e.Name} ({e.ProductId})")"
                                  ResetValueOnEmptyText="true"
                                  CoerceText="true" CoerceValue="true" />
+                <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />
+                <InputText @bind-Value="purchaseOrderModel.ProductName" class="form-control text-center" disabled hidden />
             </div>
         </div>
         <div class="mb-2 col-1 text-center">

@@ -12,13 +12,7 @@
         {
             <MudTable Items="customersAfterSearch" Dense="true" Hover="true" Bordered="true">
                 <ToolBarContent>
-                    <MudTextField Label="Search"
-                                  T="string"
-                                  AdornmentIcon="@Icons.Material.Filled.Search"
-                                  Adornment="Adornment.Start"
-                                  Placeholder="Search Customers"
-                                  ValueChanged="@(s=>SearchItem(s))"
-                                  Variant="MudBlazor.Variant.Outlined"></MudTextField>
+                    <Search SearchItemCallBack="SearchItem" />
                 </ToolBarContent>
                 <HeaderContent>
                     <MudTh>Customer ID</MudTh>
@@ -89,4 +83,13 @@
         MudDialog.Close(DialogResult.Ok(customer));
     }
     private void Cancel() => MudDialog.Cancel();
+
+    public void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value.ToString().ToLower();
+        customersAfterSearch = customers.Where(n => n.CustomerId.ToLower().Contains(search)
+                        || n.Name.ToLower().Contains(search)
+                        || n.Mobiles.Any(x => x.Phone.ToLower().Contains(search))
+                        || n.Area.ToLower().Contains(search)).ToList();
+    }
 }

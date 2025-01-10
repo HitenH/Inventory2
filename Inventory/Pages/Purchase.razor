@@ -10,24 +10,25 @@
                     else{
                         await EditPurchase();
                 } }">
-    <DataAnnotationsValidator />
-    <SupplierPopup IsVisible="isVisibleSupplierPopup" CloseCallBack="CloseSupplierPopup" SupplierCallBack="GetSupplierFromPopup" />
 
+
+    <DataAnnotationsValidator />
 
     <div class="d-flex justify-content-between">
-        <div>
-            <label class="form-label d-block text-center"><h4>Supplier</h4></label>
-            <div class="d-flex justify-content-between">
-                @if (PurchaseId == null)
-                {
-                   
-                }
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenSupplierPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
-                <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled />
-                <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled />
-            </div>
+        <div class="d-flex justify-content-between">
+
+            <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenSupplierDialogAsync"
+                           Icon="@Icons.Material.Filled.AdsClick">
+            </MudIconButton>
+            <MudAutocomplete T="SupplierModel" Label="Supplier"
+                             Value="selectedSupplier"
+                             ValueChanged="OnSupplierSelected"
+                             SearchFunc="SearchSupplierEntities"
+                             ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
+                             Clearable="true"
+                             ClearIcon="@Icons.Material.Filled.Clear"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="true" CoerceValue="true" />
         </div>
         <div class="text-center">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>

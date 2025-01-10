@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using System;
 
 namespace Inventory.Pages
@@ -11,19 +14,26 @@ namespace Inventory.Pages
     {
         [Parameter] public string PurchaseId { get; set; }
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
-        [Inject] private ISupplierRepository SuplierRepository { get; set; }
+        [Inject] private ISupplierRepository SupplierRepository { get; set; }
         [Inject] private ILogger<Purchase> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; }
+        [Inject] private IMapper Mapper { get; set; }
 
-        private bool isVisibleSupplierPopup = false;
         private SupplierEntity supplier = new();
+        private SupplierModel selectedSupplier;
         private PurchaseModel purchaseModel = new();
         private PurchaseEntity purchaseEntity = new();
         private ComponentTotalData PurchaseTotalData = new();
+
+        private List<SupplierModel> suppliers = new();
+        private List<SupplierModel> suppliersAfterSearch = new();
         private bool IsDisabled { get; set; }
 
         protected async override Task OnInitializedAsync()
         {
+            await GetSuppliersAsync();
             if (PurchaseId != null)
             {
                 purchaseEntity = await PurchaseRepository.GetById(Guid.Parse(PurchaseId));
@@ -35,7 +45,7 @@ namespace Inventory.Pages
                     purchaseModel.Remarks = purchaseEntity.Remarks;
                     purchaseModel.TotalAmountProduct = purchaseEntity.TotalAmountProduct;
                     purchaseModel.VoucherId = purchaseEntity.VoucherId;
-                    supplier = purchaseEntity.Supplier;
+                    OnSupplierSelected(Mapper.Map<SupplierModel>(purchaseEntity.Supplier));
                     PurchaseTotalData.Discount = purchaseEntity.Discount.GetValueOrDefault(0);
                     IsDisabled = false;
                     GetTotalAmount();
@@ -43,6 +53,10 @@ namespace Inventory.Pages
             }
             else
                 IsDisabled = true;
+
+
+            //Get suppliers for searching the autocomplete
+            await GetSuppliersAsync();
         }
         public async Task AddPurchase()
         {
@@ -61,7 +75,7 @@ namespace Inventory.Pages
                         Date = purchaseModel.Date,
                         Remarks = purchaseModel.Remarks,
                         Supplier = supplier,
-                        VoucherId = purchaseModel.VoucherId
+                        VoucherId = purchaseModel.VoucherId,
                     };
                     var id = await PurchaseRepository.Create(purchaseEntity);
                     PurchaseId = id.ToString();
@@ -71,7 +85,8 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Add new purchase error: " + ex.Message);
+                    //Snackbar message
+                    Snackbar.Add($"Saving Error: {ex.Message}", Severity.Error);
                 }
             }
         }
@@ -100,11 +115,11 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Update purchase: " + ex.Message);
+                    //Snackbar message
+                    Snackbar.Add($"Update Error: {ex.Message}", Severity.Error);
                 }
             }
         }
-
         public async Task DeletePurchase()
         {
             if (purchaseEntity != null)
@@ -120,7 +135,6 @@ namespace Inventory.Pages
                 navManager.NavigateTo("/purchases");
             }
         }
-
         public async Task AddTotalAmount()
         {
             try
@@ -136,23 +150,25 @@ namespace Inventory.Pages
             }
         }
 
-        public void OpenSupplierPopup()
+
+        public async Task OpenSupplierDialogAsync()
         {
-            isVisibleSupplierPopup = true;
-        }
-        public void CloseSupplierPopup(bool state)
-        {
-            isVisibleSupplierPopup = state;
-        }
-        public async void GetSupplierFromPopup(SupplierModel supplierFromPopup)
-        {
-            if (supplierFromPopup != null)
+            var options = new DialogOptions
             {
-                purchaseModel.SupplierId = supplierFromPopup.SupplierId;
-                purchaseModel.SupplierName = supplierFromPopup.Name;
-                supplier = await SuplierRepository.GetById(supplierFromPopup.Id);
+                MaxWidth = MaxWidth.Large,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                Position = DialogPosition.Center
+            };
+            var dialog = await DialogService.ShowAsync<SuppliersDialog>("Suppliers List", options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                var supplierModel = (SupplierModel)result.Data;
+                OnSupplierSelected(supplierModel);
             }
         }
+
 
         private void DiscountChanged(decimal value)
         {
@@ -171,6 +187,58 @@ namespace Inventory.Pages
         {
             if (change)
                 GetTotalAmount();
+        }
+
+        //New supplier methods
+
+        private async Task GetSuppliersAsync()
+        {
+            try
+            {
+                var suppliersDb = await SupplierRepository.GetAll();
+                if (suppliersDb.Count != 0)
+                {
+                    suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
+                    suppliersAfterSearch = suppliers;
+                }
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Something went wrong", Severity.Warning);
+            }
+        }
+        //On Supplier selected
+        private void OnSupplierSelected(SupplierModel? _supplier)
+        {
+            if (supplier != null)
+            {
+                selectedSupplier = _supplier;
+
+                //Set supplier entity to _supplier that is selected
+
+                supplier = Mapper.Map<SupplierEntity>(_supplier);
+
+
+                purchaseModel.SupplierId = _supplier.SupplierId;
+                purchaseModel.SupplierName = _supplier.Name;
+            }
+            else
+            {
+                selectedSupplier = new();
+                supplier = new();
+                purchaseModel.SupplierId = "";
+                purchaseModel.SupplierName = "";
+            }
+        }
+
+        private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(value))
+                return suppliersAfterSearch.ToList();
+
+            return suppliers.Where(n => n.SupplierId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+                            .ToList();
         }
     }
 }

@@ -11,6 +11,9 @@
         else
         {
             <MudTable Items="productsAfterSearch" Striped="true" Bordered="true" Class="my-mudtable">
+                <ToolBarContent>
+                    <Search SearchItemCallBack="SearchItem"/>
+                </ToolBarContent>
                 <HeaderContent>
                     <MudTh>Product ID</MudTh>
                     <MudTh>Product Name</MudTh>

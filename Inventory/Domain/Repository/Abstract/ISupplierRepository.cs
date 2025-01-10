@@ -1,4 +1,5 @@
 ﻿using Inventory.Domain.Entities;
+using Inventory.Models;
 
 namespace Inventory.Domain.Repository.Abstract
 {

@@ -1,7 +1,12 @@
-﻿using Inventory.Domain.Entities;
+﻿using AutoMapper;
+using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using System.Text.Json;
 
 namespace Inventory.Pages
 {
@@ -12,16 +17,24 @@ namespace Inventory.Pages
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private ILogger<SalesOrder> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; }
+        [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private IMapper Mapper { get; set; }
 
         private bool isVisibleCustomerPopup = false;
         private CustomerEntity customer = new();
+        private CustomerModel customerModel;
         private SalesOrderModel salesOrderModel = new();
         private SalesOrderEntity salesOrderEntity = new();
-        private ComponentTotalData SalesOrderTotalData = new();
+        private ComponentTotalData SalesOrderTotalData = new(); 
+        private List<CustomerModel> customers = new();
+        private List<CustomerModel> customersAfterSearch = new();
         private bool IsDisabled { get; set; }
 
         protected async override Task OnInitializedAsync()
         {
+
+            await GetCustomersAsync();
             if (SalesOrderId != null)
             {
                 salesOrderEntity = await SalesOrderRepository.GetById(Guid.Parse(SalesOrderId));
@@ -36,6 +49,10 @@ namespace Inventory.Pages
                     salesOrderModel.DueDate = salesOrderEntity.DueDate;
 
                     customer = salesOrderEntity.Customer;
+
+                    customerModel = Mapper.Map<CustomerModel>(customer);
+
+
                     IsDisabled = false;
                     GetTotalAmount();
 
@@ -75,7 +92,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Add new order error: " + ex.Message);
+                    Snackbar.Add("Something went wrong", Severity.Warning);
                 }
             }
         }
@@ -103,10 +120,11 @@ namespace Inventory.Pages
                     salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
 
                     await SalesOrderRepository.Update(salesOrderEntity);
+                    Snackbar.Add("Updated successfully", Severity.Success);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Update order: " + ex.Message);
+                    Snackbar.Add("Something went wrong", Severity.Warning);
                 }
             }
         }
@@ -117,11 +135,25 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    await SalesOrderRepository.Delete(salesOrderEntity);
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                {
+                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                    { x => x.ButtonText, "Delete" },
+                    { x => x.Color, Color.Error }
+                };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        await SalesOrderRepository.Delete(salesOrderEntity);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Delete order: " + ex.Message);
+                    Snackbar.Add("Something went wrong", Severity.Warning);
                 }
                 navManager.NavigateTo("/salesorders");
             }
@@ -137,26 +169,28 @@ namespace Inventory.Pages
             }
             catch (Exception ex)
             {
-                Logger.LogError("Add total amount: " + ex.Message);
+                Snackbar.Add("Something went wrong", Severity.Warning);
             }
         }
 
-        public void OpenCustomerPopup()
+        public async Task GetCustomerFromPopup()
         {
-            isVisibleCustomerPopup = true;
-        }
-        public void CloseCustomerPopup(bool state)
-        {
-            isVisibleCustomerPopup = state;
-        }
-
-        public async void GetCustomerFromPopup(CustomerModel customerFromPopup)
-        {
-            if (customerFromPopup != null)
+            var options = new DialogOptions
             {
-                salesOrderModel.CustomerId = customerFromPopup.CustomerId;
-                salesOrderModel.CustomerName = customerFromPopup.Name;
-                customer = await CustomerRepository.GetById(customerFromPopup.Id);
+                MaxWidth = MaxWidth.Large,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                Position = DialogPosition.Center
+            };
+
+            var dialog = await DialogService.ShowAsync<CustomerDialog>("Customer Dialog", options);
+            var result = await dialog.Result;
+
+
+            if (!result.Canceled)
+            {
+                var customerFromPopup = (CustomerModel)result.Data;
+                OnCustomerSelected(customerFromPopup);
             }
         }
 
@@ -173,10 +207,58 @@ namespace Inventory.Pages
             SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
         }
 
+
+        private async Task GetCustomersAsync()
+        {
+            try
+            {
+                var customerDb = await CustomerRepository.GetAll();
+                if (customerDb.Count != 0)
+                {
+                    customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
+                    customersAfterSearch = customers;
+                }
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Something went wrong", Severity.Warning);
+            }
+        }
+
         public void ChangeStateSalesOrderVariant(bool change)
         {
             if (change)
                 GetTotalAmount();
+        }
+
+        //Customer selection
+        private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(value))
+                return customersAfterSearch.ToList();
+            return customers.Where(n => n.Name.ToLower().Contains(value))
+                         .ToList() ?? null;
+        }
+        private async Task OnCustomerSelected(CustomerModel? _customer)
+        {
+            if (_customer != null)
+            {
+                customerModel = _customer;
+
+                customer = await CustomerRepository.GetById(_customer.Id);
+
+                salesOrderModel.CustomerId = _customer.CustomerId;
+                salesOrderModel.CustomerName = _customer.Name;
+            }
+            else
+            {
+                customerModel = null;
+                customer = new();
+                // Clear the fields if no product is selected
+                salesOrderModel.CustomerId = "";
+                salesOrderModel.CustomerName = "";
+            }
         }
     }
 }

@@ -30,8 +30,8 @@ namespace Inventory.Pages
         private List<SupplierModel> suppliersAfterSearch = new();
         private List<ProductModel> products = new();
         private List<ProductModel> productsAfterSearch = new();
-        private ProductModel selectedProduct = new();
-        private SupplierModel selectedSupplier = new();
+        private ProductModel selectedProduct;
+        private SupplierModel selectedSupplier;
         private List<PurchaseOrderEntity> ordersDb = new();
         private Snackbar snackbar;
 
