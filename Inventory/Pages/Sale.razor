@@ -143,23 +143,25 @@
         </EditForm>
             </div>
 
-    <div class="mt-4 mb-4">
-        @if (SaleId == null)
-        {
-            <button type="submit" id="button-submit" class="btn btn-success">Summarize</button>
-        }
-        else
-        {
-            <button type="submit" id="button-submit" class="btn btn-warning">Summarize</button>
-        }
-        <NavLink type="button" @onclick="OpenScanMassDialogAsync" id="button-close" class="btn btn-success ms-2">Scan Mass Products</NavLink>
-        <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>
-        @if (salesModel != null)
-        {
-            <button type="button" class="btn btn-danger ms-3" @onclick="ClearProductchoice">Clear Scan Area</button>
-        }
-        <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
-    </div>
+    <MudPaper Class="position-fixed bottom-0 mb-5 start-50 p-4">
+        <div class="mt-4 mb-4">
+            @if (SaleId == null)
+            {
+                <button type="submit" id="button-submit" class="btn btn-success">Summarize</button>
+            }
+            else
+            {
+                <button type="submit" id="button-submit" class="btn btn-warning">Summarize</button>
+            }
+            <NavLink type="button" @onclick="OpenScanMassDialogAsync" id="button-close" class="btn btn-primary ms-2">Scan Mass Products</NavLink>
+            <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>
+            @if (salesModel != null)
+            {
+                <button type="button" class="btn btn-danger ms-3" @onclick="ClearProductchoice">Clear Scan Area</button>
+            }
+            <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+        </div>
+    </MudPaper>
 
     <div class="d-flex justify-content-center">
         <div class="d-flex col-12">

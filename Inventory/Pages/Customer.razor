@@ -13,47 +13,58 @@
                         await UpdateCustomer();
                 } }">
     <DataAnnotationsValidator />
-    <div class="mb-2">
-        <label for="name" class="form-label">Name</label>
-        <InputText @bind-Value="customerModel.Name" id="name" class="form-control" autocomplete="off"/>
-    </div>
-    <div class="mb-2">
-        <label for="custid" class="form-label">Customer ID</label>
-        <InputText @bind-Value="customerModel.CustomerId" id="custid" class="form-control" rows="3" autocomplete="off" />
-    </div>
-    <div class="mb-2">
-        <label for="contact-person" class="form-label">Contact Person</label>
-        <InputText @bind-Value="customerModel.ContactPerson" id="contact-person" class="form-control" autocomplete="off" />
-    </div>
-    <div class="mb-2">
-        <label for="address" class="form-label">Address</label>
-        <InputText @bind-Value="customerModel.Address" id="address" class="form-control" autocomplete="off" />
-    </div>
-    <div class="mb-2">
-        <label for="area" class="form-label">Area</label>
-        <InputText @bind-Value="customerModel.Area" id="area" class="form-control" autocomplete="off" />
-    </div>
-    <div class="d-flex justify-content-between">
-        @foreach (var number in customerModel.Mobiles)
-        {
-            <div class="mb-3">
-                <label for="phone" class="form-label">Mobile</label>
-                <InputText id="phone" @bind-Value="number.Phone" class="form-control" autocomplete="off" />
+    
+    <MudStack Row="false" Spacing="20">
+        <div>
+            <div class="mb-2">
+                <label for="name" class="form-label">Name</label>
+                <InputText @bind-Value="customerModel.Name" id="name" class="form-control" autocomplete="off" />
             </div>
-        }
-    </div>
-    <div class="mb-3">
-        <label for="remarks" class="form-label">Remarks</label>
-        <InputTextArea @bind-Value="customerModel.Remarks" id="remarks" class="form-control" rows="3" />
-    </div>
-    <ValidationSummary />
-    <button type="submit" id="button-submit" class="btn btn-success">Save</button>
-    <NavLink type="button" href="/customers" id="button-close" class="btn btn-info ms-3">Close</NavLink>
-    @if (CustomerId != null)
-    {
-        <button type="button" class="btn btn-danger ms-3" @onclick="DeleteCustomer">Delete</button>
-    }
-    <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+            <div class="mb-2">
+                <label for="custid" class="form-label">Customer ID</label>
+                <InputText @bind-Value="customerModel.CustomerId" id="custid" class="form-control" rows="3" autocomplete="off" />
+            </div>
+            <div class="mb-2">
+                <label for="contact-person" class="form-label">Contact Person</label>
+                <InputText @bind-Value="customerModel.ContactPerson" id="contact-person" class="form-control" autocomplete="off" />
+            </div>
+            <div class="mb-2">
+                <label for="address" class="form-label">Address</label>
+                <InputText @bind-Value="customerModel.Address" id="address" class="form-control" autocomplete="off" />
+            </div>
+            <div class="mb-2">
+                <label for="area" class="form-label">Area</label>
+                <InputText @bind-Value="customerModel.Area" id="area" class="form-control" autocomplete="off" />
+            </div>
+            <div class="d-flex justify-content-between">
+                @foreach (var number in customerModel.Mobiles)
+                {
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Mobile</label>
+                        <InputText id="phone" @bind-Value="number.Phone" class="form-control" autocomplete="off" />
+                    </div>
+                }
+            </div>
+            <div class="mb-3">
+                <label for="remarks" class="form-label">Remarks</label>
+                <InputTextArea @bind-Value="customerModel.Remarks" id="remarks" class="form-control" rows="3" />
+            </div>
+            <ValidationSummary />
+        </div>
+
+        <div class="position-fixed bottom-0 mb-5 start-50">
+            <MudPaper Class="p-4">
+                <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+                <NavLink type="button" href="/customers" id="button-close" class="btn btn-info ms-3">Close</NavLink>
+                @if (CustomerId != null)
+                {
+                    <button type="button" class="btn btn-danger ms-3" @onclick="DeleteCustomer">Delete</button>
+                }
+                <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
+            </MudPaper>
+        </div>
+    </MudStack>
+
 </EditForm>
 
 

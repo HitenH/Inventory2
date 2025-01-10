@@ -84,22 +84,21 @@
     </div>
 
 
-    <div class="d-flex justify-content-around mt-3">
-        <div class="d-flex col-3">
-            <label for="totalquantity" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Quantity</label>
-            <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+    <MudPaper Class="p-4 position-fixed bottom-0 mb-5 start-50" Elevation="3">
+        <div class="d-flex justify-content-around mt-3">
+            <div class="d-flex col-3">
+                <label for="totalquantity" class="form-label d-flex align-items-end me-2">Total Quantity</label>
+                <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+            </div>
+            <div class="text-center d-flex col-3">
+                <label for="discount" class="form-label d-flex align-items-end me-2">Discount</label>
+                <NumberInput TValue="decimal" Value="SalesTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" ValueExpression="()=>SalesTotalData.Discount" />
+            </div>
+            <div class="text-center d-flex col-3">
+                <label for="totalamount" class="form-label d-flex align-items-end me-2">Total Amount</label>
+                <InputNumber @bind-Value="SalesTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
+            </div>
         </div>
-        <div class="text-center d-flex col-3">
-            <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
-            <NumberInput TValue="decimal" Value="SalesTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" ValueExpression="()=>SalesTotalData.Discount" />
-        </div>
-        <div class="text-center d-flex col-3">
-            <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>
-            <InputNumber @bind-Value="SalesTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
-        </div>
-    </div>
-
-    <div>
 
         <div class="text-center d-flex mt-4">
             <button type="submit" id="button-submit" class="btn btn-success">Save</button>
@@ -107,6 +106,6 @@
             <a class="btn btn-secondary ms-3" href="/sales">Close</a>
             <button type="button" class="btn btn-danger ms-3" @onclick="DeleteSales">Delete</button>
         </div>
-    </div>
+    </MudPaper>
 
 </EditForm>
