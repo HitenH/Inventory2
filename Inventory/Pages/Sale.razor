@@ -12,18 +12,28 @@
                         await EditOrder();
                 } }">
     <DataAnnotationsValidator />
-    <CustomerPopup IsVisible="isVisibleCustomerPopup" CloseCallBack="CloseCustomerPopup" CustomerCallBack="GetCustomerFromPopup" />
 
 
     <div class="d-flex justify-content-between">
         <div>
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
-            <div class="d-flex justify-content-between">
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2 text-center" @onclick="OpenCustomerPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
-                <InputText @bind-Value="salesModel.CustomerId" class="form-control text-center" disabled />
-                <InputText @bind-Value="salesModel.CustomerName" class="form-control text-center ms-2" disabled />
+            <div class="text-center">
+                <MudStack Row="true">
+                    <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="GetCustomerFromPopup" Icon="@Icons.Material.Filled.AdsClick">
+                    </MudIconButton>
+
+                    <MudAutocomplete T="CustomerModel" Label="Customer"
+                                     Value="customerModel"
+                                     ValueChanged="OnCustomerSelected"
+                                     SearchFunc="SearchCustomerEntities"
+                                     ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.CustomerId})")"
+                                     Clearable="true"
+                                     ClearIcon="@Icons.Material.Filled.Clear"
+                                     ResetValueOnEmptyText="true"
+                                     CoerceText="true" CoerceValue="true" />
+                </MudStack>
+                <InputText @bind-Value="salesModel.CustomerId" class="form-control text-center" disabled hidden />
+                <InputText @bind-Value="salesModel.CustomerName" class="form-control text-center ms-2" disabled hidden />
             </div>
         </div>
         <div class="text-center">
@@ -142,6 +152,7 @@
         {
             <button type="submit" id="button-submit" class="btn btn-warning">Summarize</button>
         }
+        <NavLink type="button" @onclick="OpenScanMassDialogAsync" id="button-close" class="btn btn-success ms-2">Scan Mass Products</NavLink>
         <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>
         @if (salesModel != null)
         {

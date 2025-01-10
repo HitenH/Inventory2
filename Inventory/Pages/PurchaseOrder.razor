@@ -37,7 +37,7 @@
                                  Value="selectedSupplier"
                                  ValueChanged="OnSupplierSelected"
                                  SearchFunc="SearchSupplierEntities"
-                                 ToStringFunc="@(e => e == null ? "Supplier" : $"{e.Name} ({e.SupplierId})")"
+                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
                                  Clearable="true"
                                  ClearIcon="@Icons.Material.Filled.Clear"
                                  ResetValueOnEmptyText="true"
@@ -59,7 +59,7 @@
                                  Clearable="true"
                                  ClearIcon="@Icons.Material.Filled.Clear"
                                  SearchFunc="SearchProductEntities"
-                                 ToStringFunc="@(e => e == null ? "Product" : $"{e.Name} ({e.ProductId})")"
+                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
                                  ResetValueOnEmptyText="true"
                                  CoerceText="true" CoerceValue="true" />
                 <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />

@@ -20,129 +20,133 @@
 }
 else
 {
-    <MudPaper Class="position-fixed z-20" Elevation="4">
-        <MudToolBar>
-            <MudButton Size="MudBlazor.Size.Small" Class="ma-1" Href="/customer" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
-                Add New Customer
-            </MudButton>
-            <MudFileUpload T="IBrowserFile" Accept=".csv, .xlsx" AppendMultipleFiles="false" FilesChanged="HandleFilesChanged">
-                <ActivatorContent>
-                    <MudButton Size="MudBlazor.Size.Small" Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
-                        Import Customers
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
+            <MudPaper>
+                <MudToolBar>
+                    <MudButton Size="MudBlazor.Size.Small" Class="ma-1" Href="/customer" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                        Add New Customer
                     </MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
-            <MudTooltip>
-                <ChildContent>
-                    <MudIconButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Icon="@Icons.Material.Filled.QuestionMark" Color="Color.Secondary">
-                    </MudIconButton>
-                </ChildContent>
-                <TooltipContent>
-                    Accepted formats: .csv, .xlsx
+                    <MudFileUpload T="IBrowserFile" Accept=".csv, .xlsx" AppendMultipleFiles="false" FilesChanged="HandleFilesChanged">
+                        <ActivatorContent>
+                            <MudButton Size="MudBlazor.Size.Small" Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
+                                Import Customers
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    <MudTooltip>
+                        <ChildContent>
+                            <MudIconButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Icon="@Icons.Material.Filled.QuestionMark" Color="Color.Secondary">
+                            </MudIconButton>
+                        </ChildContent>
+                        <TooltipContent>
+                            Accepted formats: .csv, .xlsx
 
-                    <div>
-                        <h2 id="customers">Customers</h2>
-                        <p>Your customer data should be formatted with the following columns:</p>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Column Name</th>
-                                    <th>Description</th>
-                                    <th>Example</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><code>CustomerId</code></td>
-                                    <td>Unique identifier for the customer.</td>
-                                    <td><code>CUST123</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>Name</code></td>
-                                    <td>Customer&#39;s name.</td>
-                                    <td><code>ABC Enterprises</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>ContactPerson</code></td>
-                                    <td>Name of the primary contact.</td>
-                                    <td><code>John Doe</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>Address</code></td>
-                                    <td>Customer&#39;s address.</td>
-                                    <td><code>123 Street, City</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>Area</code></td>
-                                    <td>Area or region of the customer.</td>
-                                    <td><code>Central Region</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>Remarks</code></td>
-                                    <td>Any additional notes about the customer.</td>
-                                    <td><code>VIP customer</code></td>
-                                </tr>
-                                <tr>
-                                    <td><code>Mobiles</code></td>
-                                    <td>List of customer mobile numbers (comma-separated).</td>
-                                    <td><code>+1234567890, +0987654321</code></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <h3 id="example-csv-format-">Example CSV format:</h3>
-                        <pre><code><span class="hljs-symbol">CustomerId</span>, Name, ContactPerson, <span class="hljs-keyword">Address, </span><span class="hljs-meta">Area</span>, Remarks, Mobiles
-                        <span class="hljs-symbol">CUST123</span>, ABC Enterprises, John Doe, <span class="hljs-number">123</span> <span class="hljs-keyword">Street, </span>City, VIP customer, +<span class="hljs-number">1234567890</span>,+<span class="hljs-number">0987654321</span>
-                                </code></pre>
-                    </div>
-                </TooltipContent>
-            </MudTooltip>
+                            <div>
+                                <h2 id="customers">Customers</h2>
+                                <p>Your customer data should be formatted with the following columns:</p>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Column Name</th>
+                                            <th>Description</th>
+                                            <th>Example</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>CustomerId</code></td>
+                                            <td>Unique identifier for the customer.</td>
+                                            <td><code>CUST123</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Name</code></td>
+                                            <td>Customer&#39;s name.</td>
+                                            <td><code>ABC Enterprises</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>ContactPerson</code></td>
+                                            <td>Name of the primary contact.</td>
+                                            <td><code>John Doe</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Address</code></td>
+                                            <td>Customer&#39;s address.</td>
+                                            <td><code>123 Street, City</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Area</code></td>
+                                            <td>Area or region of the customer.</td>
+                                            <td><code>Central Region</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Remarks</code></td>
+                                            <td>Any additional notes about the customer.</td>
+                                            <td><code>VIP customer</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>Mobiles</code></td>
+                                            <td>List of customer mobile numbers (comma-separated).</td>
+                                            <td><code>+1234567890, +0987654321</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <h3 id="example-csv-format-">Example CSV format:</h3>
+                                <pre><code><span class="hljs-symbol">CustomerId</span>, Name, ContactPerson, <span class="hljs-keyword">Address, </span><span class="hljs-meta">Area</span>, Remarks, Mobiles
+                                <span class="hljs-symbol">CUST123</span>, ABC Enterprises, John Doe, <span class="hljs-number">123</span> <span class="hljs-keyword">Street, </span>City, VIP customer, +<span class="hljs-number">1234567890</span>,+<span class="hljs-number">0987654321</span>
+                                                </code></pre>
+                            </div>
+                        </TooltipContent>
+                    </MudTooltip>
 
-            <Search SearchItemCallBack="SearchItem" />
-        </MudToolBar>
-    </MudPaper>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
 
 
-    <MudTable Items="customersAfterSearch" 
-        style="margin-top:6rem"
-    FixedHeader="true" 
-    Hover="true" 
-    Bordered="true" 
-    Striped="true"
-    @ref="mudTable"
-    OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<CustomerModel>>(this, RowClickEvent))"
-    Dense="true">
-        <HeaderContent>
-            <MudTh>
-                <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.CustomerId)">Customer ID</MudTableSortLabel>
-            </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Name)">Name</MudTableSortLabel>
-            </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Mobiles.FirstOrDefault()?.Phone)">
-                    Mobiles
-                </MudTableSortLabel>
-            </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Area)">
-                    Area
-                </MudTableSortLabel>
-            </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => totalAmount[x.Id])">
-                    Amount
-                </MudTableSortLabel>
-            </MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Customer ID">@context.CustomerId</MudTd>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
-            <MudTd DataLabel="Mobile">@(context.Mobiles.FirstOrDefault()?.Phone ?? "-")</MudTd>
-            <MudTd DataLabel="Area">@context.Area</MudTd>
-            <MudTd DataLabel="Amount">@totalAmount[context.Id]</MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
-        </NoRecordsContent>
-    </MudTable>
+        <MudTable Items="customersAfterSearch"
+                  style="margin-top:6rem"
+                  FixedHeader="true"
+                  Hover="true"
+                  Bordered="true"
+                  Striped="true"
+                  @ref="mudTable"
+                  OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<CustomerModel>>(this, RowClickEvent))"
+                  Dense="true">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.CustomerId)">Customer ID</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Name)">Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Mobiles.FirstOrDefault()?.Phone)">
+                        Mobiles
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Area)">
+                        Area
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => totalAmount[x.Id])">
+                        Amount
+                    </MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Customer ID">@context.CustomerId</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Mobile">@(context.Mobiles.FirstOrDefault()?.Phone ?? "-")</MudTd>
+                <MudTd DataLabel="Area">@context.Area</MudTd>
+                <MudTd DataLabel="Amount">@totalAmount[context.Id]</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudStack>
 }

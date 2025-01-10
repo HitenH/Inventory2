@@ -59,9 +59,9 @@ namespace Inventory.Pages
             }
         }
 
-        public void SearchItem(string e)
+        public void SearchItem(ChangeEventArgs e)
         {
-            var search = e.ToLower();
+            var search = e.Value.ToString().ToLower();
             salesOrdersAfterSearch = salesOrders.Where(n => n.CustomerName.ToLower().Contains(search)
                                                || n.VoucherId.ToString().Contains(search)
                                                || n.Date.ToString().Contains(search)

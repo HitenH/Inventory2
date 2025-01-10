@@ -17,13 +17,7 @@
         <!--TODO: Utilise MudBlazor to do these following two functions-->
         <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteSelectedOrders">Delete Selected Orders</MudButton>
         <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteCompletedOrders">Delete Completed Orders</MudButton>
-        <MudTextField Label="Search"
-                      T="string"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      Adornment="Adornment.Start"
-                      Placeholder="Search..."
-                      ValueChanged="@(s=>SearchItem(s))"
-                      Variant="MudBlazor.Variant.Outlined"></MudTextField>
+        <Search SearchItemCallBack="SearchItem"/>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>

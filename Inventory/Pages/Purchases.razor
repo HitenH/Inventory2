@@ -1,51 +1,57 @@
 ﻿@page "/purchases"
+@using Inventory.MudBlazorComponents
 
-
-
-<div class="d-flex justify-content-lg-between mb-3">
-    <NavLink href="/purchase" class="btn btn-secondary">Add New Purchase</NavLink>
-    <Search SearchItemCallBack="SearchItem"></Search>
-</div>
+<PagesHeader Title="Purchases" SubTitle="List of all purchases" />
 
 @if (purchasesAfterSearch == null)
 {
-    <p><em>Loading...</em></p>
+    <LoadingComponent />
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("VoucherId"))">Voucher ID</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("SupplierName"))">Supplier Name</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Date"))">Date</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Remarks"))">Remarks</th>
-                <th class="text-center column-item"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (purchasesAfterSearch.Count != 0)
-            {
-                @foreach (var purchase in purchasesAfterSearch.AsQueryable())
-                {
-                    <tr>
-                        <td class="text-center">@purchase.VoucherId</td>
-                        <td class="text-center">@purchase.SupplierName</td>
-                        <td class="text-center">@purchase.Date</td>
-                        <td class="text-center">@purchase.Remarks</td>
-                        <td class="text-center"><a class="btn btn-secondary" href="purchase/@purchase.Id">Info</a></td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6" class="text-center">
-                        Not Found!
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    <MudTable Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
+        <ToolBarContent>
 
+            <MudButton Class="ma-1" Href="/purchase" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                Add New Purchases
+            </MudButton>
+            <Search SearchItemCallBack="SearchItem" />
+        </ToolBarContent>
+    <HeaderContent>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.VoucherId)">
+                Voucher ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.SupplierName)">
+                Supplier Name
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
+                Date
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            Remarks
+        </MudTh>
+        <MudTh>
+            Actions
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+        <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
+        <MudTd DataLabel="Date">@context.Date</MudTd>
+        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+        <MudTd DataLabel="Actions">
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"purchase/{context.Id}")">Info</MudButton>
+        </MudTd>
+    </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="text-center">Not Found!</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+}

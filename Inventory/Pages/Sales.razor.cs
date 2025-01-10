@@ -1,6 +1,7 @@
 ﻿using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -8,10 +9,10 @@ namespace Inventory.Pages
     {
         [Inject] private ISaleRepository SaleRepository { get; set; }
         [Inject] private ILogger<Sales> Logger { get; set; }
+        [Inject] private NavigationManager navManager { get; set; }
 
         private List<SalesModel> sales = new();
         private List<SalesModel> salesAfterSearch = new();
-        private bool isSortAscending = false;
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
@@ -50,50 +51,9 @@ namespace Inventory.Pages
                                                         || n.Date.ToString().Contains(search)).ToList();
         }
 
-        public void SortItem(string column)
+        private void RowClickEvent(TableRowClickEventArgs<SalesModel> tableRowClickEventArgs)
         {
-            if (salesAfterSearch.Count != 0)
-            {
-                if (column == "VoucherId")
-                {
-                    if (isSortAscending)
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderBy(c => c.VoucherId).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderByDescending(c => c.VoucherId).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "CustomerName")
-                {
-                    if (isSortAscending)
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderBy(c => c.CustomerName).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderByDescending(c => c.CustomerName).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Date")
-                {
-                    if (isSortAscending)
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderBy(c => c.Date).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        salesAfterSearch = salesAfterSearch.OrderByDescending(c => c.Date).ToList();
-                        isSortAscending = true;
-                    }
-                }
-            }
+            navManager.NavigateTo($"salessummary/{tableRowClickEventArgs.Item.Id}");
         }
     }
 }

@@ -1,49 +1,40 @@
 ﻿@page "/sales"
+@using Inventory.MudBlazorComponents
 
-
-
-<div class="d-flex justify-content-lg-between mb-3">
-    <NavLink href="/sale" class="btn btn-secondary">Add New Sales</NavLink>
-    <Search SearchItemCallBack="SearchItem"></Search>
-</div>
-
-
+<PagesHeader Title="Sales" SubTitle="List of all sales" />
 @if (salesAfterSearch == null)
 {
-    <p><em>Loading...</em></p>
+    <LoadingComponent />
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("VoucherId"))">Voucher ID</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("CustomerName"))">Customer Name</th>
-                <th class="text-center column-item" @onclick="@(()=>SortItem("Date"))">Date</th>
-                <th class="text-center column-item"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (salesAfterSearch.Count != 0)
-            {
-                @foreach (var sale in salesAfterSearch.AsQueryable())
-                {
-                    <tr>
-                        <td class="text-center">@sale.VoucherId</td>
-                        <td class="text-center">@sale.CustomerName</td>
-                        <td class="text-center">@sale.Date</td>
-                        <td class="text-center"><a class="btn btn-secondary" href="salessummary/@sale.Id">Info</a></td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6" class="text-center">
-                        Not Found!
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudTable Items="salesAfterSearch" 
+                Hover="true" 
+                Bordered="true" 
+                Striped="true"
+                Dense="true"
+              OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SalesModel>>(this, RowClickEvent))">
+        <ToolBarContent>
+
+            <MudButton Class="ma-1" Href="/sale" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                Add New Sale
+            </MudButton>
+
+            <Search SearchItemCallBack="SearchItem" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.CustomerName)">Customer Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+            <MudTd DataLabel="Customer Name">@context.CustomerName</MudTd>
+            <MudTd DataLabel="Date">@context.Date</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="text-center">Not Found!</MudText>
+        </NoRecordsContent>
+    </MudTable>
+
 }

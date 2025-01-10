@@ -1,0 +1,13 @@
+<MudContainer Class="ma-3">
+    <MudText Typo="Typo.h3">@Title</MudText>
+    <MudText Typo="Typo.body1">@SubTitle</MudText>
+</MudContainer>
+
+@code{
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public string SubTitle { get; set; }
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}

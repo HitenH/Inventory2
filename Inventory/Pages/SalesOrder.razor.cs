@@ -21,7 +21,6 @@ namespace Inventory.Pages
         [Inject] private IDialogService DialogService { get; set; }
         [Inject] private IMapper Mapper { get; set; }
 
-        private bool isVisibleCustomerPopup = false;
         private CustomerEntity customer = new();
         private CustomerModel customerModel;
         private SalesOrderModel salesOrderModel = new();
@@ -33,7 +32,6 @@ namespace Inventory.Pages
 
         protected async override Task OnInitializedAsync()
         {
-
             await GetCustomersAsync();
             if (SalesOrderId != null)
             {
@@ -173,6 +171,26 @@ namespace Inventory.Pages
             }
         }
 
+
+        private void DiscountChanged(decimal value)
+        {
+            SalesOrderTotalData.Discount = value;
+            GetTotalAmount();
+        }
+
+        public void GetTotalAmount()
+        {
+            SalesOrderTotalData.TotalQuantity = salesOrderEntity.SalesOrderVariants.Select(x => x.Quantity).Sum().Value;
+            var amount = salesOrderEntity.SalesOrderVariants.Select(v => v.AmountAfterDiscount).Sum().Value;
+            SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
+        }
+
+        public void ChangeStateSalesOrderVariant(bool change)
+        {
+            if (change)
+                GetTotalAmount();
+        }
+
         public async Task GetCustomerFromPopup()
         {
             var options = new DialogOptions
@@ -193,21 +211,6 @@ namespace Inventory.Pages
                 OnCustomerSelected(customerFromPopup);
             }
         }
-
-        private void DiscountChanged(decimal value)
-        {
-            SalesOrderTotalData.Discount = value;
-            GetTotalAmount();
-        }
-
-        public void GetTotalAmount()
-        {
-            SalesOrderTotalData.TotalQuantity = salesOrderEntity.SalesOrderVariants.Select(x => x.Quantity).Sum().Value;
-            var amount = salesOrderEntity.SalesOrderVariants.Select(v => v.AmountAfterDiscount).Sum().Value;
-            SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
-        }
-
-
         private async Task GetCustomersAsync()
         {
             try
@@ -226,19 +229,21 @@ namespace Inventory.Pages
             }
         }
 
-        public void ChangeStateSalesOrderVariant(bool change)
-        {
-            if (change)
-                GetTotalAmount();
-        }
 
         //Customer selection
         private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
         {
-            if (string.IsNullOrEmpty(value))
+            try
+            {
+                if (string.IsNullOrEmpty(value))
+                    return customersAfterSearch.ToList();
+                return customers.Where(n => n.Name.ToLower().Contains(value)).ToList() ?? null;
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Normal);
                 return customersAfterSearch.ToList();
-            return customers.Where(n => n.Name.ToLower().Contains(value))
-                         .ToList() ?? null;
+            }
         }
         private async Task OnCustomerSelected(CustomerModel? _customer)
         {
