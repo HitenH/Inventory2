@@ -10,6 +10,7 @@ namespace Inventory.Domain.Entities
         public string? Name { get; set; }
         public Image? Image { get; set; }
         public Guid? ProductEntityId { get; set; }
+        public int? ReorderLevel { get; set; }
         public ProductEntity Product { get; set; }
         public List<PurchaseVariant>? PurchaseVariants { get; set; }
         public List<SalesOrderVariantEntity>? SalesOrderVariants { get; set; }

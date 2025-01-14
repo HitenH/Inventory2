@@ -1,104 +1,97 @@
-﻿
-<h3 class="d-flex justify-content-center mb-2 mt-4">Variants</h3>
-<EditForm EditContext="editContext" class="card-header"
-          OnSubmit="async ()=>
+﻿@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4" Elevation="3">
+    <EditForm EditContext="editContext" OnSubmit="async () => await (variantModel.Id == Guid.Empty ? AddVariant() : EditVariant())">
+        <DataAnnotationsValidator />
+        <MudStack Row="true" Spacing="3">
+            <MudTextField Label="Variant ID"
+                          @ref="variantInputRef"
+                          @bind-Value="variantModel.VariantId"
+                          InputType="InputType.Text" />
+            <MudTextField Label="Variant Name"
+                          @bind-Value="variantModel.Name"
+                          InputType="InputType.Text" />
+            <MudTextField Label="Stock In Hand"
+                          @bind-Value="variantModel.StockInHand"
+                          Disabled
+                          InputType="InputType.Number" />
+            <MudTextField Label="Reorder Level"
+                          @bind-Value="variantModel.ReorderLevel"
+                          InputType="InputType.Number" />
+            <div>
+                <label for="image" class="form-label">Image (jpeg)</label>
+                @if (!bclearinputfile)
                 {
-                    if(variantModel.Id == Guid.Empty){
-                        await AddVariant();
+                    <InputFile OnChange="UploadFile" accept=".jpg, .jpeg" class="form-control" />
                 }
-                    else{
-                        await EditVariant();
-                } }">
-    <DataAnnotationsValidator />
-    <div class="d-flex flex-row justify-content-between">
-        <div class="d-flex justify-content-around align-items-center col-1">
-            <button type="submit" id="button-submit" class="btn btn-light btn-variant-add">
-                <img src="img/add.png" alt="add" class="variant-add-img" />
-            </button>
-            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelVariant">
-                <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
-            </button>
-        </div>
-        <div class="mb-2 col-2">
-            <label for="variantid" class="form-label">Variant Id</label>
-            <InputText @bind-Value="variantModel.VariantId" id="variantid" class="form-control" />
-        </div>
-        <div class="mb-2 col-3">
-            <label for="name" class="form-label">Variant Name</label>
-            <InputText @bind-Value="variantModel.Name" id="name" class="form-control" />
-        </div>
-        <div class="mb-2 col-3">
-            <label for="stock" class="form-label">Stock in Hand</label>
-            <InputNumber @bind-Value="variantModel.StockInHand" id="stock" class="form-control" disabled />
-        </div>
-        <div class="mb-2 col-2">
-            <label for="image" class="form-label">Image (jpeg)</label>
-            @if (!bclearinputfile)
+            </div>
+            <MudStack Spacing="3">
+                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Submit" />
+                <MudIconButton OnClick="CancelVariant" Icon="@Icons.Material.Filled.Cancel" />
+            </MudStack>
+        </MudStack>
+        <ValidationSummary />
+    </EditForm>
+</MudPaper>
+<MudTable Items="variants" Dense="true" Bordered="true" Striped="true" Class="mt-2">
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.VariantId)">
+                Variant ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.Name)">
+                Name
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.StockInHand)">
+                Stock In Hand
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.ReorderLevel)">
+                Reorder Level
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.Image)">
+                Image
+            </MudTableSortLabel>
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            <MudIconButton Variant="MudBlazor.Variant.Filled" OnClick="() => UpdateVariant(context)" Icon="@Icons.Material.Filled.Edit">
+            </MudIconButton>
+            <MudIconButton Variant="MudBlazor.Variant.Filled" OnClick="() => DeleteVariant(context.Id)" Icon="@Icons.Material.Filled.Delete">
+            </MudIconButton>
+        </MudTd>
+        <MudTd>@context.VariantId</MudTd>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>@stockInHand[context.Id]</MudTd>
+        <MudTd>@context.ReorderLevel</MudTd>
+        <MudTd>
+            @if (context.Image != null)
             {
-                <InputFile OnChange="UploadFile" accept=".jpg, jpeg" class="form-control" />
+                <MudImage Src="@GetImage(context.Image)"
+                          Width="80"
+                          Height="80"
+                          Alt="Swedish Farm House"
+                          @onclick="() => OpenImagePopup(context.Image)"
+                          Elevation="25"
+                          Class="rounded-lg ma-4" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               OnClick="async () => await DeleteFile(context.Image)"
+                               Variant="MudBlazor.Variant.Filled">
+                </MudIconButton>
             }
-        </div>
-    </div>
-
-    <ValidationSummary />
-</EditForm>
-
-
-<table class="table table-striped table-bordered mt-2">
-    <thead>
-        <tr>
-            <th class="text-center"></th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Name"))">Name</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("StockInHand"))">Stock In Hand</th>
-            <th class="text-center">Image</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (variants.Count != 0)
-        {
-            @foreach (var variant in variants.AsQueryable())
-            {
-                <tr>
-                    <td class="text-center col-1">
-                        <div>
-                            <button class="btn btn-light btn-variant-edit">
-                                <img src="img/edit.png" alt="add" class="variant-edit-img" @onclick="()=>UpdateVariant(variant)" />
-                            </button>
-                            <button class="btn btn-light btn-variant-delete">
-                                <img src="img/delete.png" alt="add" class="variant-delete-img" @onclick="()=>DeleteVariant(variant.Id)" />
-                            </button>
-                        </div>
-                    </td>
-                    <td class="text-center">@variant.VariantId</td>
-                    <td class="text-center">@variant.Name</td>
-                    <td class="text-center">@stockInHand[variant.Id]</td>
-                    <td class="text-center">
-                        @if (variant.Image != null)
-                        {
-                            <ModalWindowShowImage ImageTitle="@variant.Image.ImageTitle" ImageData="@GetImage(@variant.Image)" @ref="modalWindowShowImageRefs[variant.Id]" />
-
-                            <Button Color="ButtonColor.Light" @onclick="()=>OnShowModalClick(variant.Id)">
-                                <img src="@GetImage(@variant.Image)" style="height:50px; width:50px;" />
-                            </Button>
-                            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="async ()=> await DeleteFile(variant.Image)">
-                                <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
-                            </button>
-                        }
-                    </td>
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="6" class="text-center">
-                    Not Found!
-                </td>
-            </tr>
-        }
-
-    </tbody>
-</table>
-
-<ModalWindow TitleMessage="@titleMessage" MessageShort="@errorMessageShort" MessageLong="@errorMessageFull" CloseModalWindow="CloseModalWindow" @ref="modalWindowComponenRef" />
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudTd Class="text-center">Not Found!</MudTd>
+    </NoRecordsContent>
+</MudTable>
