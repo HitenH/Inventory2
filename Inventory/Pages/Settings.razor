@@ -1,0 +1,99 @@
+﻿@page "/settings"
+@using Inventory.MudBlazorComponents
+@using Inventory.Service
+@inject BackupService backupService
+@inject ISnackbar snackbar
+@inject IDialogService DialogService
+
+<PagesHeader Title="Settings" SubTitle="Reports, backups, overview" />
+
+<MudContainer>
+    <MudTable Items="backupFiles" Hover="true" Bordered="true" Striped="true">
+        <ToolBarContent>
+            <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Backup">
+                Backup
+            </MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Backup File</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Backup File">@context</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => RestoreBackup(context)">
+                    Restore
+                </MudButton>
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => DeleteBackup(context)">
+                    Delete
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="text-center">Not Found!</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private List<string> backupFiles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        backupFiles = backupService.GetBackupFiles();
+    }
+
+    //Method to backup at current time
+    private void Backup()
+    {
+        try
+        {
+            backupService.BackupDatabase();
+            snackbar.Add("Backup created successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Failed to create backup", Severity.Error);
+        }
+    }
+
+    private void RestoreBackup(string backupFilePath)
+    {
+        try
+        {
+            backupService.RestoreDatabase(backupFilePath);
+            snackbar.Add("Restored the backup", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Failed to restore the backup", Severity.Error);
+        }
+    }
+
+    private async Task DeleteBackup(string backupFilePath)
+    {
+        try
+        {
+            var parameters = new DialogParameters<ConfirmationDialog>
+                    {
+                        { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                        { x => x.ButtonText, "Delete" },
+                        { x => x.Color, Color.Error }
+                    };
+
+            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                backupService.DeleteBackup(backupFilePath);
+                snackbar.Add("Deleted the backup", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("Failed to delete the backup", Severity.Error);
+        }
+    }
+}

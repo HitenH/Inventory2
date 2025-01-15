@@ -1,7 +1,10 @@
 ﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -10,6 +13,8 @@ namespace Inventory.Pages
         [Parameter] public string SalesId { get; set; }
         [Inject] public ISaleRepository SaleRepository { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; }
         [Inject] private ILogger<SalesSummary> Logger { get; set; }
 
         private SalesEntity salesEntity = new();
@@ -95,11 +100,26 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    await SaleRepository.Delete(salesEntity);
+                    var parameters = new DialogParameters<ConfirmationDialog>
+                    {
+                        { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                        { x => x.ButtonText, "Delete" },
+                        { x => x.Color, Color.Error }
+                    };
+
+                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
+                    var result = await dialog.Result;
+                    if (!result.Canceled)
+                    {
+                        await SaleRepository.Delete(salesEntity);
+                        Snackbar.Add("Deleted sale successfully", Severity.Success);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Delete sales " + ex.Message);
+                    Snackbar.Add($"Error deleting sale: {ex.Message}", Severity.Error);
                 }
                 navManager.NavigateTo("/sales");
             }

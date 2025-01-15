@@ -13,6 +13,9 @@
                 <MudNavLink Icon="@Icons.Material.Filled.AccountCircle">
                     @context.User.Identity?.Name
                 </MudNavLink>
+                <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">
+                    Settings
+                </MudNavLink>
 
                 <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">
                     Logout

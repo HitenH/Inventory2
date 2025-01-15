@@ -1,7 +1,10 @@
-﻿using Inventory.Domain.Entities;
+﻿using AutoMapper;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Shared
 {
@@ -12,11 +15,16 @@ namespace Inventory.Shared
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
+        [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; }
+        [Inject] private IMapper Mapper { get; set; }
         [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
 
-        private bool isVisibleProductPopup = false;
         private ProductEntity product = new();
         private int serialnumber = 1;
+        private List<ProductModel> products = new();
+        private List<ProductModel> productsAfterSearch = new();
+        private ProductModel selectedProduct;
 
         private PurchaseVariantModel purchaseVariant = new();
         private List<PurchaseVariantModel> purchaseVariants = new();
@@ -29,6 +37,10 @@ namespace Inventory.Shared
             {
                 serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
             }
+        }
+        protected override async Task OnInitializedAsync()
+        {
+            await GetProductsAsync();
         }
         protected override void OnAfterRender(bool firstRender)
         {
@@ -122,28 +134,6 @@ namespace Inventory.Shared
             purchaseVariant = new();
             product = new();
             purchaseVariantEntity = new();
-        }
-
-        public void OpenProductPopup()
-        {
-            isVisibleProductPopup = true;
-        }
-
-        public void CloseProductPopup(bool state)
-        {
-            isVisibleProductPopup = state;
-        }
-
-        public async Task GetProductFromPopup(ProductModel productFromPopup)
-        {
-            if (productFromPopup != null)
-            {
-                purchaseVariant.ProductRate = productFromPopup.Rate;
-                purchaseVariant.ProductId = productFromPopup.ProductId;
-                purchaseVariant.ProductName = productFromPopup.Name;
-                purchaseVariant.VariantEntytiId = null;
-                product = await ProductRepository.GetById(productFromPopup.Id);
-            }
         }
 
         public void QuantityChanged(int? value)
@@ -339,6 +329,66 @@ namespace Inventory.Shared
             }
         }
 
-       
+
+        public async Task OpenProductDialogAsync()
+        {
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Large,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                Position = DialogPosition.Center
+            };
+            var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                selectedProduct = (ProductModel)result.Data;
+                OnProductSelected(selectedProduct);
+            }
+        }
+        
+        private async Task OnProductSelected(ProductModel? _product)
+        {
+            if (_product != null)
+            {
+                product = await ProductRepository.GetById(_product.Id);
+                purchaseVariant.ProductId = _product.ProductId;
+                purchaseVariant.ProductName = _product.Name;
+            }
+            else
+            {
+                product = new();
+                // Clear the fields if no product is selected
+                purchaseVariant.ProductId = "";
+                purchaseVariant.ProductName = "";
+            }
+        }
+        private async Task GetProductsAsync()
+        {
+            try
+            {
+                var productsDb = await ProductRepository.GetAll();
+                if (productsDb.Count != 0)
+                {
+                    products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
+                    productsAfterSearch = products;
+                }
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Something went wrong while getting products.", Severity.Error);
+            }
+        }
+        //Getting data for products
+        private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(value))
+                return productsAfterSearch.ToList();
+            return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+                         .ToList();
+        }
     }
 }

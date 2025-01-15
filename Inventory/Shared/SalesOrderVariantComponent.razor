@@ -23,19 +23,23 @@
             <label for="serialnumber" class="form-label">Sl.</label>
             <InputNumber @bind-Value="serialnumber" id="serialnumber" class="form-control text-center" />
         </div>
-        <div class="col-2 text-center">
-            <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
-            <label for="productid" class="form-label">Product ID</label>
-            <div class="d-flex justify-content-between">
-                <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                    <img src="img/select.png" alt="select" class="select-img" />
-                </button>
-                <InputText @bind-Value="salesOrderVariantModel.ProductId" id="productid" class="form-control text-center" requared disabled />
-            </div>
-        </div>
-        <div class="col-1 text-center">
-            <label for="productname" class="form-label">Product Name</label>
-            <InputText @bind-Value="salesOrderVariantModel.ProductName" id="productname" class="form-control text-center" requared disabled />
+        <div class="col-3 text-center">
+
+            <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
+                           Icon="@Icons.Material.Filled.AdsClick">
+            </MudIconButton>
+            <MudAutocomplete T="ProductModel" Label="Product"
+                             Placeholder="Product"
+                             Value="selectedProduct"
+                             ValueChanged="OnProductSelected"
+                             Clearable="true"
+                             ClearIcon="@Icons.Material.Filled.Clear"
+                             SearchFunc="SearchProductEntities"
+                             ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="true" CoerceValue="true" />
+            <InputText @bind-Value="salesOrderVariantModel.ProductId" class="form-control text-center" disabled hidden />
+            <InputText @bind-Value="salesOrderVariantModel.ProductName" class="form-control text-center" disabled hidden />
         </div>
         <div class="mb-2 col-1 text-center">
             <label for="variantid" class="form-label">Variant ID</label>

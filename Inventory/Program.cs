@@ -55,6 +55,7 @@ builder.Services.AddTransient<ISalesOrderVariantRepository, SalesOrderVariantRep
 builder.Services.AddTransient<ISaleRepository, SaleRepositoryEF>();
 builder.Services.AddTransient<ProtectedSessionStorage>();
 builder.Services.AddTransient<IMobileService, MobileService>();
+builder.Services.AddSingleton<BackupService>(provider => new BackupService($"{AppDomain.CurrentDomain.BaseDirectory}/Backups"));
 builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
