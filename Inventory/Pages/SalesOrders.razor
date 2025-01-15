@@ -1,63 +1,69 @@
 ﻿@page "/salesorders"
 
-<MudTable Items="@salesOrdersAfterSearch"
-          Hover="true"
-          Bordered="true"
-          Striped="true"
-          Dense="true"
-          MultiSelection="true"
-          SelectionChangeable="true"
-          @bind-SelectedItems="selectedSalesOrders"
-          SelectOnRowClick="true">
-    <ToolBarContent>
-        <MudButton Class="ms-1 me-1" Href="/salesorder" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
-            Add Sales Order
-        </MudButton>
+<MudStack Spacing="20" Row="false">
+    <div class="position-fixed z-3">
+        <MudPaper>
+            <MudToolBar>
+                <MudButton Class="ms-1 me-1" Href="/salesorder" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                    Add
+                </MudButton>
 
-        <!--TODO: Utilise MudBlazor to do these following two functions-->
-        <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteSelectedOrders">Delete Selected Orders</MudButton>
-        <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteCompletedOrders">Delete Completed Orders</MudButton>
-        <Search SearchItemCallBack="SearchItem"/>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.VoucherId)">
-                Voucher ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.CustomerName)">
-                Customer Name
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.Date)">
-                Date
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.DueDate)">
-                Due Date
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.OrderStatus)">
-                Status
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd>@context.VoucherId</MudTd>
-        <MudTd>@context.CustomerName</MudTd>
-        <MudTd>@context.Date</MudTd>
-        <MudTd>@context.DueDate</MudTd>
-        <MudTd>@context.OrderStatus</MudTd>
-        <MudTd>
-            <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"salesorder/{context.Id}")">Info</MudButton>
-        </MudTd>
-    </RowTemplate>
-    @* <RowEditingTemplate>
+                <!--TODO: Utilise MudBlazor to do these following two functions-->
+                <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteSelectedOrders">Delete Selected</MudButton>
+                <MudButton Class="ms-1 me-1" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" OnClick="DeleteCompletedOrders">Delete Completed</MudButton>
+                <Search SearchItemCallBack="SearchItem" />
+            </MudToolBar>
+        </MudPaper>
+    </div>
+    <MudTable Items="@salesOrdersAfterSearch"
+              style="margin-top:6rem"
+              Hover="true"
+              Bordered="true"
+              Striped="true"
+              Dense="true"
+              MultiSelection="true"
+              SelectionChangeable="true"
+              @bind-SelectedItems="selectedSalesOrders"
+              SelectOnRowClick="true">
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.VoucherId)">
+                    Voucher ID
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.CustomerName)">
+                    Customer Name
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.Date)">
+                    Date
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.DueDate)">
+                    Due Date
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<SalesOrderModel, object>(x => x.OrderStatus)">
+                    Status
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.VoucherId</MudTd>
+            <MudTd>@context.CustomerName</MudTd>
+            <MudTd>@context.Date</MudTd>
+            <MudTd>@context.DueDate</MudTd>
+            <MudTd>@context.OrderStatus</MudTd>
+            <MudTd>
+                <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"salesorder/{context.Id}")">Info</MudButton>
+            </MudTd>
+        </RowTemplate>
+        @* <RowEditingTemplate>
         <MudTd>
             <MudTextField @bind-Value="@context.VoucherId" Disabled />
         </MudTd>
@@ -80,7 +86,9 @@
         </MudSelect>
         <MudTd>N/A</MudTd>
     </RowEditingTemplate> *@
-    <NoRecordsContent>
-        <MudText Align="Align.Center">Not Found!</MudText>
-    </NoRecordsContent>
-</MudTable>
+        <NoRecordsContent>
+            <MudText Align="Align.Center">Not Found!</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudStack>
+

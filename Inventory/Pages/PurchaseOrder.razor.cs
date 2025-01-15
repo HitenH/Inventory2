@@ -310,10 +310,11 @@ namespace Inventory.Pages
 
         private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
         {
+            var loweredValue = value.ToLower();
             if (string.IsNullOrEmpty(value))
                 return suppliersAfterSearch.ToList();
 
-            return suppliers.Where(n => n.SupplierId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+            return suppliers.Where(n => n.SupplierId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                             .ToList();
         }
 
@@ -337,9 +338,10 @@ namespace Inventory.Pages
         //Getting data for products
         private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
         {
+            var loweredValue = value.ToLower();
             if (string.IsNullOrEmpty(value))
                 return productsAfterSearch.ToList();
-            return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+            return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                          .ToList();
         }
         //On Supplier selected

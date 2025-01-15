@@ -1,7 +1,6 @@
 ﻿@page "/purchases"
 @using Inventory.MudBlazorComponents
 
-<PagesHeader Title="Purchases" SubTitle="List of all purchases" />
 
 @if (purchasesAfterSearch == null)
 {
@@ -9,49 +8,58 @@
 }
 else
 {
-    <MudTable Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
-        <ToolBarContent>
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
 
-            <MudButton Class="ma-1" Href="/purchase" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
-                Add New Purchases
-            </MudButton>
-            <Search SearchItemCallBack="SearchItem" />
-        </ToolBarContent>
-    <HeaderContent>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.VoucherId)">
-                Voucher ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.SupplierName)">
-                Supplier Name
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
-                Date
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            Remarks
-        </MudTh>
-        <MudTh>
-            Actions
-        </MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
-        <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
-        <MudTd DataLabel="Date">@context.Date</MudTd>
-        <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
-        <MudTd DataLabel="Actions">
-                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"purchase/{context.Id}")">Info</MudButton>
-        </MudTd>
-    </RowTemplate>
-        <NoRecordsContent>
-            <MudText Class="text-center">Not Found!</MudText>
-    </NoRecordsContent>
-</MudTable>
+            <PagesHeader Title="Purchases" SubTitle="List of all purchases" />
+            <MudPaper>
+                <MudToolBar>
 
+                    <MudButton Class="ma-1" Href="/purchase" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                        Add New Purchases
+                    </MudButton>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
+
+        <MudTable style="margin-top:6rem" Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.VoucherId)">
+                        Voucher ID
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.SupplierName)">
+                        Supplier Name
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
+                        Date
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    Remarks
+                </MudTh>
+                <MudTh>
+                    Actions
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+                <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
+                <MudTd DataLabel="Date">@context.Date</MudTd>
+                <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"purchase/{context.Id}")">Info</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="text-center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+
+    </MudStack>
 }

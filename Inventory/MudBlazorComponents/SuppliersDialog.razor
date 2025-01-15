@@ -11,6 +11,9 @@
         else
         {
             <MudTable T="SupplierModel" Items="suppliersAfterSearch" Bordered="true" Striped="true">
+                <ToolBarContent>
+                    <Search SearchItemCallBack="SearchItem"></Search>
+                </ToolBarContent>
                 <HeaderContent>
                     <MudTh>
                         <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.SupplierId)">

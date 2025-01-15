@@ -9,53 +9,60 @@
 }
 else
 {
-    <MudTable Items="suppliersAfterSearch" FixedHeader="true" 
-        Dense="true" Bordered="true" Striped="true"
-              OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SupplierModel>>(this, RowClickEvent))">
-    <ToolBarContent>
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
+            <MudPaper>
+                <MudToolBar>
 
-            <MudButton Class="ma-1" Href="/supplier" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">Add New Supplier</MudButton>
+                    <MudButton Class="ma-1" Href="/supplier" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">Add New Supplier</MudButton>
 
-            <Search SearchItemCallBack="SearchItem" />
-    </ToolBarContent>
-        <HeaderContent>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.SupplierId)">
-                Supplier ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Name)">
-                Name
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Mobiles.FirstOrDefault().Phone)">
-                Mobile
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Area)">
-                Area
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<SupplierModel, object>(f => totalAmount[f.Id])">
-                Amount
-            </MudTableSortLabel>
-        </MudTh>
-    </HeaderContent>
-    <RowTemplate>
-            <MudTd>@context.SupplierId</MudTd>
-            <MudTd>@context.Name</MudTd>
-            <MudTd>@(context.Mobiles?.Count > 0 ? context.Mobiles.First().Phone : "-")</MudTd>
-            <MudTd>@context.Area</MudTd>
-            <MudTd>@totalAmount[context.Id]</MudTd>
-    </RowTemplate>
-        <NoRecordsContent>
-            <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
-    </NoRecordsContent>
-</MudTable>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
+        <MudTable Items="suppliersAfterSearch" FixedHeader="true"
+                  style="margin-top:6rem"
+                  Dense="true" Bordered="true" Striped="true"
+                  OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SupplierModel>>(this, RowClickEvent))">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.SupplierId)">
+                        Supplier ID
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Name)">
+                        Name
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Mobiles.FirstOrDefault().Phone)">
+                        Mobile
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SupplierModel, object>(x => x.Area)">
+                        Area
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SupplierModel, object>(f => totalAmount[f.Id])">
+                        Amount
+                    </MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.SupplierId</MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>@(context.Mobiles?.Count > 0 ? context.Mobiles.First().Phone : "-")</MudTd>
+                <MudTd>@context.Area</MudTd>
+                <MudTd>@totalAmount[context.Id]</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudStack>
 
 }
 

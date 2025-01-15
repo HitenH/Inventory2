@@ -385,9 +385,11 @@ namespace Inventory.Shared
         //Getting data for products
         private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
         {
+            var loweredValue = value.ToLower();
+
             if (string.IsNullOrEmpty(value))
                 return productsAfterSearch.ToList();
-            return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+            return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                          .ToList();
         }
     }

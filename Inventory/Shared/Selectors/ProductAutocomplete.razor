@@ -1,0 +1,88 @@
+﻿@using System.Threading
+@using System.Threading.Tasks
+@using AutoMapper
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
+@using MudBlazor
+
+@typeparam T
+
+<div class="d-flex justify-content-between">
+    <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
+                   Icon="@Icons.Material.Filled.AdsClick">
+    </MudIconButton>
+    <MudAutocomplete T="ProductModel" Label="Product"
+                     Placeholder="Product"
+                     Value="@SelectedProduct"
+                     ValueChanged="SelectedProductChanged"
+                     Clearable="true"
+                     ClearIcon="@Icons.Material.Filled.Clear"
+                     SearchFunc="@SearchProductEntities"
+                     ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
+                     ResetValueOnEmptyText="true"
+                     CoerceText="true" CoerceValue="true" />
+</div>
+
+@code {
+    [Parameter] public EventCallback<ProductModel> SelectedProductChanged { get; set; }
+    [Parameter] public ProductModel SelectedProduct { get; set; }
+    [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; }
+
+    private ProductEntity product = new();
+    private List<ProductModel> products = new();
+    private List<ProductModel> productsAfterSearch = new();
+
+    public async Task OpenProductDialogAsync()
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Large,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                Position = DialogPosition.Center
+            };
+        var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            SelectedProduct = (ProductModel)result.Data;
+            StateHasChanged();
+            await SelectedProductChanged.InvokeAsync(SelectedProduct);
+        }
+    }
+
+    private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return productsAfterSearch.ToList();
+        return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+                      .ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetProductsAsync();
+    }
+
+    private async Task GetProductsAsync()
+    {
+        try
+        {
+            var productsDb = await ProductRepository.GetAll();
+            if (productsDb.Count != 0)
+            {
+                products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
+                productsAfterSearch = products;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Something went wrong while getting products.", Severity.Error);
+        }
+    }
+}

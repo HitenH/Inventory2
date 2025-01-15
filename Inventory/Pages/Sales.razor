@@ -1,40 +1,48 @@
 ﻿@page "/sales"
 @using Inventory.MudBlazorComponents
 
-<PagesHeader Title="Sales" SubTitle="List of all sales" />
 @if (salesAfterSearch == null)
 {
     <LoadingComponent />
 }
 else
 {
-    <MudTable Items="salesAfterSearch" 
-                Hover="true" 
-                Bordered="true" 
-                Striped="true"
-                Dense="true"
-              OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SalesModel>>(this, RowClickEvent))">
-        <ToolBarContent>
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
+            <MudPaper>
+                <MudToolBar>
 
-            <MudButton Class="ma-1" Href="/sale" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
-                Add New Sale
-            </MudButton>
+                    <MudButton Class="ma-1" Href="/sale" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
+                        Add New Sale
+                    </MudButton>
 
-            <Search SearchItemCallBack="SearchItem" />
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.CustomerName)">Customer Name</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
-            <MudTd DataLabel="Customer Name">@context.CustomerName</MudTd>
-            <MudTd DataLabel="Date">@context.Date</MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <MudText Class="text-center">Not Found!</MudText>
-        </NoRecordsContent>
-    </MudTable>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
+
+        <MudTable Items="salesAfterSearch"
+                  style="margin-top:6rem"
+                  Hover="true"
+                  Bordered="true"
+                  Striped="true"
+                  Dense="true"
+                  OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SalesModel>>(this, RowClickEvent))">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.CustomerName)">Customer Name</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+                <MudTd DataLabel="Customer Name">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Date">@context.Date</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="text-center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+
+    </MudStack>
 
 }

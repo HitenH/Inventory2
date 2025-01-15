@@ -23,8 +23,6 @@ public partial class Sale
     [Inject] private IDialogService DialogService { get; set; }
     [Inject] private IMapper Mapper { get; set; }
 
-
-    private bool isVisibleCustomerPopup = false;
     private bool IsDisabled { get; set; }
     private CustomerEntity customer = new();
     private SalesModel salesModel = new();
@@ -218,8 +216,9 @@ public partial class Sale
             }
         }
         CancelSalesVariant();
-        StateHasChanged();
+        await productInput.FocusAsync();
         await FocusInput();
+        StateHasChanged();
     }
 
     public async Task EditVariant()

@@ -14,7 +14,7 @@ namespace Inventory.Domain.Entities
         public List<SalesSummaryEntity>? SalesSummaries { get; set; } = new();
         public string? Remarks { get; set; }
         public decimal TotalQuantity { get; set; }
-        public decimal Discoint { get; set; }
+        public decimal Discount { get; set; }
         public decimal TotalAmountProduct { get; set; }
     }
 }

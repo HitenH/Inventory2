@@ -82,13 +82,14 @@ namespace Inventory.Pages
                 {
                     salesEntity.SalesSummaries = salesSummaryEntityList;
                     salesEntity.TotalQuantity = SalesTotalData.TotalQuantity;
-                    salesEntity.Discoint = SalesTotalData.Discount;
+                    salesEntity.Discount = SalesTotalData.Discount;
                     salesEntity.TotalAmountProduct = SalesTotalData.TotalAmount;
                     await SaleRepository.Update(salesEntity);
+                    Snackbar.Add("Sale made successfully", Severity.Success);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Sales summary add: " + ex.Message);
+                    Snackbar.Add($"Sale failed: {ex.Message}", Severity.Error);
                 }
                 navManager.NavigateTo("/sales");
             }
@@ -175,7 +176,7 @@ namespace Inventory.Pages
         {
             SalesTotalData.TotalQuantity = salesSummaryEntityList.Select(x => x.Quantity).Sum();
             var amount = salesSummaryEntityList.Select(v => v.AmountAfterDiscount).Sum();
-            SalesTotalData.TotalAmount = amount - SalesTotalData.Discount;
+            SalesTotalData.TotalAmount = amount - SalesTotalData.Discount;        
         }
     }
 }
