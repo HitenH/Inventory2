@@ -7,20 +7,25 @@
 
 @typeparam T
 
-<div class="d-flex justify-content-between">
-    <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
-                   Icon="@Icons.Material.Filled.AdsClick">
-    </MudIconButton>
-    <MudAutocomplete T="ProductModel" Label="Product"
-                     Placeholder="Product"
-                     Value="@SelectedProduct"
-                     ValueChanged="SelectedProductChanged"
-                     Clearable="true"
-                     ClearIcon="@Icons.Material.Filled.Clear"
-                     SearchFunc="@SearchProductEntities"
-                     ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
-                     ResetValueOnEmptyText="true"
-                     CoerceText="true" CoerceValue="true" />
+<div class="row">
+    <div class="col-3">
+        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
+                       Icon="@Icons.Material.Filled.AdsClick">
+        </MudIconButton>
+    </div>
+    <div class="col-9">
+        <AutoComplete @bind-Value="name"
+                      TItem="ProductModel"
+                      @ref="autoComplete"
+                      DataProvider="CustomersDataProvider"
+                      PropertyName="Name"
+                      Placeholder="Search a product..."
+                      StringComparison="StringComparison.Ordinal"
+                      OnChanged="(ProductModel customer) => OnAutoCompleteChanged(customer)" />
+    </div>
+</div>
+<div class="@(string.IsNullOrEmpty(productTitle) ? "d-none" : "d-block")">
+    Product selected: @productTitle
 </div>
 
 @code {
@@ -31,9 +36,17 @@
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
 
+    private AutoComplete<ProductModel> autoComplete;
+    private string productTitle = string.Empty;
+    private string name;
     private ProductEntity product = new();
     private List<ProductModel> products = new();
     private List<ProductModel> productsAfterSearch = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetProductsAsync();
+    }
 
     public async Task OpenProductDialogAsync()
     {
@@ -50,7 +63,7 @@
         if (!result.Canceled)
         {
             SelectedProduct = (ProductModel)result.Data;
-            StateHasChanged();
+            productTitle = SelectedProduct.Name;
             await SelectedProductChanged.InvokeAsync(SelectedProduct);
         }
     }
@@ -61,11 +74,6 @@
             return productsAfterSearch.ToList();
         return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
                       .ToList();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await GetProductsAsync();
     }
 
     private async Task GetProductsAsync()
@@ -84,5 +92,17 @@
         {
             Snackbar.Add("Something went wrong while getting products.", Severity.Error);
         }
+    }
+
+    private async Task<AutoCompleteDataProviderResult<ProductModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<ProductModel> request)
+    {
+        var prods = await SearchProductEntities(request.Filter.Value, request.CancellationToken);
+
+        return await Task.FromResult(new AutoCompleteDataProviderResult<ProductModel> { Data = prods });
+    }
+
+    private async Task OnAutoCompleteChanged(ProductModel product)
+    {
+        await SelectedProductChanged.InvokeAsync(product);
     }
 }

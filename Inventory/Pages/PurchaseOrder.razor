@@ -11,8 +11,8 @@
                         await EditPurchaseOrder();
                 } }">
     <DataAnnotationsValidator />
-       <div class="d-flex flex-row justify-content-between">
-        <div class="d-flex justify-content-around align-items-center">
+    <div class="d-flex flex-row justify-content-between">
+        <div class="col-3 d-flex justify-content-around align-items-center">
             <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
                 <img src="img/add.png" alt="add" class="variant-add-img" />
             </button>
@@ -20,54 +20,56 @@
                 <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
             </button>
         </div>
-        <div class="mb-2 col-1 text-center">
+        <div class="mb-2 col-3 text-center">
             <label for="date" class="form-label">Date</label>
             <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.Date" id="date" class="form-control text-center" />
         </div>
-        <div class="mb-2 col-2 text-center">
+        <div class="mb-2 col-3 text-center">
             <label for="supplierid" class="form-label">Supplier ID</label>
             <div class="d-flex justify-content-between">
 
                 <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenSupplierDialogAsync"
-                               Icon="@Icons.Material.Filled.AdsClick">
+                                Icon="@Icons.Material.Filled.AdsClick">
                 </MudIconButton>
 
 
                 <MudAutocomplete T="SupplierModel" Label="Supplier"
-                                 Value="selectedSupplier"
-                                 ValueChanged="OnSupplierSelected"
-                                 SearchFunc="SearchSupplierEntities"
-                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
-                                 Clearable="true"
-                                 ClearIcon="@Icons.Material.Filled.Clear"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true" CoerceValue="true" />
+                                    Value="selectedSupplier"
+                                    ValueChanged="OnSupplierSelected"
+                                    SearchFunc="SearchSupplierEntities"
+                                    ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
+                                    Clearable="true"
+                                    ClearIcon="@Icons.Material.Filled.Clear"
+                                    ResetValueOnEmptyText="true"
+                                    CoerceText="true" CoerceValue="true" />
 
                 <InputText @bind-Value="purchaseOrderModel.SupplierId" class="form-control text-center" disabled hidden />
             </div>
         </div>
-        <div class="mb-2 col-2 text-center">
+        <div class="mb-2 col-3 text-center">
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
                 <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenProductDialogAsync"
-                               Icon="@Icons.Material.Filled.AdsClick">
+                                Icon="@Icons.Material.Filled.AdsClick">
                 </MudIconButton>
                 <MudAutocomplete T="ProductModel" Label="Product"
-                                 Placeholder="Product"
-                                 Value="selectedProduct"
-                                 ValueChanged="OnProductSelected"
-                                 Clearable="true"
-                                 ClearIcon="@Icons.Material.Filled.Clear"
-                                 SearchFunc="SearchProductEntities"
-                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
-                                 ResetValueOnEmptyText="false"
-                                 CoerceText="true" 
-                                 CoerceValue="true" />
+                                    Placeholder="Product"
+                                    Value="selectedProduct"
+                                    ValueChanged="OnProductSelected"
+                                    Clearable="true"
+                                    ClearIcon="@Icons.Material.Filled.Clear"
+                                    SearchFunc="SearchProductEntities"
+                                    ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
+                                    ResetValueOnEmptyText="false"
+                                    CoerceText="true" 
+                                    CoerceValue="true" />
                 <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />
                 <InputText @bind-Value="purchaseOrderModel.ProductName" class="form-control text-center" disabled hidden />
             </div>
         </div>
-        <div class="mb-2 col-1 text-center">
+    </div>
+    <div class="d-flex flex-row justify-content-between">
+        <div class="m-1 col-3 text-center">
             <MudSelect @bind-Value="purchaseOrderModel.VariantId"
                        Variant="MudBlazor.Variant.Outlined"
                        Label="Variant">
@@ -80,21 +82,21 @@
                 }
             </MudSelect>
         </div>
-        <div class="mb-2 col-1 text-center">
+        <div class="m-1 col-2 text-center">
             <label for="quantity" class="form-label">Quantity</label>
             <InputNumber @bind-Value="purchaseOrderModel.Quantity" id="quantity" class="form-control text-center" />
         </div>
-        <div class="mb-2 col-1 text-center">
+        <div class="m-1 col-2 text-center">
             <label for="duedate" class="form-label">Due Date</label>
             <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" id="variantid" class="form-control text-center" />
         </div>
-        <div class="mb-2 col-1 text-center">
+        <div class="m-1 col-2 text-center">
             <label for="productrate" class="form-label">Rate</label>
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
-        <div class="mb-2 col-1 text-center">
+        <div class="m-1 col-3 text-center">
             <MudSelect @bind-Value="purchaseOrderModel.OrderStatus"
-                        Variant="Variant.Outlined"
+                       Variant="Variant.Outlined"
                        Label="Order Status"
                        T="OrderStatus">
                 @foreach (OrderStatus item in orderStatuses)
@@ -103,7 +105,6 @@
                 }
             </MudSelect>
         </div>
-       
     </div>
     <div class="mb-2 col-12 text-center">
         <label for="remarks" class="form-label">Remarks</label>

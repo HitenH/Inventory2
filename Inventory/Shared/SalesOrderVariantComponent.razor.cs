@@ -40,12 +40,10 @@ namespace Inventory.Shared
                 serialnumber = SalesOrder.SalesOrderVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
             }
         }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             GetSalesOrderVariants();
             GetAmount();
-            await GetProductsAsync();
         }
 
         public async Task AddVariant()
@@ -345,65 +343,15 @@ namespace Inventory.Shared
             }
         }
 
-        public async Task OpenProductDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-            var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
-            {
-                selectedProduct = (ProductModel)result.Data;
-                OnProductSelected(selectedProduct);
-            }
-        }
-
         private async Task OnProductSelected(ProductModel? _product)
         {
             if (_product != null)
             {
+                selectedProduct = _product;
                 product = await ProductRepository.GetById(_product.Id);
                 salesOrderVariantModel.ProductId = _product.ProductId;
                 salesOrderVariantModel.ProductName = _product.Name;
             }
-            else
-            {
-                product = new();
-                // Clear the fields if no product is selected
-                salesOrderVariantModel.ProductId = "";
-                salesOrderVariantModel.ProductName = "";
-            }
-        }
-        private async Task GetProductsAsync()
-        {
-            try
-            {
-                var productsDb = await ProductRepository.GetAll();
-                if (productsDb.Count != 0)
-                {
-                    products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
-                    productsAfterSearch = products;
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add("Something went wrong while getting products.", Severity.Error);
-            }
-        }
-        //Getting data for products
-        private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
-        {
-            if (string.IsNullOrEmpty(value))
-                return productsAfterSearch.ToList();
-            return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
-                         .ToList();
         }
     }
 }

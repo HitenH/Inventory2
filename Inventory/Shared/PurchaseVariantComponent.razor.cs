@@ -24,7 +24,7 @@ namespace Inventory.Shared
         [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
 
         private ProductEntity product = new();
-        private ProductEntity selectedProduct;
+        private ProductModel selectedProduct;
         private int serialnumber = 1;
         private List<ProductEntity> products = new();
         private List<ProductEntity> productsAfterSearch = new();
@@ -41,10 +41,6 @@ namespace Inventory.Shared
             {
                 serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
             }
-        }
-        protected override async Task OnInitializedAsync()
-        {
-            await GetProductsAsync();
         }
         protected override void OnAfterRender(bool firstRender)
         {
@@ -352,82 +348,15 @@ namespace Inventory.Shared
             }
         }
 
-
-        public async Task OpenProductDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-            var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
-            {
-                await OnProductSelected((ProductModel)result.Data);
-            }
-        }
-
-        private async Task OnProductEntitySelected(ProductEntity? _product)
-        {
-            if (_product != null)
-            {
-                product = _product;
-                purchaseVariant.ProductId = _product.ProductId;
-                purchaseVariant.ProductName = _product.Name;
-            }
-            else
-                return;
-        }
-
         private async Task OnProductSelected(ProductModel? _product)
         {
             if (_product != null)
             {
+                selectedProduct = _product;
                 product = await ProductRepository.GetById(_product.Id);
                 purchaseVariant.ProductId = _product.ProductId;
                 purchaseVariant.ProductName = _product.Name;
             }
-            else
-            {
-                product = new();
-                // Clear the fields if no product is selected
-                purchaseVariant.ProductId = "";
-                purchaseVariant.ProductName = "";
-            }
-        }
-
-        private async Task GetProductsAsync()
-        {
-            try
-            {
-                var productsDb = await ProductRepository.GetAll();
-                if (productsDb.Count != 0)
-                {
-                    products = productsDb.Select(p => Mapper.Map<ProductEntity>(p)).ToList();
-                    productsAfterSearch = products;
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add("Something went wrong while getting products.", Severity.Error);
-            }
-        }
-        //Getting data for products
-        private async Task<IEnumerable<ProductEntity>> SearchProductEntities(string value, CancellationToken token)
-        {
-            string loweredValue = "";
-            if (string.IsNullOrEmpty(value))
-            {
-                return productsAfterSearch.ToList();
-            }
-            loweredValue = value.ToLower();
-            return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
-                         .ToList();
         }
     }
 }

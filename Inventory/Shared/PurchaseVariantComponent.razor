@@ -1,4 +1,5 @@
 ﻿@using Inventory.Domain.Entities
+@using Inventory.Shared.Selectors
 
 
 <EditForm Model="@purchaseVariant" class="card-header mt-5"
@@ -24,25 +25,13 @@
             <label for="serialnumber" class="form-label">Sl.</label>
             <InputNumber @bind-Value="serialnumber" id="serialnumber" class="form-control text-center" />
         </div>
-        <div class="d-flex justify-content-between">
+        <div class="col-2 text-center">
+            
+            <label for="variantid" class="form-label">Product Selection</label>
+            <ProductAutocomplete T="ProductModel" 
+                        SelectedProduct="selectedProduct"
+                        SelectedProductChanged="OnProductSelected" />
 
-
-            <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
-                           Icon="@Icons.Material.Filled.AdsClick">
-            </MudIconButton>
-            <MudAutocomplete T="ProductEntity" 
-                            Label="Product"
-                             Placeholder="Product"
-                             @ref="productAutocomplete"
-                             Value="selectedProduct"
-                             ValueChanged="OnProductEntitySelected"
-                             Clearable="true"
-                             ClearIcon="@Icons.Material.Filled.Clear"
-                             SelectValueOnTab="true"
-                             SearchFunc="SearchProductEntities"
-                             ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
-                             ResetValueOnEmptyText="false"
-                             CoerceText="true" CoerceValue="true" />
             <InputText @bind-Value="purchaseVariant.ProductId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="purchaseVariant.ProductName" class="form-control text-center" disabled hidden />
 
