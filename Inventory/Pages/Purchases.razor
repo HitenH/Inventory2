@@ -29,13 +29,13 @@ else
                     </MudTableSortLabel>
                 </MudTh>
                 <MudTh>
-                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.SupplierName)">
-                        Supplier Name
+                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
+                        Date
                     </MudTableSortLabel>
                 </MudTh>
                 <MudTh>
-                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
-                        Date
+                    <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.SupplierName)">
+                        Supplier Name
                     </MudTableSortLabel>
                 </MudTh>
                 <MudTh>
@@ -47,8 +47,8 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
-                <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
                 <MudTd DataLabel="Date">@context.Date</MudTd>
+                <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
                 <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"purchase/{context.Id}")">Info</MudButton>

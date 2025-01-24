@@ -39,7 +39,7 @@ namespace Inventory.Pages
                     if (list.Count != 0)
                     {
                         products = list.Select(c => Mapper.Map<ProductModel>(c)).ToList();
-                        productsAfterSearch = products;
+                        productsAfterSearch = [.. products.OrderByDescending(o => o.Name)];
                     }
                 }
                 catch (Exception ex)

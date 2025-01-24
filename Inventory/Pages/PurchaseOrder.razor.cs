@@ -62,7 +62,8 @@ namespace Inventory.Pages
                     SupplierId = o.SupplierId,
                     VariantId = o.VariantId
                 }).ToList();
-                ordersAfterSearch = orders;
+                //Order by Date latest
+                ordersAfterSearch = [.. orders.OrderByDescending(o => o.Date)];
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -72,7 +73,7 @@ namespace Inventory.Pages
         }
         public async Task AddPurchaseOrder()
         {
-            if (purchaseOrderModel != null)
+            if (purchaseOrderModel != null || selectedProduct != null)
             {
                 try
                 {
@@ -95,6 +96,10 @@ namespace Inventory.Pages
                 {
                     Logger.LogError("Add new order error: " + ex.Message);
                 }
+            }
+            else
+            {
+                Snackbar.Add("There is data missing", Severity.Info);
             }
         }
 
@@ -310,9 +315,10 @@ namespace Inventory.Pages
 
         private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
         {
-            var loweredValue = value.ToLower();
             if (string.IsNullOrEmpty(value))
                 return suppliersAfterSearch.ToList();
+
+            string loweredValue = value.ToLower() ?? null;
 
             return suppliers.Where(n => n.SupplierId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                             .ToList();
@@ -338,9 +344,9 @@ namespace Inventory.Pages
         //Getting data for products
         private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
         {
-            var loweredValue = value.ToLower();
             if (string.IsNullOrEmpty(value))
                 return productsAfterSearch.ToList();
+            var loweredValue = value.ToLower();
             return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                          .ToList();
         }

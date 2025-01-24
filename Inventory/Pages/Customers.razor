@@ -111,7 +111,6 @@ else
                   Hover="true"
                   Bordered="true"
                   Striped="true"
-                  @ref="mudTable"
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<CustomerModel>>(this, RowClickEvent))"
                   Dense="true">
             <HeaderContent>

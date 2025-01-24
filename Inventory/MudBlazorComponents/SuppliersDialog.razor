@@ -33,8 +33,8 @@
                     <MudTd DataLabel="Supplier ID">@context.SupplierId</MudTd>
                     <MudTd DataLabel="Supplier Name">@context.Name</MudTd>
                     <MudTd DataLabel="Actions">
-                        <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Primary" OnClick="@(async () => await SelectSupplier(@context))">
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                        <MudButton Class="mx-2" OnClick="@(async () => await SelectSupplier(@context))">
+                            Select
                         </MudButton>
                     </MudTd>
                 </RowTemplate>

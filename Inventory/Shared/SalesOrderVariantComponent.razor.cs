@@ -41,10 +41,11 @@ namespace Inventory.Shared
             }
         }
 
-        protected override void OnAfterRender(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             GetSalesOrderVariants();
             GetAmount();
+            await GetProductsAsync();
         }
 
         public async Task AddVariant()

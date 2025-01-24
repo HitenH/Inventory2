@@ -25,8 +25,6 @@ namespace Inventory.Pages
 
         private List<CustomerModel> customers = new();
         private List<CustomerModel> customersAfterSearch = new();
-        private MudTable<CustomerModel> mudTable;
-        private int selectedRowNumber = -1;
         private IDialogReference dialogReference;
         private Dictionary<Guid, decimal> totalAmount = new();
 
@@ -40,7 +38,7 @@ namespace Inventory.Pages
                     if (list.Count != 0)
                     {
                         customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
-                        customersAfterSearch = customers;
+                        customersAfterSearch = [.. customers.OrderByDescending(o => o.Name)];
                         GetTotalAmount();
                         StateHasChanged();
                     }
@@ -130,15 +128,22 @@ namespace Inventory.Pages
 
             for (int row = 2; row <= rowCount; row++) // Assuming row 1 contains headers
             {
+
+                //get the value of mobiles from column 7, split by commas and convert to list
+                var mobiles = worksheet.Cell(row, 7).GetValue<string>().Split(',').Select(x => new Mobile { Phone = x }).ToList();
+
+
                 var customer = new CustomerModel
                 {
+
                     Id = Guid.NewGuid(),
                     CustomerId = worksheet.Cell(row, 1).GetValue<string>(), // Column 1
                     Name = worksheet.Cell(row, 2).GetValue<string>(),       // Column 2
                     ContactPerson = worksheet.Cell(row, 3).GetValue<string>(), // Column 3
                     Address = worksheet.Cell(row, 4).GetValue<string>(),    // Column 4
                     Area = worksheet.Cell(row, 5).GetValue<string>(),       // Column 5
-                    Remarks = worksheet.Cell(row, 6).GetValue<string>()     // Column 6
+                    Remarks = worksheet.Cell(row, 6).GetValue<string>(),   // Column 6
+                    Mobiles = mobiles,
                 };
 
                 // Add the customer to the database or a collection
@@ -146,6 +151,7 @@ namespace Inventory.Pages
 
                 //Snackbar of progress
                 Snackbar.Add($"Imported {row - 1}", Severity.Info);
+                StateHasChanged();
             }
 
             //Snackbar of completion

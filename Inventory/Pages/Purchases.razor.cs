@@ -37,7 +37,7 @@ namespace Inventory.Pages
                              TotalAmountProduct = c.TotalAmountProduct
                          }
                         ).ToList();
-                        purchasesAfterSearch = purchases;
+                        purchasesAfterSearch = [.. purchases.OrderByDescending(o => o.Date)];
                     }
                     StateHasChanged();
                 }

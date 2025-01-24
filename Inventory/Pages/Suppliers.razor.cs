@@ -15,7 +15,6 @@ namespace Inventory.Pages
 
         private List<SupplierModel> suppliers = new();
         private List<SupplierModel> suppliersAfterSearch = new();
-        private bool isSortAscending = false;
         private Dictionary<Guid,decimal> totalAmount = new();
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -28,7 +27,7 @@ namespace Inventory.Pages
                     if (list.Count != 0)
                     {
                         suppliers = list.Select(c => Mapper.Map<SupplierModel>(c)).ToList();
-                        suppliersAfterSearch = suppliers;
+                        suppliersAfterSearch = [.. suppliers.OrderByDescending(o => o.Name)];
                         GetTotalAmount();
                         StateHasChanged();
                     }

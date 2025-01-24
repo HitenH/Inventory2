@@ -235,9 +235,13 @@ namespace Inventory.Pages
         {
             try
             {
-                var loweredValue = value.ToLower();
+                string loweredValue = "";
+
                 if (string.IsNullOrEmpty(value))
                     return customersAfterSearch.ToList();
+
+
+                loweredValue = value.ToLower();
                 return customers.Where(n => n.Name.ToLower().Contains(loweredValue)).ToList() ?? null;
             }
             catch (Exception ex)

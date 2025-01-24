@@ -33,7 +33,7 @@ namespace Inventory.Pages
                              Id = c.Id
                          }
                         ).ToList();
-                        salesAfterSearch = sales;
+                        salesAfterSearch = [.. sales.OrderByDescending(o => o.CustomerName)];
                     }
                     StateHasChanged();
                 }

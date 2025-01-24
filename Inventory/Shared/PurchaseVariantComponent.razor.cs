@@ -4,6 +4,8 @@ using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Inventory.Shared
@@ -16,20 +18,22 @@ namespace Inventory.Shared
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
         [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private IJSRuntime JSRuntime { get; set; }
         [Inject] private ISnackbar Snackbar { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private ILogger<PurchaseVariantComponent> Logger { get; set; }
 
         private ProductEntity product = new();
+        private ProductEntity selectedProduct;
         private int serialnumber = 1;
-        private List<ProductModel> products = new();
-        private List<ProductModel> productsAfterSearch = new();
-        private ProductModel selectedProduct;
+        private List<ProductEntity> products = new();
+        private List<ProductEntity> productsAfterSearch = new();
 
         private PurchaseVariantModel purchaseVariant = new();
         private List<PurchaseVariantModel> purchaseVariants = new();
         private PurchaseVariant purchaseVariantEntity = new();
         private bool isSortAscending = false;
+        private MudAutocomplete<ProductEntity> productAutocomplete;
 
         protected override void OnParametersSet()
         {
@@ -65,12 +69,16 @@ namespace Inventory.Shared
                     purchaseVariantEntity.PurchaseEntityId = Purchase.Id;
 
                     purchaseVariantEntity.Product = product;
+
                     Purchase.PurchaseVariants.Add(purchaseVariantEntity);
                     await PurchaseRepository.Update(Purchase);
 
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;
+
+                    await FocusInput();
+
                     await ChangeState.InvokeAsync(true);
                 }
                 catch (Exception ex)
@@ -97,6 +105,7 @@ namespace Inventory.Shared
                         purchaseVariantEntity.Discount = purchaseVariant.Discount;
                         purchaseVariantEntity.AmountAfterDiscount = purchaseVariant.AmountAfterDiscount;
                         purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
+
                         purchaseVariantEntity.Product = product;
 
                         await PurchaseVariantRepository.Update(purchaseVariantEntity);
@@ -110,6 +119,16 @@ namespace Inventory.Shared
                 Logger.LogError("Update purchase error: " + ex.Message);
             }
         }
+
+
+        private async Task FocusInput()
+        {
+            await productAutocomplete.ClearAsync();
+            await productAutocomplete.FocusAsync();
+            await JSRuntime.InvokeVoidAsync("setFocus", productAutocomplete);
+            StateHasChanged();
+        }
+
 
         public async Task DeletePurchaseVariant(Guid id)
         {
@@ -131,6 +150,10 @@ namespace Inventory.Shared
 
         public void CancelPurchaseVariant()
         {
+            selectedProduct = new();
+            product = new();
+            purchaseVariant.ProductId = "";
+            purchaseVariant.ProductName = "";
             purchaseVariant = new();
             product = new();
             purchaseVariantEntity = new();
@@ -344,11 +367,22 @@ namespace Inventory.Shared
 
             if (!result.Canceled)
             {
-                selectedProduct = (ProductModel)result.Data;
-                OnProductSelected(selectedProduct);
+                await OnProductSelected((ProductModel)result.Data);
             }
         }
-        
+
+        private async Task OnProductEntitySelected(ProductEntity? _product)
+        {
+            if (_product != null)
+            {
+                product = _product;
+                purchaseVariant.ProductId = _product.ProductId;
+                purchaseVariant.ProductName = _product.Name;
+            }
+            else
+                return;
+        }
+
         private async Task OnProductSelected(ProductModel? _product)
         {
             if (_product != null)
@@ -365,6 +399,7 @@ namespace Inventory.Shared
                 purchaseVariant.ProductName = "";
             }
         }
+
         private async Task GetProductsAsync()
         {
             try
@@ -372,7 +407,7 @@ namespace Inventory.Shared
                 var productsDb = await ProductRepository.GetAll();
                 if (productsDb.Count != 0)
                 {
-                    products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
+                    products = productsDb.Select(p => Mapper.Map<ProductEntity>(p)).ToList();
                     productsAfterSearch = products;
                 }
                 StateHasChanged();
@@ -383,12 +418,14 @@ namespace Inventory.Shared
             }
         }
         //Getting data for products
-        private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
+        private async Task<IEnumerable<ProductEntity>> SearchProductEntities(string value, CancellationToken token)
         {
-            var loweredValue = value.ToLower();
-
+            string loweredValue = "";
             if (string.IsNullOrEmpty(value))
+            {
                 return productsAfterSearch.ToList();
+            }
+            loweredValue = value.ToLower();
             return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
                          .ToList();
         }

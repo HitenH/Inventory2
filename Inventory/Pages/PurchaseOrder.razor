@@ -33,7 +33,7 @@
                 </MudIconButton>
 
 
-                <MudAutocomplete T="SupplierModel" Label="Supplier ID"
+                <MudAutocomplete T="SupplierModel" Label="Supplier"
                                  Value="selectedSupplier"
                                  ValueChanged="OnSupplierSelected"
                                  SearchFunc="SearchSupplierEntities"
@@ -60,15 +60,16 @@
                                  ClearIcon="@Icons.Material.Filled.Clear"
                                  SearchFunc="SearchProductEntities"
                                  ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true" CoerceValue="true" />
+                                 ResetValueOnEmptyText="false"
+                                 CoerceText="true" 
+                                 CoerceValue="true" />
                 <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />
                 <InputText @bind-Value="purchaseOrderModel.ProductName" class="form-control text-center" disabled hidden />
             </div>
         </div>
         <div class="mb-2 col-1 text-center">
             <MudSelect @bind-Value="purchaseOrderModel.VariantId"
-                       Variant="MudBlazor.Variant.Filled"
+                       Variant="MudBlazor.Variant.Outlined"
                        Label="Variant">
                 @if (selectedProduct != null && selectedProduct.Variants.Count != 0)
                 {
@@ -93,6 +94,7 @@
         </div>
         <div class="mb-2 col-1 text-center">
             <MudSelect @bind-Value="purchaseOrderModel.OrderStatus"
+                        Variant="Variant.Outlined"
                        Label="Order Status"
                        T="OrderStatus">
                 @foreach (OrderStatus item in orderStatuses)

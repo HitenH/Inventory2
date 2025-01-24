@@ -50,7 +50,7 @@ namespace Inventory.Pages
                     OrderStatus = o.OrderStatus,
                     TotalAmountProduct = o.TotalAmountProduct
                 }).ToList();
-                salesOrdersAfterSearch = salesOrders;
+                salesOrdersAfterSearch = [.. salesOrders.OrderByDescending(o => o.Date)];
                 StateHasChanged();
             }
             catch (Exception ex)
