@@ -33,7 +33,6 @@ public partial class Purchase
 
     protected async override Task OnInitializedAsync()
     {
-        await GetSuppliersAsync();
         if (PurchaseId != null)
         {
             purchaseEntity = await PurchaseRepository.GetById(Guid.Parse(PurchaseId));
@@ -185,43 +184,6 @@ public partial class Purchase
             GetTotalAmount();
     }
 
-    //New supplier methods
-
-    private async Task GetSuppliersAsync()
-    {
-        try
-        {
-            var suppliersDb = await SupplierRepository.GetAll();
-            if (suppliersDb.Count != 0)
-            {
-                suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
-                suppliersAfterSearch = suppliers;
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Something went wrong", Severity.Warning);
-        }
-    }
-
-    public async Task OpenSupplierDialogAsync()
-    {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Large,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            Position = DialogPosition.Center
-        };
-        var dialog = await DialogService.ShowAsync<SuppliersDialog>("Suppliers List", options);
-        var result = await dialog.Result;
-        if (!result.Canceled)
-        {
-            var supplierModel = (SupplierModel)result.Data;
-            await OnSupplierSelected(supplierModel);
-        }
-    }
     //On Supplier selected
     private async Task OnSupplierSelected(SupplierModel? _supplier)
     {
@@ -244,14 +206,5 @@ public partial class Purchase
             purchaseModel.SupplierId = "";
             purchaseModel.SupplierName = "";
         }
-    }
-
-    private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
-    {
-        if (string.IsNullOrEmpty(value))
-            return suppliersAfterSearch.ToList();
-
-        return suppliers.Where(n => n.SupplierId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
-                        .ToList();
     }
 }

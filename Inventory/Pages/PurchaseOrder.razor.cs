@@ -39,8 +39,6 @@ namespace Inventory.Pages
         protected async override Task OnInitializedAsync()
         {
             await GetOrders();
-            await GetSuppliersAsync();
-            await GetProductsAsync();
         }
 
         public async Task GetOrders()
@@ -147,43 +145,6 @@ namespace Inventory.Pages
             purchaseOrderEntity = new();
             selectedProduct = new();
             selectedSupplier = new();
-        }
-
-        public async Task OpenSupplierDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-            var dialog = await DialogService.ShowAsync<SuppliersDialog>("Suppliers List", options);
-            var result = await dialog.Result;
-            if (!result.Canceled)
-            {
-                var supplierModel = (SupplierModel)result.Data;
-                OnSupplierSelected(supplierModel);
-            }
-        }
-
-        public async Task OpenProductDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-            var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
-            {
-                selectedProduct = (ProductModel)result.Data;
-                OnProductSelected(selectedProduct);
-            }
         }
 
         public void SearchItem(ChangeEventArgs e)
@@ -313,43 +274,6 @@ namespace Inventory.Pages
             }
         }
 
-        private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
-        {
-            if (string.IsNullOrEmpty(value))
-                return suppliersAfterSearch.ToList();
-
-            string loweredValue = value.ToLower() ?? null;
-
-            return suppliers.Where(n => n.SupplierId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
-                            .ToList();
-        }
-
-        private async Task GetSuppliersAsync()
-        {
-            try
-            {
-                var suppliersDb = await SupplierRepository.GetAll();
-                if (suppliersDb.Count != 0)
-                {
-                    suppliers = suppliersDb.Select(s => Mapper.Map<SupplierModel>(s)).ToList();
-                    suppliersAfterSearch = suppliers;
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                snackbar = Snackbar.Add("Something went wrong", Severity.Warning);
-            }
-        }
-        //Getting data for products
-        private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
-        {
-            if (string.IsNullOrEmpty(value))
-                return productsAfterSearch.ToList();
-            var loweredValue = value.ToLower();
-            return products.Where(n => n.ProductId.ToLower().Contains(loweredValue) || n.Name.ToLower().Contains(loweredValue))
-                         .ToList();
-        }
         //On Supplier selected
         private void OnSupplierSelected(SupplierModel? supplier)
         {
@@ -378,24 +302,6 @@ namespace Inventory.Pages
                 // Clear the fields if no product is selected
                 purchaseOrderModel.ProductId = "";
                 purchaseOrderModel.ProductName = "";
-            }
-        }
-
-        private async Task GetProductsAsync()
-        {
-            try
-            {
-                var productsDb = await ProductRepository.GetAll();
-                if (productsDb.Count != 0)
-                {
-                    products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
-                    productsAfterSearch = products;
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                snackbar = Snackbar.Add("Something went wrong while getting products.", Severity.Error);
             }
         }
     }

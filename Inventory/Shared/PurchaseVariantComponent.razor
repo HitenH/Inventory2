@@ -29,6 +29,7 @@
             
             <label for="variantid" class="form-label">Product Selection</label>
             <ProductAutocomplete T="ProductModel" 
+                        @ref="productAutocompleteReference"
                         SelectedProduct="selectedProduct"
                         SelectedProductChanged="OnProductSelected" />
 

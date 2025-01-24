@@ -3,6 +3,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
+using Inventory.Shared.Selectors;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -26,14 +27,12 @@ namespace Inventory.Shared
         private ProductEntity product = new();
         private ProductModel selectedProduct;
         private int serialnumber = 1;
-        private List<ProductEntity> products = new();
-        private List<ProductEntity> productsAfterSearch = new();
 
         private PurchaseVariantModel purchaseVariant = new();
         private List<PurchaseVariantModel> purchaseVariants = new();
         private PurchaseVariant purchaseVariantEntity = new();
         private bool isSortAscending = false;
-        private MudAutocomplete<ProductEntity> productAutocomplete;
+        private ProductAutocomplete<ProductModel> productAutocompleteReference;
 
         protected override void OnParametersSet()
         {
@@ -119,10 +118,7 @@ namespace Inventory.Shared
 
         private async Task FocusInput()
         {
-            await productAutocomplete.ClearAsync();
-            await productAutocomplete.FocusAsync();
-            await JSRuntime.InvokeVoidAsync("setFocus", productAutocomplete);
-            StateHasChanged();
+            await productAutocompleteReference.SetFocusAsync();
         }
 
 

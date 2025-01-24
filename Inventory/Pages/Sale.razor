@@ -1,4 +1,5 @@
 ﻿@page "/sale/{saleId?}"
+@using Inventory.Shared.Selectors
 
 
 
@@ -15,27 +16,17 @@
 
 
     <div class="d-flex justify-content-between">
-        <div>
+        
+        <div class="col-3 text-center">
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
-            <div class="text-center">
-                <MudStack Row="true">
-                    <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="GetCustomerFromPopup" Icon="@Icons.Material.Filled.AdsClick">
-                    </MudIconButton>
+            <CustomerAutocomplete T="CustomerModel"
+                                  SelectedCustomer="customerModel"
+                                  SelectedCustomerChanged="OnCustomerSelected" />
 
-                    <MudAutocomplete T="CustomerModel" Label="Customer"
-                                     Value="customerModel"
-                                     ValueChanged="OnCustomerSelected"
-                                     SearchFunc="SearchCustomerEntities"
-                                     ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.CustomerId})")"
-                                     Clearable="true"
-                                     ClearIcon="@Icons.Material.Filled.Clear"
-                                     ResetValueOnEmptyText="true"
-                                     CoerceText="true" CoerceValue="true" />
-                </MudStack>
-                <InputText @bind-Value="salesModel.CustomerId" class="form-control text-center" disabled hidden />
-                <InputText @bind-Value="salesModel.CustomerName" class="form-control text-center ms-2" disabled hidden />
-            </div>
+            <InputText @bind-Value="salesModel.CustomerId" class="form-control text-center" disabled hidden />
+            <InputText @bind-Value="salesModel.CustomerName" class="form-control text-center ms-2" disabled hidden />
         </div>
+
         <div class="text-center">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
             @if (IsDisabled)
@@ -93,19 +84,11 @@
                         <img src="img/cancel.png" alt="cancel" class="purchase-cancel-img" />
                     </button>
                 </div>
-                <div class="text-center col-2">
-                    <ProductPopup IsVisible="isVisibleProductPopup" CloseCallBack="CloseProductPopup" ProductCallBack="GetProductFromPopup" />
+                <div class="text-center col-4">
                     <label for="productid" class="form-label">Product ID</label>
-                    <div class="d-flex justify-content-between">
-                        <button type="button" id="button-submit" class="btn btn-light btn-select mx-2" @onclick="OpenProductPopup">
-                            <img src="img/select.png" alt="select" class="select-img" />
-                        </button>
-                        <InputText @bind-Value="salesVariantModel.ProductId" id="productid" class="form-control text-center" requared disabled />
-                    </div>
-                </div>
-                <div class="col-2 text-center">
-                    <label for="productname" class="form-label">Product Name</label>
-                    <InputText @bind-Value="salesVariantModel.ProductName" id="productname" class="form-control text-center" requared disabled />
+                    <ProductAutocomplete T="ProductModel" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
+                        <InputText @bind-Value="salesVariantModel.ProductId" id="productid" class="form-control text-center" required hidden />
+                        <InputText @bind-Value="salesVariantModel.ProductName" id="productname" class="form-control text-center" required hidden />
                 </div>
                 <div class="col-2 mb-2 text-center">
                     <label for="variantid" class="form-label">Variant ID</label>

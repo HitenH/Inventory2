@@ -1,4 +1,5 @@
 ﻿@page "/salesorder/{salesorderId?}";
+@using Inventory.Shared.Selectors
 
 <EditForm Model="@salesOrderModel" class="card-header mt-5"
           OnValidSubmit="async ()=>
@@ -15,28 +16,13 @@
     <div class="d-flex justify-content-between">
         <div>
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
-            <div class="d-flex justify-content-between">
-                @if (SalesOrderId == null)
-                {
-                 
-                }
-                <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="GetCustomerFromPopup" Icon="@Icons.Material.Filled.AdsClick">
-                </MudIconButton>
 
+            <CustomerAutocomplete T="CustomerModel"
+                                  SelectedCustomer="customerModel"
+                                  SelectedCustomerChanged="OnCustomerSelected" />
 
-                <MudAutocomplete T="CustomerModel" Label="Customer"
-                                 Value="customerModel"
-                                 ValueChanged="OnCustomerSelected"
-                                 SearchFunc="SearchCustomerEntities"
-                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.CustomerId})")"
-                                 Clearable="true"
-                                 ClearIcon="@Icons.Material.Filled.Clear"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true" CoerceValue="true" />
-
-                <InputText @bind-Value="salesOrderModel.CustomerId" class="form-control text-center" disabled hidden/>
-                <InputText @bind-Value="salesOrderModel.CustomerName" class="form-control text-center ms-2" disabled hidden/>
-            </div>
+            <InputText @bind-Value="salesOrderModel.CustomerId" class="form-control text-center" disabled hidden />
+            <InputText @bind-Value="salesOrderModel.CustomerName" class="form-control text-center ms-2" disabled hidden />
         </div>
         <div class="text-center">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>

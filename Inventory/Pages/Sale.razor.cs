@@ -29,17 +29,14 @@ public partial class Sale
     private SalesEntity salesEntity = new();
 
 
+    private ProductModel selectedProduct;
     private CustomerModel customerModel;
-    private List<CustomerModel> customers = new();
-    private List<CustomerModel> customersAfterSearch = new();
 
     private SalesVariantModel salesVariantModel = new();
     private List<SalesVariantModel> salesModelVariants = new();
     private List<SalesVariantEntity> salesEntityVariants = new();
 
     private ProductEntity productEntity = new();
-    private List<ProductEntity> products = new();
-    private bool isVisibleProductPopup = false;
     private ElementReference productInput;
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -84,12 +81,6 @@ public partial class Sale
             StateHasChanged();
         }
     }
-
-    protected async override Task OnInitializedAsync()
-    {
-        await GetCustomersAsync();
-    }
-
     private async Task FocusInput()
     {
         await JSRuntime.InvokeVoidAsync("setFocus", productInput);
@@ -278,26 +269,6 @@ public partial class Sale
         salesModelVariants = new();
     }
 
-    public void OpenProductPopup()
-    {
-        isVisibleProductPopup = true;
-    }
-
-    public void CloseProductPopup(bool state)
-    {
-        isVisibleProductPopup = state;
-    }
-
-    public async Task GetProductFromPopup(ProductModel productFromPopup)
-    {
-        if (productFromPopup != null)
-        {
-            salesVariantModel.ProductId = productFromPopup.ProductId;
-            salesVariantModel.ProductName = productFromPopup.Name;
-            productEntity = await ProductRepository.GetById(productFromPopup.Id);
-        }
-    }
-
     public async void UpdateSalesVariant(SalesVariantModel model)
     {
         CancelSalesVariant();
@@ -305,36 +276,6 @@ public partial class Sale
         productEntity = model.Product;
     }
 
-
-    private async Task GetCustomersAsync()
-    {
-        try
-        {
-            var customerDb = await CustomerRepository.GetAll();
-            if (customerDb.Count != 0)
-            {
-                customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
-                customersAfterSearch = customers;
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Something went wrong", Severity.Warning);
-        }
-    }
-
-
-    //Customer selection
-    private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
-    {
-        if (string.IsNullOrEmpty(value))
-            return customersAfterSearch.ToList();
-        return customers.Where(n => n.Name.ToLower().Contains(value)
-                || n.CustomerId.ToLower().Contains(value) || n.Area.ToLower().Contains(value)
-                || n.Address.ToLower().Contains(value))
-                     .ToList() ?? null;
-    }
     private async Task OnCustomerSelected(CustomerModel? _customer)
     {
         if (_customer != null)
@@ -353,27 +294,6 @@ public partial class Sale
             // Clear the fields if no product is selected
             salesModel.CustomerId = "";
             salesModel.CustomerName = "";
-        }
-    }
-
-    public async Task GetCustomerFromPopup()
-    {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Large,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            Position = DialogPosition.Center
-        };
-
-        var dialog = await DialogService.ShowAsync<CustomerDialog>("Customer Dialog", options);
-        var result = await dialog.Result;
-
-
-        if (!result.Canceled)
-        {
-            var customerFromPopup = (CustomerModel)result.Data;
-            OnCustomerSelected(customerFromPopup);
         }
     }
 
@@ -425,6 +345,17 @@ public partial class Sale
                 }
             }
             StateHasChanged();
+        }
+    }
+
+
+    private async Task OnProductSelected(ProductModel? _product)
+    {
+        if (_product != null)
+        {
+            productEntity = await ProductRepository.GetById(_product.Id);
+            salesVariantModel.ProductId = _product.ProductId;
+            salesVariantModel.ProductName = _product.Name;
         }
     }
 }

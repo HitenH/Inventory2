@@ -1,0 +1,109 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Repository.Abstract
+@typeparam T
+
+<div class="row">
+    <div class="col-3">
+        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="GetCustomerFromPopup"
+                       Icon="@Icons.Material.Filled.AdsClick">
+        </MudIconButton>
+    </div>
+    <div class="col-9">
+        <AutoComplete @bind-Value="name"
+                      TItem="CustomerModel"
+                      DataProvider="CustomersDataProvider"
+                      PropertyName="Name"
+                      Placeholder="Search a customer..."
+                      StringComparison="StringComparison.Ordinal"
+                      OnChanged="(CustomerModel customer) => OnAutoCompleteChanged(customer)" />
+    </div>
+</div>
+<div class="@(string.IsNullOrEmpty(customerTitle) ? "d-none" : "d-block")">
+    Customer selected: @customerTitle
+</div>
+
+@code {
+    [Parameter] public EventCallback<CustomerModel> SelectedCustomerChanged { get; set; }
+    [Parameter] public CustomerModel SelectedCustomer { get; set; }
+    [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; }
+
+    private string customerTitle = string.Empty;
+    private string name;
+    private CustomerModel customerModel;
+    private List<CustomerModel> customers = new();
+    private List<CustomerModel> customersAfterSearch = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetCustomersAsync();
+    }
+
+
+    private async Task GetCustomersAsync()
+    {
+        try
+        {
+            var customerDb = await CustomerRepository.GetAll();
+            if (customerDb.Count != 0)
+            {
+                customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
+                customersAfterSearch = customers;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Something went wrong", Severity.Warning);
+        }
+    }
+
+
+    //Customer selection
+    private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return customersAfterSearch.ToList();
+        return customers.Where(n => n.Name.ToLower().Contains(value)
+                || n.CustomerId.ToLower().Contains(value) || n.Area.ToLower().Contains(value)
+                || n.Address.ToLower().Contains(value))
+                     .ToList() ?? null;
+    }
+
+    public async Task GetCustomerFromPopup()
+    {
+        var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Large,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                Position = DialogPosition.Center
+            };
+
+        var dialog = await DialogService.ShowAsync<CustomerDialog>("Customer Dialog", options);
+        var result = await dialog.Result;
+
+
+        if (!result.Canceled)
+        {
+            SelectedCustomer = (CustomerModel)result.Data;
+            customerTitle = $"{SelectedCustomer.Name} - {SelectedCustomer.CustomerId}";
+            await SelectedCustomerChanged.InvokeAsync(SelectedCustomer);
+        }
+    }
+
+
+    private async Task<AutoCompleteDataProviderResult<CustomerModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<CustomerModel> request)
+    {
+        var prods = await SearchCustomerEntities(request.Filter.Value, request.CancellationToken);
+
+        return await Task.FromResult(new AutoCompleteDataProviderResult<CustomerModel> { Data = prods });
+    }
+
+    private async Task OnAutoCompleteChanged(CustomerModel customerModel)
+    {
+        await SelectedCustomerChanged.InvokeAsync(customerModel);
+    }
+}

@@ -35,6 +35,7 @@
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private IJSRuntime JSRuntime { get; set; }
 
     private AutoComplete<ProductModel> autoComplete;
     private string productTitle = string.Empty;
@@ -104,5 +105,10 @@
     private async Task OnAutoCompleteChanged(ProductModel product)
     {
         await SelectedProductChanged.InvokeAsync(product);
+    }
+    // Expose a method to set focus to the AutoComplete
+    public async Task SetFocusAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("setFocus", autoComplete);
     }
 }

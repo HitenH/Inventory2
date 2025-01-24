@@ -1,4 +1,6 @@
 ﻿@page "/purchaseorder"
+@using Inventory.MudBlazorComponents
+@using Inventory.Shared.Selectors
 @using Variant = MudBlazor.Variant
 
 <EditForm Model="@purchaseOrderModel" class="card-header"
@@ -28,20 +30,7 @@
             <label for="supplierid" class="form-label">Supplier ID</label>
             <div class="d-flex justify-content-between">
 
-                <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenSupplierDialogAsync"
-                                Icon="@Icons.Material.Filled.AdsClick">
-                </MudIconButton>
-
-
-                <MudAutocomplete T="SupplierModel" Label="Supplier"
-                                    Value="selectedSupplier"
-                                    ValueChanged="OnSupplierSelected"
-                                    SearchFunc="SearchSupplierEntities"
-                                    ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
-                                    Clearable="true"
-                                    ClearIcon="@Icons.Material.Filled.Clear"
-                                    ResetValueOnEmptyText="true"
-                                    CoerceText="true" CoerceValue="true" />
+                <SupplierAutocomplete T="SupplierModel" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
                 <InputText @bind-Value="purchaseOrderModel.SupplierId" class="form-control text-center" disabled hidden />
             </div>
@@ -49,20 +38,9 @@
         <div class="mb-2 col-3 text-center">
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
-                <MudIconButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="OpenProductDialogAsync"
-                                Icon="@Icons.Material.Filled.AdsClick">
-                </MudIconButton>
-                <MudAutocomplete T="ProductModel" Label="Product"
-                                    Placeholder="Product"
-                                    Value="selectedProduct"
-                                    ValueChanged="OnProductSelected"
-                                    Clearable="true"
-                                    ClearIcon="@Icons.Material.Filled.Clear"
-                                    SearchFunc="SearchProductEntities"
-                                    ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.ProductId})")"
-                                    ResetValueOnEmptyText="false"
-                                    CoerceText="true" 
-                                    CoerceValue="true" />
+
+                <ProductAutocomplete T="ProductModel" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
+
                 <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />
                 <InputText @bind-Value="purchaseOrderModel.ProductName" class="form-control text-center" disabled hidden />
             </div>
@@ -70,17 +48,16 @@
     </div>
     <div class="d-flex flex-row justify-content-between">
         <div class="m-1 col-3 text-center">
-            <MudSelect @bind-Value="purchaseOrderModel.VariantId"
-                       Variant="MudBlazor.Variant.Outlined"
-                       Label="Variant">
+            <label for="productid" class="form-label">Variant ID</label>
+            <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control text-center" id="orderstatus">
                 @if (selectedProduct != null && selectedProduct.Variants.Count != 0)
                 {
                     @foreach (var item in selectedProduct.Variants)
                     {
-                        <MudSelectItem Value="@item.VariantId">@item.Name</MudSelectItem>
+                        <option class="text-center" value="@item.VariantId">@item.Name</option>
                     }
                 }
-            </MudSelect>
+            </InputSelect>
         </div>
         <div class="m-1 col-2 text-center">
             <label for="quantity" class="form-label">Quantity</label>
@@ -95,15 +72,13 @@
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
         <div class="m-1 col-3 text-center">
-            <MudSelect @bind-Value="purchaseOrderModel.OrderStatus"
-                       Variant="Variant.Outlined"
-                       Label="Order Status"
-                       T="OrderStatus">
+            <label for="productid" class="form-label">Order Status</label>
+            <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
                 @foreach (OrderStatus item in orderStatuses)
                 {
-                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                    <option value="@item" class="text-center">@item</option>
                 }
-            </MudSelect>
+            </InputSelect>
         </div>
     </div>
     <div class="mb-2 col-12 text-center">

@@ -1,4 +1,5 @@
 ﻿@page "/purchase/{purchaseId?}";
+@using Inventory.Shared.Selectors
 
 
 <EditForm Model="@purchaseModel" class="card-header mt-5"
@@ -16,21 +17,8 @@
 
     <div class="d-flex justify-content-between">
         <div class="text-center">
-
-            <MudStack Row="true">
-                <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenSupplierDialogAsync"
-                               Icon="@Icons.Material.Filled.AdsClick">
-                </MudIconButton>
-                <MudAutocomplete T="SupplierModel" Label="Supplier"
-                                 Value="selectedSupplier"
-                                 ValueChanged="OnSupplierSelected"
-                                 SearchFunc="SearchSupplierEntities"
-                                 ToStringFunc="@(e => e == null ? null : $"{e.Name} ({e.SupplierId})")"
-                                 Clearable="true"
-                                 ClearIcon="@Icons.Material.Filled.Clear"
-                                 ResetValueOnEmptyText="true"
-                                 CoerceText="true" CoerceValue="true" />
-            </MudStack>
+            <label for="voucher" class="form-label"><h4>Supplier</h4></label>
+            <SupplierAutocomplete T="SupplierModel" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
             <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled hidden />
