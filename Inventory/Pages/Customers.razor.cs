@@ -38,7 +38,7 @@ namespace Inventory.Pages
                     if (list.Count != 0)
                     {
                         customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
-                        customersAfterSearch = [.. customers.OrderByDescending(o => o.Name)];
+                        customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
                         GetTotalAmount();
                         StateHasChanged();
                     }

@@ -71,7 +71,7 @@
             <label for="productrate" class="form-label">Rate</label>
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
-        <div class="m-1 col-3 text-center">
+        <div class="m-1 col-1 text-center">
             <label for="productid" class="form-label">Order Status</label>
             <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
                 @foreach (OrderStatus item in orderStatuses)

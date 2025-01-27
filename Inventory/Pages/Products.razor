@@ -96,6 +96,11 @@ else
                     <MudTableSortLabel InitialDirection="MudBlazor.SortDirection.Descending" SortBy="new Func<ProductModel, object>(x => x.Name)">Name</MudTableSortLabel>
                 </MudTh>
                 <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Category.Name)">
+                        Category
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
                     <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Rate)">Rate</MudTableSortLabel>
                 </MudTh>
                 <MudTh>
@@ -105,6 +110,9 @@ else
             <RowTemplate>
                 <MudTd>@context.ProductId</MudTd>
                 <MudTd>@context.Name</MudTd>
+                <MudTd>
+                    @context.Category.Name
+                </MudTd>
                 <MudTd>@context.Rate</MudTd>
                 <MudTd>
                     <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"product/{context.Id}")">Info</MudButton>

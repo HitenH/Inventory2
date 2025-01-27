@@ -139,7 +139,9 @@ else
             <RowTemplate>
                 <MudTd DataLabel="Customer ID">@context.CustomerId</MudTd>
                 <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Mobile">@(context.Mobiles.FirstOrDefault()?.Phone ?? "-")</MudTd>
+                <MudTd DataLabel="Mobile">
+                    @(context.Mobiles.FirstOrDefault()?.Phone ?? "-")
+                </MudTd>
                 <MudTd DataLabel="Area">@context.Area</MudTd>
                 <MudTd DataLabel="Amount">@totalAmount[context.Id]</MudTd>
             </RowTemplate>
