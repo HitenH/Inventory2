@@ -3,6 +3,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -10,6 +11,7 @@ using MudBlazor;
 
 namespace Inventory.Pages;
 
+[Authorize]
 public partial class Sale
 {
     [Parameter] public string SaleId { get; set; }

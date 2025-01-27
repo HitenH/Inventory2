@@ -3,11 +3,13 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Inventory.Pages
 {
+    [Authorize]
     public partial class PurchaseOrder
     {
         [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }

@@ -4,12 +4,14 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System;
 
 namespace Inventory.Pages;
 
+[Authorize]
 public partial class Purchase
 {
     [Parameter] public string PurchaseId { get; set; }

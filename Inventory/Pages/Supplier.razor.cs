@@ -6,12 +6,14 @@ using Inventory.Models;
 using Inventory.MudBlazorComponents;
 using Inventory.Service;
 using Inventory.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 
 namespace Inventory.Pages
 {
+    [Authorize]
     public partial class Supplier
     {
         [Parameter] public string SupplierId { get; set; }

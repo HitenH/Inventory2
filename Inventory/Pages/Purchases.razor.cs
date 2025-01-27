@@ -1,12 +1,11 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
-using Inventory.Domain.Repository.Abstract;
+﻿using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 
 namespace Inventory.Pages
 {
+    [Authorize]
     public partial class Purchases
     {
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }

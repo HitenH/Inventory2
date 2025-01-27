@@ -1,10 +1,12 @@
 ﻿using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Inventory.Pages
 {
+    [Authorize]
     public partial class Sales
     {
         [Inject] private ISaleRepository SaleRepository { get; set; }
