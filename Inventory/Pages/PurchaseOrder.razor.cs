@@ -73,7 +73,7 @@ namespace Inventory.Pages
         }
         public async Task AddPurchaseOrder()
         {
-            if (purchaseOrderModel != null || selectedProduct != null)
+            if (purchaseOrderModel != null || selectedProduct.Id != null || selectedProduct.Name != null)
             {
                 try
                 {
@@ -297,6 +297,7 @@ namespace Inventory.Pages
                 selectedProduct = product;
                 purchaseOrderModel.ProductId = product.ProductId;
                 purchaseOrderModel.ProductName = product.Name;
+                purchaseOrderModel.VariantId = product.Variants[0].VariantId;
             }
             else
             {

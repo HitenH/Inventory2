@@ -91,21 +91,20 @@
         
 <!-- Table Panel -->
 
-<MudStack Spacing="20" Row="false">
-    <MudPaper Class="position-fixed">
-        <div class="text-center d-flex mt-1 justify-content-center p-1">
+<MudStack Spacing="2" Row="false">
+    <div class="my-3">
+        <MudPaper>
             <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteSelectedOrders" StartIcon="@Icons.Material.Filled.Delete">Selected</MudButton>
             <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteCompletedOrders" StartIcon="@Icons.Material.Filled.Delete">Completed</MudButton>
 
 
             <Search SearchItemCallBack="SearchItem" />
-        </div>
-    </MudPaper>
+        </MudPaper>
+    </div>
 
 
     <MudTable Items="ordersAfterSearch"
               Hover="true"
-              Class="mt-2"
               Bordered="true"
               Striped="true"
               Dense="true"
@@ -121,8 +120,6 @@
               RowEditPreview="BackupItem"
               RowEditCancel="ResetItemToOriginalValues"
               RowEditCommit="EditRowPurchaseOrder">
-        <ToolBarContent>
-        </ToolBarContent>
         <HeaderContent>
             <MudTh>
                 <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Date)">
