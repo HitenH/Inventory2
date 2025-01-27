@@ -91,139 +91,147 @@
         
 <!-- Table Panel -->
 
-<MudTable Items="ordersAfterSearch"
-          Hover="true"
-          Class="mt-2"
-          Bordered="true"
-          Striped="true"
-          Dense="true"
-          CanCancelEdit="true"
-          MultiSelection="true"
-          SelectionChangeable="true"
-          @bind-SelectedItems="selectedOrders"
-          SelectOnRowClick="true"
-          EditTrigger="TableEditTrigger.RowClick"
-          EditButtonPosition="TableEditButtonPosition.End"
-          ApplyButtonPosition="TableApplyButtonPosition.End"
-          IsEditRowSwitchingBlocked="true"
-          RowEditPreview="BackupItem"
-          RowEditCancel="ResetItemToOriginalValues"
-          RowEditCommit="EditRowPurchaseOrder">
-    <ToolBarContent>
-        <MudButton Class="ms-1 me-1" Variant="Variant.Filled" Color="Color.Tertiary" OnClick="DeleteSelectedOrders">Delete Selected Orders</MudButton>
-        <MudButton Class="ms-1 me-1" Variant="Variant.Filled" Color="Color.Tertiary" OnClick="DeleteCompletedOrders">Delete Completed Orders</MudButton>
+<MudStack Spacing="20" Row="false">
+    <MudPaper Class="position-fixed">
+        <div class="text-center d-flex mt-1 justify-content-center p-1">
+            <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteSelectedOrders" StartIcon="@Icons.Material.Filled.Delete">Selected</MudButton>
+            <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteCompletedOrders" StartIcon="@Icons.Material.Filled.Delete">Completed</MudButton>
 
 
-        <Search SearchItemCallBack="SearchItem" />
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Date)">
-                Date
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.SupplierId)">
-                Supplier ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductId)">
-                Product ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductName)">
-                Product Name
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.VariantId)">
-                Variant ID
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Quantity)">
-                Quantity
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.DueDate)">
-                Due Date
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductRate)">
-                Rate
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.OrderStatus)">
-                Order Status
-            </MudTableSortLabel>
-        </MudTh>
-        <MudTh>
-            <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Remarks)">
-                Remarks
-            </MudTableSortLabel>
-        </MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd>@context.Date</MudTd>
-        <MudTd>@context.SupplierId</MudTd>
-        <MudTd>@context.ProductId</MudTd>
-        <MudTd>@context.ProductName</MudTd>
-        <MudTd>@context.VariantId</MudTd>
-        <MudTd>@context.Quantity</MudTd>
-        <MudTd>@context.DueDate</MudTd>
-        <MudTd>@context.ProductRate</MudTd>
-        <MudTd>@context.OrderStatus</MudTd>
-        <MudTd>@context.Remarks</MudTd>
-    </RowTemplate>
-    <RowEditingTemplate>
-        <MudTd>
+            <Search SearchItemCallBack="SearchItem" />
+        </div>
+    </MudPaper>
 
-            <DateInput TValue="DateOnly?" @bind-Value="context.Date" id="date" class="form-control text-center" />
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="context.SupplierId" />
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="context.ProductId" />
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="context.ProductName" />
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="context.VariantId" />
-        </MudTd>
-        <MudTd>
-            <MudNumericField @bind-Value="context.Quantity" />
-        </MudTd>
-        <MudTd>
 
-            <DateInput TValue="DateOnly?" @bind-Value="context.DueDate" id="date" class="form-control text-center" />
-        </MudTd>
-        <MudTd>
-            <MudNumericField @bind-Value="context.ProductRate" />
-        </MudTd>
-        <MudTd>
-            <MudSelect @bind-Value="context.OrderStatus"
-                       Variant="MudBlazor.Variant.Filled"
-                       Label="Order Status"
-                       T="OrderStatus">
-                @foreach (OrderStatus item in orderStatuses)
-                {
-                    <MudSelectItem Value="@item">@item</MudSelectItem>
-                }
-            </MudSelect>
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="context.Remarks" />
-        </MudTd>
-    </RowEditingTemplate>
+    <MudTable Items="ordersAfterSearch"
+              Hover="true"
+              Class="mt-2"
+              Bordered="true"
+              Striped="true"
+              Dense="true"
+              CanCancelEdit="true"
+              MultiSelection="true"
+              SelectionChangeable="true"
+              @bind-SelectedItems="selectedOrders"
+              SelectOnRowClick="true"
+              EditTrigger="TableEditTrigger.RowClick"
+              EditButtonPosition="TableEditButtonPosition.End"
+              ApplyButtonPosition="TableApplyButtonPosition.End"
+              IsEditRowSwitchingBlocked="true"
+              RowEditPreview="BackupItem"
+              RowEditCancel="ResetItemToOriginalValues"
+              RowEditCommit="EditRowPurchaseOrder">
+        <ToolBarContent>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Date)">
+                    Date
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.SupplierId)">
+                    Supplier ID
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductId)">
+                    Product ID
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductName)">
+                    Product Name
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.VariantId)">
+                    Variant ID
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Quantity)">
+                    Quantity
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.DueDate)">
+                    Due Date
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductRate)">
+                    Rate
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.OrderStatus)">
+                    Order Status
+                </MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.Remarks)">
+                    Remarks
+                </MudTableSortLabel>
+            </MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Date</MudTd>
+            <MudTd>@context.SupplierId</MudTd>
+            <MudTd>@context.ProductId</MudTd>
+            <MudTd>@context.ProductName</MudTd>
+            <MudTd>@context.VariantId</MudTd>
+            <MudTd>@context.Quantity</MudTd>
+            <MudTd>@context.DueDate</MudTd>
+            <MudTd>@context.ProductRate</MudTd>
+            <MudTd>@context.OrderStatus</MudTd>
+            <MudTd>@context.Remarks</MudTd>
+        </RowTemplate>
+        <RowEditingTemplate>
+            <MudTd>
 
-    <NoRecordsContent>
-        <MudText Align="Align.Center">Not Found!</MudText>
-    </NoRecordsContent>
-</MudTable>
+                <DateInput TValue="DateOnly?" @bind-Value="context.Date" id="date" class="form-control text-center" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.SupplierId" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.ProductId" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.ProductName" />
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.VariantId" />
+            </MudTd>
+            <MudTd>
+                <MudNumericField @bind-Value="context.Quantity" />
+            </MudTd>
+            <MudTd>
+
+                <DateInput TValue="DateOnly?" @bind-Value="context.DueDate" id="date" class="form-control text-center" />
+            </MudTd>
+            <MudTd>
+                <MudNumericField @bind-Value="context.ProductRate" />
+            </MudTd>
+            <MudTd>
+                <MudSelect @bind-Value="context.OrderStatus"
+                           Variant="MudBlazor.Variant.Filled"
+                           Label="Order Status"
+                           T="OrderStatus">
+                    @foreach (OrderStatus item in orderStatuses)
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTd>
+            <MudTd>
+                <MudTextField @bind-Value="context.Remarks" />
+            </MudTd>
+        </RowEditingTemplate>
+
+        <NoRecordsContent>
+            <MudText Align="Align.Center">Not Found!</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudStack>

@@ -84,8 +84,8 @@
     </div>
 
 
-    <MudPaper Class="p-4 position-fixed bottom-0 mb-5 start-50" Elevation="3">
-        <div class="d-flex justify-content-around mt-3">
+    <MudPaper Class="p-1 position-fixed bottom-0 mb-5 d-flex flex-column align-items-center" Style="left:35%!important" Elevation="3">
+        <div class="d-flex justify-content-around">
             <div class="d-flex col-3">
                 <label for="totalquantity" class="form-label d-flex align-items-end me-2">Total Quantity</label>
                 <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
@@ -100,7 +100,7 @@
             </div>
         </div>
 
-        <div class="text-center d-flex mt-4">
+        <div class="text-center d-flex mt-1 justify-content-center">
             <button type="submit" id="button-submit" class="btn btn-success">Save</button>
             <a class="btn btn-warning ms-3" href="sale/@SalesId">Back To Scanning Area</a>
             <a class="btn btn-secondary ms-3" href="/sales">Close</a>

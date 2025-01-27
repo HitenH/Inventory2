@@ -65,8 +65,13 @@ namespace Inventory.Pages
                                 salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount;
                             }
                             GetTotalAmount();
-                           
                         }
+                        SalesTotalData = new()
+                        {
+                            Discount = salesEntity.Discount,
+                            TotalAmount = salesEntity.TotalAmountProduct,
+                            TotalQuantity = salesEntity.TotalQuantity
+                        };
                     }
                 }
                 StateHasChanged();
