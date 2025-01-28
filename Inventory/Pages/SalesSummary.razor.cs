@@ -48,45 +48,24 @@ public partial class SalesSummary
                     }).ToList();
                     if (salesSummaryModelList.Count != 0)
                     {
-                        //salesSummaryEntityList = salesSummaryModelList.Select(p => new SalesSummaryEntity()
-                        //{
-                        //    ProductEntityId = p.Product.Id,
-                        //    ProductName = p.Product.Name,
-                        //    ProductId = p.Product.ProductId,
-                        //    Quantity = p.Quantity,
-                        //    ProductRate = p.ProductRate,
-                        //    Discount = p.Discount
-                        //}).ToList();
+                        var summaryDict = salesEntity.SalesSummaries?.ToDictionary(s => s.ProductEntityId) ?? new Dictionary<Guid, SalesSummaryEntity>();
 
-                        foreach (var item in salesEntity.SalesVariants)
-                        {
-                            var saleSumEntity = salesEntity.SalesSummaries.Where(s => s.ProductEntityId == item.ProductEntityId).FirstOrDefault();
-
-                            if (saleSumEntity != null)
+                        salesSummaryEntityList = salesEntity.SalesVariants.Select(item =>
                             {
-                                salesSummaryEntityList.Add(new SalesSummaryEntity
+                                summaryDict.TryGetValue(item.ProductEntityId, out var saleSum);
+                                return new SalesSummaryEntity
                                 {
                                     ProductEntityId = item.ProductEntityId,
-                                    ProductName = item.Product.Name,
-                                    ProductId = item.Product.ProductId,
-                                    Quantity = item.Quantity.Value,
-                                    ProductRate = saleSumEntity.ProductRate,
-                                    Discount = saleSumEntity.Discount,
-                                    Amount = saleSumEntity.Amount,
-                                    AmountAfterDiscount = saleSumEntity.AmountAfterDiscount
-                                });
-                            }
-                            else
-                            {
-                                salesSummaryEntityList.Add(new SalesSummaryEntity
-                                {
-                                    ProductEntityId = item.Product.Id,
-                                    ProductName = item.Product.Name,
-                                    ProductId = item.Product.ProductId,
+                                    ProductName = item.Product?.Name ?? "Unknown",
+                                    ProductId = item.Product?.ProductId ?? "N/A",
                                     Quantity = item.Quantity ?? 0,
-                                });
-                            }
-                        }
+                                    ProductRate = saleSum?.ProductRate ?? 0m,
+                                    Discount = saleSum?.Discount ?? 0,
+                                    Amount = saleSum?.Amount ?? 0m,
+                                    AmountAfterDiscount = saleSum?.AmountAfterDiscount ?? 0m
+                                };
+                            })
+                            .ToList();
 
                         for (int i = 0; i < salesSummaryEntityList.Count; i++)
                         {
@@ -95,16 +74,18 @@ public partial class SalesSummary
                                 salesSummaryEntityList[i].Amount = 0;
                             else
                                 salesSummaryEntityList[i].Amount = Math.Round(salesSummaryEntityList[i].ProductRate * salesSummaryEntityList[i].Quantity, 2);
-                            salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount;
+
+
+                            salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount * (1 - ((decimal)salesSummaryEntityList[i].Discount / 100));
                         }
+
+                        SalesTotalData = new()
+                        {
+                            Discount = salesEntity.Discount,
+                        };
+
                         GetTotalAmount();
                     }
-                    SalesTotalData = new()
-                    {
-                        Discount = salesEntity.Discount,
-                        TotalAmount = salesEntity.TotalAmountProduct,
-                        TotalQuantity = salesEntity.TotalQuantity
-                    };
                 }
             }
             StateHasChanged();
@@ -214,6 +195,8 @@ public partial class SalesSummary
     {
         SalesTotalData.TotalQuantity = salesSummaryEntityList.Select(x => x.Quantity).Sum();
         var amount = salesSummaryEntityList.Select(v => v.AmountAfterDiscount).Sum();
-        SalesTotalData.TotalAmount = amount - SalesTotalData.Discount;        
+
+        //Calculate total after discount
+        SalesTotalData.TotalAmount = amount * (1 - (SalesTotalData.Discount / 100));
     }
 }
