@@ -18,33 +18,37 @@ public partial class Suppliers
 
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();
     private List<SuppliersDisplayModel> suppliersAfterSearch = new();
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var list = await SupplierRepository.GetAll();
-            if (list.Count != 0)
-            {
-                foreach (var item in list)
-                {
-                    suppliersDisplayModels.Add(new SuppliersDisplayModel
-                    {
-                        Id = item.Id,
-                        SupplierId = item.SupplierId,
-                        Name = item.Name,
-                        Mobiles = item.Mobiles,
-                        Area = item.Area,
-                        TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
-                    });
-                }
 
-                suppliersAfterSearch = suppliersDisplayModels;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            Logger.LogError("Suppliers page error" + ex.Message);
+            try
+            {
+                var list = await SupplierRepository.GetAll();
+                if (list.Count != 0)
+                {
+                    foreach (var item in list)
+                    {
+                        suppliersDisplayModels.Add(new SuppliersDisplayModel
+                        {
+                            Id = item.Id,
+                            SupplierId = item.SupplierId,
+                            Name = item.Name,
+                            Mobiles = item.Mobiles,
+                            Area = item.Area,
+                            TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
+                        });
+                    }
+
+                    suppliersAfterSearch = suppliersDisplayModels;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Suppliers page error" + ex.Message);
+            }
         }
     }
 
