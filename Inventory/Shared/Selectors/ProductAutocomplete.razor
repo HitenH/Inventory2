@@ -69,7 +69,7 @@
     {
         if (string.IsNullOrEmpty(value))
             return productsAfterSearch.ToList();
-        return products.Where(n => n.ProductId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+        return products.Where(n => n.ProductId.ToLower().Contains(value.ToLower()) || n.Name.ToLower().Contains(value.ToLower()))
                       .ToList();
     }
 

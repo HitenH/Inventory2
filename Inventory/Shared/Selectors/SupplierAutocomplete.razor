@@ -68,7 +68,7 @@
     {
         if (string.IsNullOrEmpty(value))
             return suppliersAfterSearch.ToList();
-        return suppliers.Where(n => n.SupplierId.ToLower().Contains(value) || n.Name.ToLower().Contains(value))
+        return suppliers.Where(n => n.SupplierId.ToLower().Contains(value.ToLower()) || n.Name.ToLower().Contains(value.ToLower()))
                       .ToList();
     }
 

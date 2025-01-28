@@ -16,19 +16,8 @@ public partial class Suppliers
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
 
-    private List<SupplierModel> suppliers = new();
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();
-    private List<SupplierModel> suppliersAfterSearch = new();
-    private Dictionary<Guid, decimal> totalAmount = new();
-
-    protected async override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-
-        }
-    }
-
+    private List<SuppliersDisplayModel> suppliersAfterSearch = new();
     protected override async Task OnInitializedAsync()
     {
         try
@@ -38,7 +27,7 @@ public partial class Suppliers
             {
                 foreach (var item in list)
                 {
-                    suppliersDisplayModels.Add(new SuppliersDisplayModel 
+                    suppliersDisplayModels.Add(new SuppliersDisplayModel
                     {
                         Id = item.Id,
                         SupplierId = item.SupplierId,
@@ -48,6 +37,8 @@ public partial class Suppliers
                         TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
                     });
                 }
+
+                suppliersAfterSearch = suppliersDisplayModels;
                 StateHasChanged();
             }
         }
@@ -57,23 +48,10 @@ public partial class Suppliers
         }
     }
 
-
-    public void GetTotalAmount()
-    {
-        if (suppliersAfterSearch.Count != 0)
-        {
-            totalAmount = suppliersAfterSearch.Select(supplier => new
-            {
-                SupplierId = supplier.Id,
-                TotalAmount = supplier.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
-            }).ToDictionary(result => result.SupplierId, result => result.TotalAmount);
-        }
-    }
-
     public void SearchItem(ChangeEventArgs e)
     {
         var search = e.Value.ToString().ToLower();
-        suppliersAfterSearch = suppliers.Where(n => n.SupplierId.ToLower().Contains(search)
+        suppliersAfterSearch = suppliersDisplayModels.Where(n => n.SupplierId.ToLower().Contains(search)
                     || n.Name.ToLower().Contains(search)
                     || n.Area.ToLower().Contains(search)
                     || n.Mobiles.Any(p => p.Phone.ToLower().Contains(search))).ToList();

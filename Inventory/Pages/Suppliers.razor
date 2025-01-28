@@ -20,7 +20,7 @@ else
                 </MudToolBar>
             </MudPaper>
         </div>
-        <MudTable Items="suppliersDisplayModels" FixedHeader="true"
+        <MudTable Items="suppliersAfterSearch" FixedHeader="true"
                   style="margin-top:6rem"
                   Dense="true" Bordered="true" Striped="true"
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SuppliersDisplayModel>>(this, RowClickEvent))">

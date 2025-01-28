@@ -62,9 +62,12 @@
     {
         if (string.IsNullOrEmpty(value))
             return customersAfterSearch.ToList();
-        return customers.Where(n => n.Name.ToLower().Contains(value)
-                || n.CustomerId.ToLower().Contains(value) || n.Area.ToLower().Contains(value)
-                || n.Address.ToLower().Contains(value))
+
+        string loweredValue = value.ToLower();
+
+        return customers.Where(n => n.Name.ToLower().Contains(loweredValue)
+                || n.CustomerId.ToLower().Contains(loweredValue) || n.Area.ToLower().Contains(loweredValue)
+                || n.Address.ToLower().Contains(loweredValue))
                      .ToList() ?? null;
     }
 
