@@ -214,6 +214,6 @@ public partial class SalesSummary
         var amount = salesSummaryEntityList.Select(v => v.AmountAfterDiscount).Sum();
 
         //Calculate total after discount
-        SalesTotalData.TotalAmount = amount * SalesTotalData.Discount;
+        SalesTotalData.TotalAmount = amount - SalesTotalData.Discount;
     }
 }
