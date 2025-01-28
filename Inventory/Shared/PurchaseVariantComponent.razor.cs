@@ -71,9 +71,6 @@ namespace Inventory.Shared
                     CancelPurchaseVariant();
                     GetPurchaseVariants();
                     serialnumber += 1;
-
-                    await FocusInput();
-
                     await ChangeState.InvokeAsync(true);
                 }
                 catch (Exception ex)

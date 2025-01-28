@@ -230,28 +230,6 @@ namespace Inventory.Pages
                 Snackbar.Add("Something went wrong", Severity.Warning);
             }
         }
-
-
-        //Customer selection
-        private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
-        {
-            try
-            {
-                string loweredValue = "";
-
-                if (string.IsNullOrEmpty(value))
-                    return customersAfterSearch.ToList();
-
-
-                loweredValue = value.ToLower();
-                return customers.Where(n => n.Name.ToLower().Contains(loweredValue)).ToList() ?? null;
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Normal);
-                return customersAfterSearch.ToList();
-            }
-        }
         private async Task OnCustomerSelected(CustomerModel? _customer)
         {
             if (_customer != null)

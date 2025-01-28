@@ -24,9 +24,6 @@
                       OnChanged="(SupplierModel customer) => OnAutoCompleteChanged(customer)" />
     </div>
 </div>
-<div class="@(string.IsNullOrEmpty(supplierTitle) ? "d-none" : "d-block")">
-    Supplier selected: @supplierTitle
-</div>
 
 @code {
     [Parameter] public EventCallback<SupplierModel> SelectedSupplierChanged { get; set; }
@@ -37,7 +34,6 @@
     [Inject] private ISnackbar Snackbar { get; set; }
 
     private AutoComplete<SupplierModel> autoComplete;
-    private string supplierTitle = string.Empty;
     private string name;
     private SupplierEntity supplier = new();
     private List<SupplierModel> suppliers = new();
@@ -63,7 +59,7 @@
         if (!result.Canceled)
         {
             SelectedSupplier = (SupplierModel)result.Data;
-            supplierTitle = SelectedSupplier.Name;
+            name = SelectedSupplier.Name;
             await SelectedSupplierChanged.InvokeAsync(SelectedSupplier);
         }
     }

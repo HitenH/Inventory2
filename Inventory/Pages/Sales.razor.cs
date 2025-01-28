@@ -35,7 +35,7 @@ namespace Inventory.Pages
                              Id = c.Id
                          }
                         ).ToList();
-                        salesAfterSearch = [.. sales.OrderByDescending(o => o.CustomerName)];
+                        salesAfterSearch = [.. sales.OrderByDescending(o => o.Date)];
                     }
                     StateHasChanged();
                 }

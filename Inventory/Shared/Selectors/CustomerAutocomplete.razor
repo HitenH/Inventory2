@@ -18,9 +18,6 @@
                       OnChanged="(CustomerModel customer) => OnAutoCompleteChanged(customer)" />
     </div>
 </div>
-<div class="@(string.IsNullOrEmpty(customerTitle) ? "d-none" : "d-block")">
-    Customer selected: @customerTitle
-</div>
 
 @code {
     [Parameter] public EventCallback<CustomerModel> SelectedCustomerChanged { get; set; }
@@ -30,7 +27,6 @@
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
 
-    private string customerTitle = string.Empty;
     private string name;
     private CustomerModel customerModel;
     private List<CustomerModel> customers = new();
@@ -89,7 +85,7 @@
         if (!result.Canceled)
         {
             SelectedCustomer = (CustomerModel)result.Data;
-            customerTitle = $"{SelectedCustomer.Name} - {SelectedCustomer.CustomerId}";
+            name = SelectedCustomer.Name;
             await SelectedCustomerChanged.InvokeAsync(SelectedCustomer);
         }
     }

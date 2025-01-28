@@ -48,14 +48,45 @@ public partial class SalesSummary
                     }).ToList();
                     if (salesSummaryModelList.Count != 0)
                     {
-                        salesSummaryEntityList = salesSummaryModelList.Select(p => new SalesSummaryEntity()
+                        //salesSummaryEntityList = salesSummaryModelList.Select(p => new SalesSummaryEntity()
+                        //{
+                        //    ProductEntityId = p.Product.Id,
+                        //    ProductName = p.Product.Name,
+                        //    ProductId = p.Product.ProductId,
+                        //    Quantity = p.Quantity,
+                        //    ProductRate = p.ProductRate,
+                        //    Discount = p.Discount
+                        //}).ToList();
+
+                        foreach (var item in salesEntity.SalesVariants)
                         {
-                            ProductEntityId = p.Product.Id,
-                            ProductName = p.Product.Name,
-                            ProductId = p.Product.ProductId,
-                            Quantity = p.Quantity,
-                            ProductRate = p.Product.Rate.Value
-                        }).ToList();
+                            var saleSumEntity = salesEntity.SalesSummaries.Where(s => s.ProductEntityId == item.ProductEntityId).FirstOrDefault();
+
+                            if (saleSumEntity != null)
+                            {
+                                salesSummaryEntityList.Add(new SalesSummaryEntity
+                                {
+                                    ProductEntityId = item.ProductEntityId,
+                                    ProductName = item.Product.Name,
+                                    ProductId = item.Product.ProductId,
+                                    Quantity = item.Quantity.Value,
+                                    ProductRate = saleSumEntity.ProductRate,
+                                    Discount = saleSumEntity.Discount,
+                                    Amount = saleSumEntity.Amount,
+                                    AmountAfterDiscount = saleSumEntity.AmountAfterDiscount
+                                });
+                            }
+                            else
+                            {
+                                salesSummaryEntityList.Add(new SalesSummaryEntity
+                                {
+                                    ProductEntityId = item.Product.Id,
+                                    ProductName = item.Product.Name,
+                                    ProductId = item.Product.ProductId,
+                                    Quantity = item.Quantity ?? 0,
+                                });
+                            }
+                        }
 
                         for (int i = 0; i < salesSummaryEntityList.Count; i++)
                         {
@@ -133,7 +164,7 @@ public partial class SalesSummary
         }
     }
 
-    public void RateChanged(ChangeEventArgs arg, Guid productId)
+    public async void RateChanged(ChangeEventArgs arg, Guid productId)
     {
         var index = salesSummaryEntityList.FindIndex(n => n.ProductEntityId == productId);
         var value = decimal.Parse(arg.Value.ToString());
@@ -151,7 +182,7 @@ public partial class SalesSummary
         AmountAfterDiscountChanged(index);
     }
 
-    public void DiscountChanged(ChangeEventArgs arg, Guid productId)
+    public async void DiscountChanged(ChangeEventArgs arg, Guid productId)
     {
         var index = salesSummaryEntityList.FindIndex(n => n.ProductEntityId == productId);
         var value = int.Parse(arg.Value.ToString());

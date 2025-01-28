@@ -24,9 +24,6 @@
                       OnChanged="(ProductModel customer) => OnAutoCompleteChanged(customer)" />
     </div>
 </div>
-<div class="@(string.IsNullOrEmpty(productTitle) ? "d-none" : "d-block")">
-    Product selected: @productTitle
-</div>
 
 @code {
     [Parameter] public EventCallback<ProductModel> SelectedProductChanged { get; set; }
@@ -38,7 +35,6 @@
     [Inject] private IJSRuntime JSRuntime { get; set; }
 
     private AutoComplete<ProductModel> autoComplete;
-    private string productTitle = string.Empty;
     private string name;
     private ProductEntity product = new();
     private List<ProductModel> products = new();
@@ -64,7 +60,7 @@
         if (!result.Canceled)
         {
             SelectedProduct = (ProductModel)result.Data;
-            productTitle = SelectedProduct.Name;
+            name = SelectedProduct.Name;
             await SelectedProductChanged.InvokeAsync(SelectedProduct);
         }
     }

@@ -28,9 +28,6 @@ public partial class Purchase
     private PurchaseModel purchaseModel = new();
     private PurchaseEntity purchaseEntity = new();
     private ComponentTotalData PurchaseTotalData = new();
-
-    private List<SupplierModel> suppliers = new();
-    private List<SupplierModel> suppliersAfterSearch = new();
     private bool IsDisabled { get; set; }
 
     protected async override Task OnInitializedAsync()
@@ -60,7 +57,7 @@ public partial class Purchase
     }
     public async Task AddPurchase()
     {
-        if (purchaseModel != null)
+        if (selectedSupplier != null)
         {
             try
             {
@@ -88,6 +85,10 @@ public partial class Purchase
                 //Snackbar message
                 Snackbar.Add($"Saving Error: {ex.Message}", Severity.Error);
             }
+        }
+        else
+        {
+            Snackbar.Add("There is data missing.", Severity.Error);
         }
     }
     public async Task EditPurchase()
@@ -164,9 +165,6 @@ public partial class Purchase
             Logger.LogError("Add total amount: " + ex.Message);
         }
     }
-
-
-
     private void DiscountChanged(decimal value)
     {
         PurchaseTotalData.Discount = value;
