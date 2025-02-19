@@ -28,10 +28,6 @@ namespace Inventory.Pages
         private List<PurchaseOrderModel> orders = new();
         private List<PurchaseOrderModel> ordersAfterSearch = new();
         private HashSet<PurchaseOrderModel> selectedOrders = new();
-        private List<SupplierModel> suppliers = new();
-        private List<SupplierModel> suppliersAfterSearch = new();
-        private List<ProductModel> products = new();
-        private List<ProductModel> productsAfterSearch = new();
         private ProductModel selectedProduct;
         private SupplierModel selectedSupplier;
         private List<PurchaseOrderEntity> ordersDb = new();

@@ -1,0 +1,142 @@
+﻿@using Inventory.Domain.Repository.Abstract
+@using Inventory.Models
+@inject IPurchaseOrderRepository PurchaseOrderRepository
+@inject ISupplierRepository SupplierRepository
+@inject IProductRepository ProductRepository
+
+<h3>Purchase Order Reports</h3>
+
+<MudTabs>
+    <MudTabPanel Text="Orders Beyond Due Date">
+        <MudTable Items="ordersBeyondDueDate" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Due Date</MudTh>
+                <MudTh>Supplier</MudTh>
+                <MudTh>Product</MudTh>
+                <MudTh>Quantity</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Due Date">@context.DueDate</MudTd>
+                <MudTd DataLabel="Supplier">@context.SupplierId</MudTd>
+                <MudTd DataLabel="Product">@context.ProductName</MudTd>
+                <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Supplier">
+        <MudTable Items="ordersBySupplier" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Supplier</MudTh>
+                <MudTh>Product</MudTh>
+                <MudTh>Quantity</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Supplier">@context.SupplierId</MudTd>
+                <MudTd DataLabel="Product">@context.ProductName</MudTd>
+                <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Product">
+        <MudTable Items="ordersByProduct" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Product</MudTh>
+                <MudTh>Quantity</MudTh>
+                <MudTh>Supplier</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Product">@context.ProductName</MudTd>
+                <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+                <MudTd DataLabel="Supplier">@context.SupplierId</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Status">
+        <MudTable Items="ordersByStatus" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Supplier</MudTh>
+                <MudTh>Product</MudTh>
+                <MudTh>Quantity</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+                <MudTd DataLabel="Supplier">@context.SupplierId</MudTd>
+                <MudTd DataLabel="Product">@context.ProductName</MudTd>
+                <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private List<PurchaseOrderModel> ordersBeyondDueDate = new();
+    private List<PurchaseOrderModel> ordersBySupplier = new();
+    private List<PurchaseOrderModel> ordersByProduct = new();
+    private List<PurchaseOrderModel> ordersByStatus = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ordersDb = await PurchaseOrderRepository.GetAll();
+        var suppliers = await SupplierRepository.GetAll();
+        var products = await ProductRepository.GetAll();
+
+        var orders = ordersDb.Select(o => new PurchaseOrderModel()
+            {
+                Date = o.Date,
+                DueDate = o.DueDate,
+                Id = o.Id,
+                OrderStatus = o.OrderStatus,
+                ProductId = o.ProductId,
+                ProductName = o.ProductName,
+                ProductRate = o.ProductRate,
+                Quantity = o.Quantity,
+                Remarks = o.Remarks,
+                SupplierId = o.SupplierId,
+                VariantId = o.VariantId
+            }).ToList();
+
+        ordersBeyondDueDate = orders.Where(o => o.DueDate < DateOnly.FromDateTime(DateTime.Now)).ToList();
+        ordersBySupplier = orders.OrderBy(o => o.SupplierId).ToList();
+        ordersByProduct = orders.OrderBy(o => o.ProductId).ToList();
+        ordersByStatus = orders.OrderBy(o => o.OrderStatus).ToList();
+
+        foreach (var order in ordersBeyondDueDate)
+        {
+            order.SupplierId = suppliers.FirstOrDefault(s => s.SupplierId == order.SupplierId)?.Name;
+            order.ProductName = products.FirstOrDefault(p => p.ProductId == order.ProductId)?.Name;
+        }
+
+        foreach (var order in ordersBySupplier)
+        {
+            order.SupplierId = suppliers.FirstOrDefault(s => s.SupplierId == order.SupplierId)?.Name;
+            order.ProductName = products.FirstOrDefault(p => p.ProductId == order.ProductId)?.Name;
+        }
+
+        foreach (var order in ordersByProduct)
+        {
+            order.SupplierId = suppliers.FirstOrDefault(s => s.SupplierId == order.SupplierId)?.Name;
+            order.ProductName = products.FirstOrDefault(p => p.ProductId == order.ProductId)?.Name;
+        }
+
+        foreach (var order in ordersByStatus)
+        {
+            order.SupplierId = suppliers.FirstOrDefault(s => s.SupplierId == order.SupplierId)?.Name;
+            order.ProductName = products.FirstOrDefault(p => p.ProductId == order.ProductId)?.Name;
+        }
+    }
+}

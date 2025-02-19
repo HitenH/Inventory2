@@ -1,0 +1,101 @@
+﻿@using Inventory.Domain.Repository.Abstract
+
+<MudDataGrid T="SalesByAreaModel" MultiSelection="true" Items="@salesByArea" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="SalesByAreaModel" />
+        <PropertyColumn Property="x => x.Area" Title="Area" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.TotalSales" Title="Total Sales"/>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="SalesByAreaModel" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+
+    [Inject] private ISaleRepository SaleRepository { get; set; }
+    [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    private List<SalesByAreaModel> salesByArea = new();
+    private decimal totalSales;
+
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTotalSalesByArea();
+    }
+
+    private async Task GetTotalSalesByArea()
+    {
+        try
+        {
+            var sales = await SaleRepository.GetAll();
+            var customers = await CustomerRepository.GetAll();
+
+            salesByArea = sales
+                .GroupBy(s => s.Customer.Area)
+                .Select(g => new SalesByAreaModel
+                    {
+                        Area = g.Key,
+                        TotalSales = g.Sum(s => s.TotalAmountProduct)
+                    })
+                .ToList();
+
+            totalSales = salesByArea.Sum(s => s.TotalSales);
+        }
+        catch (Exception ex)
+        {
+            // Handle exception (e.g., log error)
+        }
+    }
+
+    // DataGrid Events
+
+    // custom sort by name length
+    private Func<SalesByAreaModel, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Area.Length;
+        else
+            return x.Area;
+    };
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<SalesByAreaModel, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Area.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    void RowClicked(DataGridRowClickEventArgs<SalesByAreaModel> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+
+    void RowRightClicked(DataGridRowClickEventArgs<SalesByAreaModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+    void SelectedItemsChanged(HashSet<SalesByAreaModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+    public class SalesByAreaModel
+    {
+        public string Area { get; set; }
+        public decimal TotalSales { get; set; }
+    }
+}

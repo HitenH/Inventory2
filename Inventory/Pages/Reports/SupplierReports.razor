@@ -1,0 +1,138 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
+
+<MudDataGrid T="SuppliersDisplayModel" MultiSelection="true" Items="@suppliersAfterSearch" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="SuppliersDisplayModel" />
+        <PropertyColumn Property="x => x.SupplierId" Title="Supplier ID" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Name" Title="Name" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Mobiles.FirstOrDefault().Phone.ToString()" Title="Mobiles" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.TotalAmount" Title="Total Amount" SortBy="@_sortBy" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="SuppliersDisplayModel" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Inject] private ISupplierRepository SupplierRepository { get; set; }
+    [Inject] private ILogger<Suppliers> Logger { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+
+    private List<SuppliersDisplayModel> suppliersDisplayModels = new();
+    private List<SuppliersDisplayModel> suppliersAfterSearch = new();
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var list = await SupplierRepository.GetAll();
+                if (list.Count != 0)
+                {
+                    foreach (var item in list)
+                    {
+                        suppliersDisplayModels.Add(new SuppliersDisplayModel
+                            {
+                                Id = item.Id,
+                                SupplierId = item.SupplierId,
+                                Name = item.Name,
+                                Mobiles = item.Mobiles,
+                                Area = item.Area,
+                                TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
+                            });
+                    }
+
+                    suppliersAfterSearch = suppliersDisplayModels;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Suppliers page error" + ex.Message);
+            }
+        }
+    }
+
+    public void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value.ToString().ToLower();
+        suppliersAfterSearch = suppliersDisplayModels.Where(n => n.SupplierId.ToLower().Contains(search)
+                    || n.Name.ToLower().Contains(search)
+                    || n.Area.ToLower().Contains(search)
+                    || n.Mobiles.Any(p => p.Phone.ToLower().Contains(search))).ToList();
+    }
+
+
+    private void RowClickEvent(TableRowClickEventArgs<SuppliersDisplayModel> tableRowClickEventArgs)
+    {
+        navManager.NavigateTo($"supplier/{tableRowClickEventArgs.Item.Id}");
+    }
+
+
+    class SuppliersDisplayModel()
+    {
+        public Guid Id { get; set; }
+        public string SupplierId { get; set; }
+        public string Name { get; set; }
+        public List<Mobile> Mobiles { get; set; }
+        public string Area { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
+
+
+    // DataGrid Events
+
+    // custom sort by name length
+    private Func<SuppliersDisplayModel, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Area.Length;
+        else
+            return x.Area;
+    };
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<SuppliersDisplayModel, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Area.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.SupplierId.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    void RowClicked(DataGridRowClickEventArgs<SuppliersDisplayModel> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+
+    void RowRightClicked(DataGridRowClickEventArgs<SuppliersDisplayModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+    void SelectedItemsChanged(HashSet<SuppliersDisplayModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+}

@@ -1,0 +1,119 @@
+﻿@page "/reports/salesorders"
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Models
+@inject ISalesOrderRepository SalesOrderRepository
+@inject ICustomerRepository CustomerRepository
+@inject IProductRepository ProductRepository
+
+<h3>Sales Order Reports</h3>
+
+<MudTabs>
+    <MudTabPanel Text="Orders Beyond Due Date">
+        <MudTable Items="ordersBeyondDueDate" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Due Date</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Due Date">@context.DueDate.ToShortDateString()</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Customer">
+        <MudTable Items="ordersByCustomer" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Product">
+        <MudTable Items="ordersByProduct" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+    <MudTabPanel Text="Orders by Status">
+        <MudTable Items="ordersByStatus" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Order ID</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Customer</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order ID">@context.Id</MudTd>
+                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+    private List<SalesOrderModel> ordersBeyondDueDate = new();
+    private List<SalesOrderModel> ordersByCustomer = new();
+    private List<SalesOrderModel> ordersByProduct = new();
+    private List<SalesOrderModel> ordersByStatus = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ordersDb = await SalesOrderRepository.GetAll();
+        var customers = await CustomerRepository.GetAll();
+        var products = await ProductRepository.GetAll();
+
+        var orders = ordersDb.Select(o => new SalesOrderModel()
+            {
+                CustomerId = o.Customer.CustomerId,
+                CustomerName = o.Customer.Name,
+                Date = o.Date,
+                DueDate = o.Date,
+                Id = o.Id,
+                VoucherId = o.VoucherId,
+                OrderStatus = o.OrderStatus,
+                TotalAmountProduct = o.TotalAmountProduct
+            }).ToList();
+
+        ordersBeyondDueDate = orders.Where(o => o.DueDate < DateOnly.FromDateTime(DateTime.Now)).ToList();
+        ordersByCustomer = orders.OrderBy(o => o.CustomerId).ToList();
+        ordersByStatus = orders.OrderBy(o => o.OrderStatus).ToList();
+
+        foreach (var order in ordersBeyondDueDate)
+        {
+            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
+        }
+
+        foreach (var order in ordersByCustomer)
+        {
+            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
+        }
+
+        foreach (var order in ordersByProduct)
+        {
+            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
+        }
+
+        foreach (var order in ordersByStatus)
+        {
+            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
+        }
+    }
+}
