@@ -1,5 +1,123 @@
-﻿<h3>SalesPurchasesReports</h3>
+﻿@using Inventory.Domain.Repository.Abstract
+@using MudBlazor
+
+<MudStack Spacing="20">
+    <MudSelect T="string" Label="Filter by Time" Value="selectedTimeFilter" ValueChanged="OnTimeFilterChanged">
+        <MudSelectItem Value="@("Daily")">Today</MudSelectItem>
+        <MudSelectItem Value="@("Yesterday")">Yesterday</MudSelectItem>
+        <MudSelectItem Value="@("Weekly")">This Week</MudSelectItem>
+        <MudSelectItem Value="@("Monthly")">The Last 30 Days</MudSelectItem>
+        <MudSelectItem Value="@("Quarterly")">Last Quarter</MudSelectItem>
+        <MudSelectItem Value="@("HalfYearly")">Last 6 Months</MudSelectItem>
+        <MudSelectItem Value="@("Yearly")">This Year</MudSelectItem>
+    </MudSelect>
+    <MudGrid Spacing="10">
+        <MudItem xs="6">
+
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Total Sales</MudText>
+                    <MudText Typo="Typo.h4">@totalSales.ToString("C")</MudText>
+                </MudCardContent>
+            </MudCard>
+
+        </MudItem>
+        <MudItem xs="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Total Purchases</MudText>
+                    <MudText Typo="Typo.h4">@totalPurchases.ToString("C")</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudStack>
 
 @code {
 
+    [Inject] private ISaleRepository SaleRepository { get; set; }
+    [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
+    [Inject] private ILogger<Sales> Logger { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+
+    private List<SalesModel> sales = new();
+    private List<SalesModel> salesAfterSearch = new();
+
+    private string _searchString;
+    private string selectedTimeFilter = "Daily";
+
+    private decimal totalSales;
+    private decimal totalPurchases;
+
+    private bool isCustomRangeDialogOpen = false;
+    private DateTime customStartDate;
+    private DateTime customEndDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTotals();
+    }
+
+    private async Task LoadTotals()
+    {
+        await LoadTotalSales();
+        await LoadTotalPurchases();
+    }
+
+    private async Task LoadTotalSales()
+    {
+        try
+        {
+            var salesEntities = await SaleRepository.GetAll();
+            var filteredSales = FilterByTime(salesEntities, selectedTimeFilter);
+            totalSales = filteredSales.Sum(s => s.TotalAmountProduct);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading total sales");
+        }
+    }
+
+    private async Task LoadTotalPurchases()
+    {
+        try
+        {
+            var purchaseEntities = await PurchaseRepository.GetAll();
+            var filteredPurchases = FilterByTime(purchaseEntities, selectedTimeFilter);
+            totalPurchases = filteredPurchases.Sum(p => p.TotalAmountProduct ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading total purchases");
+        }
+    }
+
+    private IEnumerable<T> FilterByTime<T>(IEnumerable<T> entities, string timeFilter) where T : class
+    {
+        DateTime now = DateTime.Now;
+        return timeFilter switch
+        {
+            "Daily" => entities.Where(e => ((dynamic)e).Date == DateOnly.FromDateTime(now)),
+            "Yesterday" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddDays(-1))),
+            "Weekly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddDays(-7))),
+            "Monthly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-1))),
+            "Quarterly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-3))),
+            "HalfYearly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-6))),
+            "Yearly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddYears(-1))),
+            _ => entities
+        };
+    }
+
+    private async Task OnTimeFilterChanged(string value)
+    {
+        selectedTimeFilter = value;
+        if (value == "Custom")
+        {
+            isCustomRangeDialogOpen = true;
+        }
+        else
+        {
+            await LoadTotals();
+        }
+    }
 }

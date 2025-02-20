@@ -1,119 +1,132 @@
 ﻿@page "/reports/salesorders"
+@using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 @using Inventory.Models
-@inject ISalesOrderRepository SalesOrderRepository
-@inject ICustomerRepository CustomerRepository
-@inject IProductRepository ProductRepository
 
-<h3>Sales Order Reports</h3>
-
-<MudTabs>
-    <MudTabPanel Text="Orders Beyond Due Date">
-        <MudTable Items="ordersBeyondDueDate" Hover="true" Bordered="true" Striped="true" Dense="true">
-            <HeaderContent>
-                <MudTh>Order ID</MudTh>
-                <MudTh>Due Date</MudTh>
-                <MudTh>Customer</MudTh>
-                <MudTh>Status</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Order ID">@context.Id</MudTd>
-                <MudTd DataLabel="Due Date">@context.DueDate.ToShortDateString()</MudTd>
-                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
-                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudTabPanel>
-    <MudTabPanel Text="Orders by Customer">
-        <MudTable Items="ordersByCustomer" Hover="true" Bordered="true" Striped="true" Dense="true">
-            <HeaderContent>
-                <MudTh>Order ID</MudTh>
-                <MudTh>Customer</MudTh>
-                <MudTh>Status</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Order ID">@context.Id</MudTd>
-                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
-                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudTabPanel>
-    <MudTabPanel Text="Orders by Product">
-        <MudTable Items="ordersByProduct" Hover="true" Bordered="true" Striped="true" Dense="true">
-            <HeaderContent>
-                <MudTh>Order ID</MudTh>
-                <MudTh>Customer</MudTh>
-                <MudTh>Status</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Order ID">@context.Id</MudTd>
-                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
-                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudTabPanel>
-    <MudTabPanel Text="Orders by Status">
-        <MudTable Items="ordersByStatus" Hover="true" Bordered="true" Striped="true" Dense="true">
-            <HeaderContent>
-                <MudTh>Order ID</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Customer</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Order ID">@context.Id</MudTd>
-                <MudTd DataLabel="Status">@context.OrderStatus</MudTd>
-                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
-            </RowTemplate>
-        </MudTable>
-    </MudTabPanel>
-</MudTabs>
+<MudDataGrid T="SalesOrderModel" MultiSelection="true" Items="@salesOrdersAfterSearch" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="SalesOrderModel" />
+        <PropertyColumn Property="x => x.VoucherId" Title="Voucher ID" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.CustomerId" Title="Customer ID" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Date" Title="Date" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.DueDate" Title="Due Date" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.OrderStatus" Title="Status" SortBy="@_sortBy" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="SalesOrderModel" />
+    </PagerContent>
+</MudDataGrid>
 
 @code {
-    private List<SalesOrderModel> ordersBeyondDueDate = new();
-    private List<SalesOrderModel> ordersByCustomer = new();
-    private List<SalesOrderModel> ordersByProduct = new();
-    private List<SalesOrderModel> ordersByStatus = new();
+    [Inject] public ISalesOrderRepository SalesOrderRepository { get; set; }
+    [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] public ILogger<SalesOrders> Logger { get; set; }
+    [Inject] IDialogService DialogService { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private List<SalesOrderModel> salesOrders = new();
+    //Get enums list to populate order status
+    private List<OrderStatus> orderStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
+    private List<SalesOrderModel> salesOrdersAfterSearch = new();
+    private List<SalesOrderEntity> salesOrdersDb = new();
+    private HashSet<SalesOrderModel> selectedSalesOrders = new();
+    private SalesOrderModel salesOrderModelBackup = new();
+    private Snackbar snackbar;
+    private bool isSortAscending = false;
+    private bool isSelected = false;
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
     {
-        var ordersDb = await SalesOrderRepository.GetAll();
-        var customers = await CustomerRepository.GetAll();
-        var products = await ProductRepository.GetAll();
-
-        var orders = ordersDb.Select(o => new SalesOrderModel()
-            {
-                CustomerId = o.Customer.CustomerId,
-                CustomerName = o.Customer.Name,
-                Date = o.Date,
-                DueDate = o.Date,
-                Id = o.Id,
-                VoucherId = o.VoucherId,
-                OrderStatus = o.OrderStatus,
-                TotalAmountProduct = o.TotalAmountProduct
-            }).ToList();
-
-        ordersBeyondDueDate = orders.Where(o => o.DueDate < DateOnly.FromDateTime(DateTime.Now)).ToList();
-        ordersByCustomer = orders.OrderBy(o => o.CustomerId).ToList();
-        ordersByStatus = orders.OrderBy(o => o.OrderStatus).ToList();
-
-        foreach (var order in ordersBeyondDueDate)
+        if (firstRender)
         {
-            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
+            await GetOrders();
+        }
+    }
+
+    public async Task GetOrders()
+    {
+        try
+        {
+            salesOrdersDb = await SalesOrderRepository.GetAll();
+            salesOrders = salesOrdersDb.Select(o => new SalesOrderModel()
+                {
+                    CustomerId = o.Customer.CustomerId,
+                    CustomerName = o.Customer.Name,
+                    Date = o.Date,
+                    DueDate = o.DueDate,
+                    Id = o.Id,
+                    VoucherId = o.VoucherId,
+                    OrderStatus = o.OrderStatus,
+                    TotalAmountProduct = o.TotalAmountProduct
+                }).ToList();
+            salesOrdersAfterSearch = [.. salesOrders.OrderByDescending(o => o.Date)];
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("SalesOrders error: " + ex.Message);
+        }
+    }
+
+    public void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value.ToString().ToLower();
+        salesOrdersAfterSearch = salesOrders.Where(n => n.CustomerName.ToLower().Contains(search)
+                                           || n.VoucherId.ToString().Contains(search)
+                                           || n.Date.ToString().Contains(search)
+                                           || n.DueDate.ToString().Contains(search)
+                                           || n.OrderStatus.ToString().ToLower().Contains(search)).ToList();
+    }
+
+
+
+    // DataGrid Events
+    // custom sort by name length
+    private Func<SalesOrderModel, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.CustomerName.Length;
+        else
+            return x.CustomerName;
+    };
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<SalesOrderModel, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.VoucherId.ToString().ToLower().Contains(_searchString)
+                                      || x.CustomerName.ToString().ToLower().Contains(_searchString)
+                                      || x.DueDate.ToString().Contains(_searchString)
+                                      || x.OrderStatus.ToString().ToLower().Contains(_searchString))
+        {
+            return true;
         }
 
-        foreach (var order in ordersByCustomer)
-        {
-            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
-        }
+        return false;
+    };
 
-        foreach (var order in ordersByProduct)
-        {
-            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
-        }
+    void RowClicked(DataGridRowClickEventArgs<SalesOrderModel> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
 
-        foreach (var order in ordersByStatus)
-        {
-            order.CustomerName = customers.FirstOrDefault(c => c.CustomerId == order.CustomerId)?.Name;
-        }
+    void RowRightClicked(DataGridRowClickEventArgs<SalesOrderModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+    void SelectedItemsChanged(HashSet<SalesOrderModel> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
     }
 }
