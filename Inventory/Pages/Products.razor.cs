@@ -18,14 +18,12 @@ public partial class Products
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private ILogger<Products> Logger { get; set; }
     [Inject] private IMapper Mapper { get; set; }
-    [Inject] IMobileService MobileService {get; set;}
     [Inject] ISnackbar Snackbar {get; set;}
     [Inject] IDialogService DialogService {get; set;}
     [Inject] ICategoryRepository CategoryRepository { get; set; }
 
     private List<ProductModel> products;
     private List<ProductModel> productsAfterSearch = new();
-    private bool isSortAscending = false;
     private IDialogReference dialogReference;
 
     protected async override Task OnAfterRenderAsync(bool firstRender)

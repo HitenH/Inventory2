@@ -45,7 +45,11 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductEntity>> GetAll()
         {
-            return await context.Products.Include(p => p.Variants).ThenInclude(p => p.PurchaseVariants).ToListAsync();
+            return await context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Variants)
+                .ThenInclude(p => p.PurchaseVariants)
+                .Include(p => p.Variants).ThenInclude(p => p.SalesVariants).ToListAsync();
         }
 
         public async Task<ProductEntity> GetById(Guid id)
