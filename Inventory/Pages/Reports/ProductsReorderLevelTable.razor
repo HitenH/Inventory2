@@ -1,0 +1,125 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Service
+
+<MudDataGrid T="ProductReportItem" MultiSelection="true" Items="@productReportItems" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+    <ToolBarContent>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="ProductReportItem" />
+        <PropertyColumn Property="x => x.ProductId" Title="Product ID" />
+        <PropertyColumn Property="x => x.ProductName" Title="Product Name" />
+        <PropertyColumn Property="x => x.VariantId" Title="Variant ID" />
+        <PropertyColumn Property="x => x.VariantName" Title="Variant Name" />
+        <PropertyColumn Property="x => x.StockInHand" Title="Stock In Hand" />
+        <PropertyColumn Property="x => x.ReorderLevel" Title="Reorder Level" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="ProductReportItem" />
+    </PagerContent>
+</MudDataGrid>
+
+
+
+@code {
+    [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private ILogger<Products> Logger { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] IMobileService MobileService { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Inject] IDialogService DialogService { get; set; }
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+
+    private List<ProductReportItem> productReportItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadProductReports();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading product reports");
+            Snackbar.Add("Error loading product reports", Severity.Error);
+        }
+    }
+
+    private async Task LoadProductReports()
+    {
+        try
+        {
+            var products = await ProductRepository.GetAll();
+            foreach (var product in products)
+            {
+                foreach (var variant in product.Variants)
+                {
+                    var salesQuantity = variant.SalesVariants.Sum(sv => sv.Quantity);
+                    var salesAmount = variant.SalesVariants.Sum(sv => sv.Quantity * product.Rate);
+
+                    //Calculate stock in hand from purchase variants and sales variants
+                    var stockInHand = variant.PurchaseVariants.Sum(p => p.Quantity ?? 0) - variant.SalesVariants.Sum(p => p.Quantity ?? 0);
+
+                    if (stockInHand <= variant.ReorderLevel)
+                    {
+                        productReportItems.Add(new ProductReportItem
+                            {
+                                ProductId = product.ProductId,
+                                ProductName = product.Name,
+                                VariantId = variant.VariantId,
+                                VariantName = variant.Name,
+                                StockInHand = stockInHand,
+                                ReorderLevel = variant.ReorderLevel
+                            });
+                    }
+                }
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading product reports");
+            Snackbar.Add("Error loading product reports", Severity.Error);
+        }
+    }// DataGrid Events
+
+    // custom sort by name length
+    private Func<ProductReportItem, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.ProductName.Length;
+        else
+            return x.ProductName;
+    };
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<ProductReportItem, bool> _quickFilter => x =>
+    {
+
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if ($"{x.ProductName} {x.VariantName} {x.CategoryName} {x.ProductName} {x.VariantId}".Contains(_searchString))
+            return true;
+
+        return false;
+    };
+
+    void RowClicked(DataGridRowClickEventArgs<ProductReportItem> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+
+    void RowRightClicked(DataGridRowClickEventArgs<ProductReportItem> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+
+    void SelectedItemsChanged(HashSet<ProductReportItem> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+}

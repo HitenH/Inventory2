@@ -1,0 +1,148 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudTable Items="variants" Dense="true" Bordered="true" Striped="true" Class="mt-2">
+    <HeaderContent>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.VariantId)">
+                Variant ID
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.Name)">
+                Name
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.StockInHand)">
+                Stock In Hand
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.ReorderLevel)">
+                Reorder Level
+            </MudTableSortLabel>
+        </MudTh>
+        <MudTh>
+            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.Image)">
+                Image
+            </MudTableSortLabel>
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.VariantId</MudTd>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>@stockInHand[context.Id]</MudTd>
+        <MudTd>@context.ReorderLevel</MudTd>
+        <MudTd>
+            @if (context.Image != null)
+            {
+                <MudImage Src="@GetImage(context.Image)"
+                          Width="80"
+                          Height="80"
+                          Alt="Swedish Farm House"
+                          @onclick="() => OpenImagePopup(context.Image)"
+                          Elevation="25"
+                          Class="rounded-lg ma-4" />
+            }
+        </MudTd>
+    </RowTemplate>
+
+    <NoRecordsContent>
+        <MudTd Class="text-center">Not Found!</MudTd>
+    </NoRecordsContent>
+</MudTable> 
+<MudText Typo="Typo.h6" Class="mt-4">
+    Total Stock In Hand: @totalStockInHand
+</MudText>
+@code{
+
+    [Parameter] public ProductEntity Product { get; set; }
+    [Inject] private IVariantRepository VariantRepository { get; set; }
+    [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private IImageRepository ImageRepository { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] private IConfiguration config { get; set; }
+    private int totalStockInHand;
+
+    private VariantModel variantModel = new();
+    private Image image = new();
+    private List<VariantModel> variants = new();
+    private Dictionary<Guid, int> stockInHand = new();
+    private EditContext? editContext;
+    private MudTextField<string?> variantInputRef = null!;
+    private ValidationMessageStore? messageStore;
+    private bool bclearinputfile = false;
+    private Snackbar snackbar;
+
+    protected override void OnParametersSet()
+    {
+        GetVariants();
+        GetStockInHandAmount();
+        CalculateTotalStockInHand();
+    }
+
+    
+    //Open Image Popup
+    private async Task OpenImagePopup(Image image)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ImageHere", image);
+        var dialog = DialogService.Show<ImagePopup>(image.ImageTitle, parameters);
+        var result = await dialog.Result;
+    }
+
+    public void GetVariants()
+    {
+        if (Product != null)
+            variants = Product.Variants.Select(v => Mapper.Map<VariantModel>(v)).ToList();
+    }
+
+    public string GetImage(Image image)
+    {
+        return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
+    }
+
+    private async Task ReturnFocusToInput()
+    {
+        if (variantInputRef != null)
+        {
+            await variantInputRef.FocusAsync();
+        }
+    }
+
+    public void GetStockInHandAmount()
+    {
+        if (variants.Count != 0)
+        {
+            var arrival = variants.Select(variant => new
+            {
+                VariantId = variant.Id,
+                Quantity = variant.PurchaseVariants.Sum(purchase => purchase.Quantity ?? 0)
+            }).ToDictionary(result => result.VariantId, result => result.Quantity);
+
+            var shipment = variants.Select(variant => new
+            {
+                VariantId = variant.Id,
+                Quantity = variant.SalesVariants.Sum(sale => sale.Quantity ?? 0)
+            }).ToDictionary(result => result.VariantId, result => result.Quantity);
+
+            stockInHand = arrival.Join(shipment,
+                arrivalItem => arrivalItem.Key,
+                shipmentItem => shipmentItem.Key,
+                (arrivalItem, shipmentItem) => new
+                {
+                    VariantId = arrivalItem.Key,
+                    Quantity = arrivalItem.Value - shipmentItem.Value
+                }).ToDictionary(result => result.VariantId, result => result.Quantity);
+        }
+    }
+
+    private void CalculateTotalStockInHand()
+    {
+        totalStockInHand = stockInHand.Values.Sum();
+    }
+}

@@ -1,0 +1,47 @@
+﻿@using AutoMapper
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Service
+@using Inventory.Shared.Selectors
+
+
+<ProductAutocomplete T="ProductModel" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
+
+@if (productEntity != null)
+{
+    <VariantPageForReports Product="productEntity" />
+}
+
+@code {
+    [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private ILogger<Products> Logger { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+    [Inject] private ICategoryRepository CategoryRepository { get; set; }
+    [Inject] IMobileService MobileService { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Inject] IDialogService DialogService { get; set; }
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+    private ProductModel selectedProduct = new();
+    private ProductEntity productEntity = new();
+
+    private List<ProductReportItem> productReportItems = new();
+
+    //Product selection stuff
+
+    private async Task OnProductSelected(ProductModel? product)
+    {
+        if (product != null)
+        {
+            selectedProduct = product;
+
+
+            productEntity = Mapper.Map<ProductEntity>(selectedProduct);
+        }
+        else
+        {
+            selectedProduct = new();
+        }
+    }
+}

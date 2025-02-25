@@ -69,7 +69,14 @@ public partial class PurchaseOrder
     }
     public async Task AddPurchaseOrder()
     {
-        if (purchaseOrderModel != null || selectedProduct.Id != null || selectedProduct.Name != null)
+        if (string.IsNullOrEmpty(purchaseOrderModel.SupplierId))
+            Snackbar.Add("Supplier ID is missing.", Severity.Info);
+
+        if (string.IsNullOrEmpty(selectedProduct.Name))
+            Snackbar.Add("Please select a product.", Severity.Info);
+
+
+        if (purchaseOrderModel != null)
         {
             try
             {
