@@ -13,14 +13,14 @@
         <SelectColumn T="PurchaseOrderModel" />
         <PropertyColumn Property="x => x.Date" Title="Date" Sortable="false" Filterable="false" />
         <PropertyColumn Property="x => x.SupplierId" Title="Supplier ID" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.ProductId" Title="Product ID" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.ProductName" Title="Product Name" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.VariantId" Title="Variant ID" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.Quantity" Title="Quantity" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.DueDate" Title="Due Date" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.ProductRate" Title="Rate" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.OrderStatus" Title="Order Status" SortBy="@_sortBy"/>
-        <PropertyColumn Property="x => x.Remarks" Title="Remarks" SortBy="@_sortBy"/>
+        <PropertyColumn Property="x => x.ProductId" Title="Product ID" />
+        <PropertyColumn Property="x => x.ProductName" Title="Product Name" />
+        <PropertyColumn Property="x => x.VariantId" Title="Variant ID" />
+        <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+        <PropertyColumn Property="x => x.DueDate" Title="Due Date" />
+        <PropertyColumn Property="x => x.ProductRate" Title="Rate" />
+        <PropertyColumn Property="x => x.OrderStatus" Title="Order Status" />
+        <PropertyColumn Property="x => x.Remarks" Title="Remarks" />
     </Columns>
     <PagerContent>
         <MudDataGridPager T="PurchaseOrderModel" />

@@ -10,13 +10,13 @@ Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" Sel
     </ToolBarContent>
     <Columns>
         <SelectColumn T="ProductReportItem" />
-        <PropertyColumn Property="x => x.ProductName" Title="Product Name" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.VariantName" Title="Variant Name" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.StockInHand" Title="Stock In Hand" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.ReorderLevel" Title="Reorder Level" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.SalesAmount" Title="Sales Amount" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.SalesQuantity" Title="Sales Quantity" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.CategoryName" Title="Category Name" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.ProductName" Title="Product Name" />
+        <PropertyColumn Property="x => x.VariantName" Title="Variant Name" />
+        <PropertyColumn Property="x => x.StockInHand" Title="Stock In Hand" />
+        <PropertyColumn Property="x => x.ReorderLevel" Title="Reorder Level" />
+        <PropertyColumn Property="x => x.SalesAmount" Title="Sales Amount" />
+        <PropertyColumn Property="x => x.SalesQuantity" Title="Sales Quantity" />
+        <PropertyColumn Property="x => x.CategoryName" Title="Category Name" />
     </Columns>
     <PagerContent>
         <MudDataGridPager T="ProductReportItem" />

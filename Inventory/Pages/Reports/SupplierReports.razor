@@ -11,9 +11,9 @@
     <Columns>
         <SelectColumn T="SuppliersDisplayModel" />
         <PropertyColumn Property="x => x.SupplierId" Title="Supplier ID" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.Name" Title="Name" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.Mobiles.FirstOrDefault().Phone.ToString()" Title="Mobiles" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.TotalAmount" Title="Total Amount" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+        <PropertyColumn Property="x => x.Mobiles.FirstOrDefault().Phone.ToString()" Title="Mobiles" />
+        <PropertyColumn Property="x => x.TotalAmount" Title="Total Amount" />
     </Columns>
     <PagerContent>
         <MudDataGridPager T="SuppliersDisplayModel" />

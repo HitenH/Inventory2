@@ -11,12 +11,12 @@
     </ToolBarContent>
     <Columns>
         <SelectColumn T="SalesOrderModel" />
-        <PropertyColumn Property="x => x.VoucherId" Title="Voucher ID" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.CustomerId" Title="Customer ID" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.Date" Title="Date" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.DueDate" Title="Due Date" SortBy="@_sortBy" />
-        <PropertyColumn Property="x => x.OrderStatus" Title="Status" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.VoucherId" Title="Voucher ID" />
+        <PropertyColumn Property="x => x.CustomerId" Title="Customer ID" />
+        <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" />
+        <PropertyColumn Property="x => x.Date" Title="Date" />
+        <PropertyColumn Property="x => x.DueDate" Title="Due Date" />
+        <PropertyColumn Property="x => x.OrderStatus" Title="Status" />
     </Columns>
     <PagerContent>
         <MudDataGridPager T="SalesOrderModel" />

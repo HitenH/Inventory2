@@ -98,7 +98,7 @@
         return timeFilter switch
         {
             "Daily" => entities.Where(e => ((dynamic)e).Date == DateOnly.FromDateTime(now)),
-            "Yesterday" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddDays(-1))),
+            "Yesterday" => entities.Where(e => ((dynamic)e).Date == DateOnly.FromDateTime(now.AddDays(-1))),
             "Weekly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddDays(-7))),
             "Monthly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-1))),
             "Quarterly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-3))),
