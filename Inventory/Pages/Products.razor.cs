@@ -37,7 +37,7 @@ public partial class Products
                 if (list.Count != 0)
                 {
                     products = list.Select(c => Mapper.Map<ProductModel>(c)).ToList();
-                    productsAfterSearch = [.. products.OrderByDescending(o => o.Name)];
+                    productsAfterSearch = [.. products.OrderBy(o => o.Name)];
                 }
                 StateHasChanged();
             }
