@@ -38,7 +38,7 @@ namespace Inventory.Shared
         {
             if (Purchase.PurchaseVariants.Count != 0)
             {
-                serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
+                serialnumber = Purchase.PurchaseVariants.OrderBy(p => p.SerialNumber).First().SerialNumber + 1;
             }
         }
         protected override void OnAfterRender(bool firstRender)
