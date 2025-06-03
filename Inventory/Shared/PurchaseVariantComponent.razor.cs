@@ -346,7 +346,7 @@ namespace Inventory.Shared
             if (_product != null)
             {
                 selectedProduct = _product;
-                product = await ProductRepository.GetById(_product.Id);
+                product = await ProductRepository.GetProductWithVariantsById(_product.Id);
                 purchaseVariant.ProductId = _product.ProductId;
                 purchaseVariant.ProductName = _product.Name;
             }

@@ -54,7 +54,12 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetById(Guid id)
         {
-            return await context.Products.Include(p => p.Category).Include(p => p.Variants).ThenInclude(v => v.Image).Include(p => p.PurchaseVariants).Include(p=>p.SalesVariants).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Products.Include(p => p.Category)
+                            .Include(p => p.Variants)
+                            .ThenInclude(v => v.Image)
+                            .Include(p => p.PurchaseVariants)
+                            .Include(p=>p.SalesVariants)
+                            .FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task<ProductEntity> GetByProductId(string productId)
@@ -79,6 +84,12 @@ namespace Inventory.Domain.Repository
                 return false;
             else
                 return IsProductIdExist(productId);
+        }
+
+        public async Task<ProductEntity> GetProductWithVariantsById(Guid id)
+        {
+            return await context.Products.Include(p => p.Variants)
+                            .FirstOrDefaultAsync(c => c.Id == id, default);
         }
     }
 }

@@ -355,7 +355,7 @@ public partial class Sale
     {
         if (_product != null)
         {
-            productEntity = await ProductRepository.GetById(_product.Id);
+            productEntity = await ProductRepository.GetProductWithVariantsById(_product.Id);
             salesVariantModel.ProductId = _product.ProductId;
             salesVariantModel.ProductName = _product.Name;
         }

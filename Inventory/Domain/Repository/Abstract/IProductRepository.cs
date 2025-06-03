@@ -6,6 +6,7 @@ namespace Inventory.Domain.Repository.Abstract
     {
         Task<Guid> Create(ProductEntity product);
         Task<ProductEntity> GetById(Guid id);
+        Task<ProductEntity> GetProductWithVariantsById(Guid id);
         Task<ProductEntity> GetByProductId(string productId);
         Task<List<ProductEntity>> GetAll();
         Task Update(ProductEntity product);
