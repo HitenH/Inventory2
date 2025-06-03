@@ -34,11 +34,13 @@ namespace Inventory.Shared
         private bool isSortAscending = false;
         private ProductAutocomplete<ProductModel> productAutocompleteReference;
 
-        protected override void OnParametersSet()
+        protected override void OnParametersSet()   
         {
+            Purchase.PurchaseVariants = [.. Purchase.PurchaseVariants.OrderBy(o => o.SerialNumber)];
+
             if (Purchase.PurchaseVariants.Count != 0)
             {
-                serialnumber = Purchase.PurchaseVariants.OrderBy(p => p.SerialNumber).First().SerialNumber + 1;
+                serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
             }
         }
         protected override void OnAfterRender(bool firstRender)
