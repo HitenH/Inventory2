@@ -250,29 +250,10 @@ public partial class Variant
 
     public void GetStockInHandAmount()
     {
-        if (variants.Count != 0)
-        {
-            var arrival = variants.Select(variant => new
-            {
-                VariantId = variant.Id,
-                Quantity = variant.PurchaseVariants.Sum(purchase => purchase.Quantity ?? 0)
-            }).ToDictionary(result => result.VariantId, result => result.Quantity);
-
-            var shipment = variants.Select(variant => new
-            {
-                VariantId = variant.Id,
-                Quantity = variant.SalesVariants.Sum(sale => sale.Quantity ?? 0)
-            }).ToDictionary(result => result.VariantId, result => result.Quantity);
-
-            stockInHand = arrival.Join(shipment,
-                arrivalItem => arrivalItem.Key,
-                shipmentItem => shipmentItem.Key,
-                (arrivalItem, shipmentItem) => new
-                {
-                    VariantId = arrivalItem.Key,
-                    Quantity = arrivalItem.Value - shipmentItem.Value
-                }).ToDictionary(result => result.VariantId, result => result.Quantity);
-        }
+        stockInHand = variants.ToDictionary(variant => variant.Id, variant =>
+            (variant.PurchaseVariants.Sum(p => p.Quantity ?? 0)) -
+            (variant.SalesVariants.Sum(s => s.Quantity ?? 0))
+        );
     }
 
     public void Dispose()
