@@ -1,0 +1,233 @@
+# Improvement Plan – Inventory App
+
+**Purpose:** This file is the working plan for improving the Inventory app in small, safe batches. It is written so that a new chat session (or a new developer) can pick up the next batch with no other context. The full findings are in `REVIEW.md`; this file is the short version plus the exact tasks.
+
+**Owner:** Hiten (business owner, not a developer). Explain changes in plain English. Ask before anything that changes how the app behaves for the operator.
+
+**Last updated:** 11 November 2026
+
+---
+
+## 1. Context a new session needs
+
+### The app
+- Small-business inventory and sales system. Blazor **Interactive Server** on **.NET 9**, **EF Core 9 + SQLite**, **MudBlazor 7.15** (plus leftover Blazor.Bootstrap and Bootstrap). One project: `Inventory/`. No tests.
+- **In daily production use.** The operator records purchases (adds stock), sales via barcode scanning (removes stock), and runs reports. Stock is *calculated* as purchased minus sold per variant, never stored.
+- Deployed as a self-contained Windows exe that starts a web server on `http://localhost:5000` and opens the browser. The SQLite file `Inventory.db` currently lives **next to the exe** (`Program.cs`, `AppDomain.CurrentDomain.BaseDirectory`). Backups go to a `Backups` folder in the same place.
+- Login: two users seeded in `Domain/AppDbContext.cs` with plain-text passwords (roles "User" and "Admin"). Roles are not checked anywhere yet.
+- Git: `https://github.com/HitenH/Inventory2`, branch `main`. Last commit before this plan: `13ea0be` (11 Nov 2026) which included REVIEW.md and five months of uncommitted work.
+
+### Layout
+```
+Inventory/
+  Program.cs                 startup, DI, DB path, migrations run at startup
+  Domain/AppDbContext.cs     tables, relationships, seeded users
+  Domain/Entities/*.cs       tables
+  Domain/Repository/*.cs     one repository per table (+ Abstract/ interfaces)
+  Domain/TransactionLineHydrator.cs   workaround for EF tracking conflicts (goes away in batch 6)
+  Service/                   BackupService, LineAmounts (line maths), MobileService, DateOnlyConverter
+  Authentication/            CustomAuthenticationProvider (session-storage login), UserSession
+  Pages/                     screens (.razor + .razor.cs code-behind); Pages/Reports/
+  Shared/                    components: line editors, Variant editor, Selectors/ autocompletes, old popups (unused)
+  MudBlazorComponents/       dialogs: Confirmation, Customer/Products/Suppliers pickers, Loading, ScanMassProducts
+  Models/                    view models
+  Migrations/                EF migrations (last: 20250115 RenameDiscoint)
+  appsettings.json           CustomerNumberMobile, SupplierNumberMobile, FileMaxSize, unused SQL Server ConnectionString
+```
+
+### Build and run
+```
+cd Inventory
+dotnet build          # must be 0 errors (563 warnings today; do not add new ones)
+dotnet run            # Development profile, https://localhost:7224 / http://localhost:5259
+```
+Note: on the development machine only the .NET 10 runtime is installed. Until batch 9 (upgrade to .NET 10), run the app and the EF tool with roll-forward:
+```
+DOTNET_ROLL_FORWARD=Major dotnet run --no-build --no-launch-profile --urls http://localhost:5599
+DOTNET_ROLL_FORWARD=Major dotnet ef migrations add <Name> --no-build     # build first, or the tool uses stale code
+```
+A throwaway database is created in `bin/Debug/net9.0/Inventory.db` when running from the build folder; delete it between tests.
+
+---
+
+## 2. Rules for every batch
+
+1. **One batch = one Git commit** (plus small follow-up commits if a check fails). Commit message starts with `Batch N:`.
+2. **Never change what the operator sees or does** unless the batch says so and Hiten agreed.
+3. **Build after every change.** 0 errors. Do not introduce new warnings.
+4. **Before any batch that touches the database file, schema or data layer** (batches 2, 5, 6, 7, 9): take a copy of the live `Inventory.db` from the counter PC and keep it outside the project folder.
+5. **Smoke test after every batch** (section 3) on a copy of the real database, not on the counter PC. Only then publish to the counter PC.
+6. **If a batch breaks something and the fix is not obvious within an hour, revert the batch** (`git revert <commit>`), publish the previous version, and write what happened in the status log.
+7. **Update section 5 (status log)** at the end of each batch: what was done, what was skipped, anything Hiten must do by hand.
+8. Do not start the next batch until the previous one is on the counter PC and has survived at least one working day, unless Hiten says otherwise.
+
+---
+
+## 3. Smoke test checklist (run after every batch)
+
+Use a copy of the real database. Tick each item.
+
+- [ ] App starts, browser opens, login page shows. Login works with both users. Wrong password is rejected.
+- [ ] Customers: list loads, search works, open one, edit a phone number, save, reopen and confirm. Add a new customer. Delete attempt on a customer with sales is blocked with a message.
+- [ ] Suppliers: same as customers.
+- [ ] Products: list loads, open one, add a variant with a photo, edit its reorder level, delete a variant that has no transactions.
+- [ ] Purchase: create a new purchase, pick supplier, add two lines, edit one line, delete one line, save total amount. Reopen: lines and total correct. Voucher number assigned.
+- [ ] Sale: open new sale, pick customer, scan/type a product ID + variant ID + Enter, add a second line via the picker, Summarize, set a rate and discount, Save. Reopen from Sales list: values correct.
+- [ ] Stock: Products → the variant just sold shows stock reduced by the quantity; the variant just purchased shows stock increased.
+- [ ] Sales order: create, add a line, save totals. Purchase order: add a row, mark completed, delete completed.
+- [ ] Reports page: every tab opens without error; Sales & Purchases totals change when the period changes.
+- [ ] Settings: create a backup; the file appears in the list.
+- [ ] Log out, try to open `/customers` directly: redirected/denied (from batch 3 onward).
+
+---
+
+## 4. Batches
+
+Each batch lists: goal, why, exact tasks, files, acceptance, and risks. REVIEW.md item codes in brackets.
+
+### Batch 1 – Passwords: hash them, remove them from source  [S1]
+**Goal:** No plain-text passwords in the database or in the code. Both passwords changed.
+**Why:** The two logins are visible to anyone who has ever seen the repository.
+**Tasks:**
+1. Add a `PasswordHash` handling using `Microsoft.AspNetCore.Identity.PasswordHasher<UserEntity>` (already available in ASP.NET Core; no new package). Keep the existing `Password` column but store the hash in it.
+2. Remove the `HasData(...)` seed in `Domain/AppDbContext.cs` (lines ~33-37). Add a migration that removes nothing from the DB (the two user rows must survive) – the migration will only drop the seed definition.
+3. On startup (`Program.cs`, after `Migrate()`), run a one-time upgrade: for each user whose `Password` is not yet a hash (does not start with the hasher's format marker, or simply length < 40), hash it in place. This keeps the current passwords working on the first run.
+4. `Pages/Login.razor.cs`: replace the `user.Password != loginModel.Password` comparison with `hasher.VerifyHashedPassword(...)`. Show "Invalid username or password" on failure (today it silently clears the field).
+5. Add a **Change Password** page (`/changepassword`): current password, new password twice, min 8 characters. Logged-in user changes their own password. Link it in `Shared/NavMenu.razor` under the user's name.
+6. Hiten changes both passwords through that page after deployment, and records them outside Git.
+**Files:** `Domain/AppDbContext.cs`, `Migrations/` (new), `Program.cs`, `Pages/Login.razor(.cs)`, new `Pages/ChangePassword.razor(.cs)`, `Shared/NavMenu.razor`.
+**Acceptance:** Login works with old passwords once, then with new ones after change. `Users` table shows hashes. `grep -r "J031289\|Admin@"` in the source returns only migration history files (which cannot be rewritten without force-pushing; note in log).
+**Risks:** Low. If the upgrade step runs twice it must not double-hash (check the marker). Do not force-push history unless Hiten explicitly wants the repository history rewritten.
+
+### Batch 2 – Safe backups and a safe data folder  [Backups, M1]
+**Goal:** Backups cannot be corrupt, run automatically, live somewhere else; the database no longer sits in the program folder.
+**Tasks:**
+1. `Service/BackupService.cs`: replace `File.Copy` with SQLite's online backup: open a `SqliteConnection` to the live DB, open one to the backup path, call `source.BackupDatabase(destination)`. Verify the backup opens (`PRAGMA integrity_check`) before reporting success.
+2. Restore: before copying over the live file, call `SqliteConnection.ClearAllPools()`; after restore, show "Restart the application now" and refuse further DB work until restarted. Keep a copy of the pre-restore DB as `Inventory.before-restore-<timestamp>.db`.
+3. Data folder: read `DataFolder` and `BackupFolder` from `appsettings.json`. Defaults: `%ProgramData%\InventoryApp\` for the DB and `%ProgramData%\InventoryApp\Backups\` for backups. **One-time migration on startup:** if the DB does not exist at the new path but does exist next to the exe, copy it to the new path (never delete the old one). Log what happened.
+4. Add a hosted background service that creates a backup once a day (configurable `BackupDailyAt`, default 02:00, and also on app start if none exists for today). Keep the last 30 daily backups; delete older ones.
+5. Settings page: show the backup folder path and the last successful backup time.
+6. Hiten: set `BackupFolder` to a second drive, USB, NAS or synced cloud folder on the counter PC.
+**Files:** `Service/BackupService.cs`, `Program.cs`, `appsettings.json`, `Pages/Settings.razor`, new `Service/BackupScheduler.cs`.
+**Acceptance:** Backup file passes integrity check; daily backup appears without clicking; app started on a PC with the DB in the old location picks it up and keeps running; restore + restart works on a copy.
+**Risks:** Medium – touches the data file location. Do step 3 last within the batch and test on a copy of the deployed folder first.
+
+### Batch 3 – Login on every page, Admin-only destructive actions  [S2, S3]
+**Tasks:**
+1. `_Imports.razor`: add `@using Microsoft.AspNetCore.Authorization` and `@attribute [Authorize]`. Add `@attribute [AllowAnonymous]` to `Pages/Login.razor` and `Pages/Index.razor`. Remove the now-redundant `[Authorize]` attributes from code-behind files (optional, harmless to leave).
+2. `Routes.razor`: give `AuthorizeRouteView` a `NotAuthorized` section that redirects to `/login` (so a direct URL sends the operator to login instead of a bare "Not authorized" text).
+3. Admin-only (`[Authorize(Roles = "Admin")]` or `<AuthorizeView Roles="Admin">` around the buttons): Settings page (backup/restore/delete), Change Password for *other* users (if added), Import buttons on Customers and Products, "Delete Selected"/"Delete Completed" on Sales Orders and Purchase Orders, Delete buttons on Customer, Supplier, Product, Variant, Purchase, Sale, Sales Order. **Confirm this list with Hiten first** – the "User" account may need some of these.
+**Files:** `_Imports.razor`, `Routes.razor`, `Pages/Login.razor`, `Pages/Index.razor`, the pages listed above.
+**Acceptance:** Logged out → every page except `/` and `/login` redirects to login. Logged in as User → admin-only buttons hidden/disabled. Logged in as Admin → everything works.
+**Risks:** Low. If the "User" role is used by the main operator, over-restricting will block daily work; that is why the list must be confirmed.
+
+### Batch 4 – Crash and small-correctness fixes  [B3, B4, B7, B8]
+**Tasks:**
+1. Change every `async void` to `async Task` (Blazor handles both): `Pages/Product.razor.cs:144 DeleteProduct`, `Pages/PurchaseOrder.razor.cs:246 EditRowPurchaseOrder`, `Pages/Sale.razor.cs:276 UpdateSalesVariant` and `:304 OpenScanMassDialogAsync`, `Pages/SalesOrders.razor.cs:148 EditOrder`, `Pages/SalesSummary.razor.cs:154 RateChanged` and `:172 DiscountChanged`, `Pages/Supplier.razor.cs:157 DeleteSupplier`, `Shared/PurchaseVariantComponent.razor.cs:195 UpdatePurchaseVariant`, `Shared/SalesOrderVariantComponent.razor.cs:192 UpdateSalesOrderVariant`. Also `Pages/Purchases.razor.cs:644`: change `async void OnAfterRender` to `override async Task OnAfterRenderAsync`.
+2. `Pages/SalesSummary.razor.cs`: `RateChanged`/`DiscountChanged` use `decimal.TryParse` / `int.TryParse` with `CultureInfo.InvariantCulture`; on failure keep the previous value and show a snackbar.
+3. `Pages/Sale.razor.cs`: `CheckIfClickEnter` becomes `async Task` and `await AddVariant();`.
+4. `Pages/Sale.razor.cs AddOrder`: if `customer.Id == Guid.Empty` show "Please select a customer" and return (same as `SalesOrder.razor.cs`).
+5. `Pages/Category.razor.cs CreateCategory`: do not navigate away on failure; show the error.
+**Acceptance:** Typing "abc" or clearing the rate on Sales Summary shows a message instead of the red "An error has occurred" banner. Enter-key scanning still adds lines. Saving a sale with no customer shows the message.
+**Risks:** Very low.
+
+### Batch 5 – Unique rules in the database  [D2, B1]
+**Tasks:**
+1. **First, check the live data** for duplicates (run against a copy):
+   ```sql
+   SELECT ProductId, COUNT(*) FROM Products GROUP BY ProductId HAVING COUNT(*)>1;
+   SELECT CustomerId, COUNT(*) FROM Customers GROUP BY CustomerId HAVING COUNT(*)>1;
+   SELECT SupplierId, COUNT(*) FROM Suppliers GROUP BY SupplierId HAVING COUNT(*)>1;
+   SELECT ProductEntityId, VariantId, COUNT(*) FROM Variants GROUP BY ProductEntityId, VariantId HAVING COUNT(*)>1;
+   SELECT Date, VoucherId, COUNT(*) FROM Purchases GROUP BY Date, VoucherId HAVING COUNT(*)>1;
+   SELECT Date, VoucherId, COUNT(*) FROM Sales GROUP BY Date, VoucherId HAVING COUNT(*)>1;
+   SELECT Date, VoucherId, COUNT(*) FROM SalesOrders GROUP BY Date, VoucherId HAVING COUNT(*)>1;
+   ```
+   If any rows come back, Hiten decides how to merge/rename them before the migration.
+2. `Domain/AppDbContext.cs`: add `HasIndex(...).IsUnique()` for `Products.ProductId`, `Customers.CustomerId`, `Suppliers.SupplierId`, `Variants (ProductEntityId, VariantId)`, and `(Date, VoucherId)` on `Purchases`, `Sales`, `SalesOrders`. New migration.
+3. Voucher assignment (`Purchase.razor.cs`, `Sale.razor.cs`, `SalesOrder.razor.cs`): on `DbUpdateException` with a unique violation, re-read the last voucher and retry once; then show a message.
+4. Edit screens: re-check voucher uniqueness when the **date** changes, not only the number.
+5. Catch unique violations on customer/supplier/product/variant save and show "This ID already exists".
+**Acceptance:** Migration applies on a copy of the live DB. Creating a second product with an existing ProductId is refused with a clear message. Two browser tabs saving a purchase at the same second get different vouchers.
+**Risks:** Medium – migration fails if duplicates exist; hence step 1.
+
+### Batch 6 – Short-lived database contexts  [A2]
+**Goal:** Remove the root cause of "second operation on this context" crashes and stale data.
+**Tasks:**
+1. `Program.cs`: replace `AddDbContext<AppDbContext>` with `AddDbContextFactory<AppDbContext>` (same options). Keep the startup `Migrate()` by creating a context from the factory.
+2. Every repository in `Domain/Repository/`: constructor takes `IDbContextFactory<AppDbContext>`; every method does `await using var context = await factory.CreateDbContextAsync();`.
+3. `Pages/Customer.razor.cs` and `Pages/Supplier.razor.cs` inject `AppDbContext` directly for `MobileService.DeleteEmptyNumbers(context)`; change `IMobileService` to take the factory (or move the sweep into the repository Update – see batch 7).
+4. With short-lived contexts, `GetById` methods can use plain `Include(...)` again; delete `Domain/TransactionLineHydrator.cs` and the `HydrateSaleDetailsAsync` method in `SaleRepositoryEF.cs`. Keep `AsNoTracking()` on read-only list queries.
+5. Update methods that relied on long-lived tracking (`context.X.Update(entity)` on entities loaded earlier): load the row inside the method, copy the changed fields, save. `ProductRepositoryEF.Update`, `CustomerRepositoryEF.Update`, `SupplierRepositoryEF.Update`, `VariantRepositoryEF.Update`, `CategoryRepositoryEF.Update`, `ImageRepositoryEF.Update`, and `Shared/Variant.razor.cs` (which adds to `Product.Variants` then calls `ProductRepository.Update(Product)`).
+**Acceptance:** Full smoke test passes. Open a product in two tabs, edit in one, refresh the other: new value shows. No "second operation" errors while a purchase page loads with the product picker.
+**Risks:** Medium-high: touches every data file. Do it in two commits if needed (factory + repositories first, then hydrator removal and Update rewrites). This is the batch where the smoke test matters most.
+
+### Batch 7 – One transaction per business operation  [D1, B6, B2, B10]
+**Tasks:**
+1. New `Service/PurchaseService.cs`: `AddLine`, `UpdateLine`, `DeleteLine`, `UpdateHeader`, each in one context/transaction and each **recomputing and saving `TotalAmountProduct`** (sum of lines' `AmountAfterDiscount` minus header `Discount`). Pages call the service; the "Save Total Amount" button stays but becomes a no-op safety (or is removed after Hiten agrees).
+2. Same for `SalesOrderService`.
+3. `SaleRepositoryEF.Update`: when the incoming line list is empty, delete all existing lines (today it keeps them). Confirm with Hiten whether an empty sale should instead be refused.
+4. Customer/Supplier update: compute added/removed phone numbers for that one record and apply them in the same save; delete `MobileService.DeleteEmptyNumbers` (global sweep).
+5. Supplier totals and Sales vs Purchases report: compute from lines, not from stored header totals (or trust the now-always-updated header).
+**Acceptance:** Delete a purchase line → supplier total on Suppliers page changes immediately without pressing Save Total. Edit a sale, remove all lines, save → stock restored. Kill the app mid-save in a test → no half-saved purchase.
+**Risks:** Medium. Behaviour change (totals auto-update) must be agreed with Hiten.
+
+### Batch 8 – Import: hide now, fix later  [B5]
+**Quick step (do with batch 3):** hide the Import buttons on Customers and Products behind Admin, or remove them until fixed.
+**Full fix (its own batch):** new `Service/ImportService.cs`: parse CSV/XLSX into rows → validate (required fields, duplicate IDs in file and in DB, category must exist) → show a preview with error list → import all-or-nothing in one transaction. Use `;` for multiple mobiles. Update the help tooltips to match.
+**Acceptance:** Importing the same file twice creates nothing the second time and says why.
+
+### Batch 9 – Supported platform and real logs  [Runtime, Logging]
+**Tasks:**
+1. `Inventory.csproj`: `net10.0`; EF Core packages 10.x; `Microsoft.EntityFrameworkCore.Design/Tools` 10.x; MudBlazor 8.x (check breaking changes list; `MudDialogInstance` → `IMudDialogInstance`, `DialogService.Show` → `ShowAsync`, etc.); AutoMapper 12 → keep or move to 13 (licence change in 15+; stay ≤14). `dotnet-tools.json` dotnet-ef 10.x.
+2. Add Serilog (`Serilog.AspNetCore`, `Serilog.Sinks.File`): rolling daily file in `<DataFolder>\logs\`, keep 30 days. Replace `Logger.LogError("..." + ex.Message)` with `Logger.LogError(ex, "...")` everywhere (grep `ex.Message)`).
+3. Remove dead config: `AddAuthentication(...)` block, `AddHttpContextAccessor`, transient `ProtectedSessionStorage`, `ConnectionString` in appsettings, `Error.cshtml(.cs)` and `UseExceptionHandler("/Error")` (replace with Blazor `ErrorBoundary` around `@Body` in `MainLayout.razor`).
+4. Publish profiles: update `TargetFramework`.
+**Acceptance:** Builds and runs on .NET 10; log file appears; an error on a page shows a friendly boundary instead of killing the layout.
+**Risks:** Medium (library upgrades). Do MudBlazor 8 as a separate commit from the .NET upgrade.
+
+### Batch 10 – Tests and CI
+**Tasks:** New `Inventory.Tests` project (xUnit). Unit tests: `LineAmounts`, stock calculation (`GetStockInHandByVariantIdsAsync` on in-memory SQLite), voucher assignment, import validation. Integration tests for `PurchaseService`/`SaleService`. GitHub Actions workflow in `.github/workflows/build.yml`: restore, build, test on push.
+**Acceptance:** `dotnet test` green; the Actions badge green on `main`.
+
+### Batch 11 – Remove dead code  [REVIEW §6 "Unused"]
+Delete, in one commit each group, building between: `Shared/CustomerPopup.*`, `SupplierPopup.*`, `ProductPopup.*`, `ModalWindowShowImage.razor`; `Shared/MainLayout.razor.cs`; Chart.js + datalabels (`App.razor`, `libman.json`, `wwwroot/lib/...`); `SalesOrders.razor.cs` edit-row leftovers; `Purchases.razor.cs SortItem`; demo code in `Pages/Reports/*.razor` (`_events`, `RowClicked`, `RowRightClicked`, `SelectedItemsChanged`, `_sortNameByLength`, "Swedish Farm House" alt text); leftover fields listed in REVIEW §6; `UserRepositoryEF` not-implemented members; `Product.razor.cs GetVariant/variant`; unused model properties. Decide with Hiten whether `/reports/salesorders` (unlinked) should be linked or deleted.
+**Acceptance:** Build 0 errors; warning count goes down; smoke test unchanged.
+
+### Batch 12 – Merge duplicated code  [REVIEW §6 "Duplicated", A3, A4]
+One commit per merge: `PurchaseVariantComponent` + `SalesOrderVariantComponent` → one line editor; three pickers + three autocompletes → one generic lookup; the nine-branch `SortItem` methods → one helper or MudTable sorting; confirm-dialog boilerplate → `ConfirmAsync` helper; `SalesSummary` maths → use `LineAmounts`; `GetProductStockReportAsync` and `GetStockInHandByVariantIdsAsync` → one query. Then flatten view models (remove entity-typed properties). Then collapse trivial repositories.
+**Risks:** Medium: UI components are being replaced; smoke test every merge.
+
+### Batch 13 – One UI library  [A5, M7]
+Replace Blazor.Bootstrap `AutoComplete` → `MudAutocomplete`, `DateInput` → `MudDatePicker`, `NumberInput` → `MudNumericField`, `Modal` (`Shared/ModalWindow.razor`) → `MudDialog`. Remove the `Blazor.Bootstrap` package and its script/css from `App.razor`. Keep Bootstrap CSS only if layout still depends on it; otherwise remove. Cosmetic changes must be shown to Hiten before publishing.
+
+### Batch 14 – Performance for growth  [P1–P5]
+Customer totals via aggregate query (copy the supplier pattern) and stop including `Sales` in `CustomerRepositoryEF.GetAll`; paging on all list tables (`MudTable ServerData` or page size); images served from disk via an endpoint instead of base64 in the page; report sums in SQL with correct period labels; single-row variant updates.
+
+### Batch 15 – Data features needing Hiten's decisions  [D3, D4, D5, M13]
+`RowVersion` concurrency on editable tables; oversell warning or block on Sale; `StockMovement` ledger + stock-adjustment screen with reason; `CreatedAt/By`, `ModifiedAt/By`; rename `Discount` to `DiscountPercent` (lines) / `DiscountAmount` (headers) and store the sales-order discount. Each needs a short conversation first.
+
+---
+
+## 5. Status log
+
+| Batch | Status | Commit | Date | Notes / things Hiten must do by hand |
+|---|---|---|---|---|
+| 0 | Done | 13ea0be | 2026-11-11 | Review written (REVIEW.md), five months of uncommitted work pushed. |
+| 1 | Done | (see git log, "Batch 1") | 2026-11-11 | **Hiten: after deploying, log in as each user and change both passwords via the new "Change Password" menu item; store them outside Git.** Done: `PasswordService` (PBKDF2 via ASP.NET `PasswordHasher`), `UserBootstrap` hashes legacy plain-text rows at startup and creates a random-password Admin on an empty DB (password printed to console + `initial-admin-password.txt` next to the DB), seed removed from `AppDbContext` and from the 2025 migration, empty migration `RemoveSeededUsers`, login shows "Invalid user name or password", `UserRepositoryEF` fully implemented, `/changepassword` page. Verified: build 0 errors / 563 warnings (unchanged); startup tested on a fresh DB for both paths. **Not verified:** logging in through the browser UI (no browser in the dev session). Old passwords still appear in the 2025 migration *Designer* snapshot files and in Git history; removing them needs a history rewrite (force-push), which was not done. |
+| 2 | Not started | | | Hiten: choose the backup folder (second drive / USB / NAS / cloud). |
+| 3 | Not started | | | Hiten: confirm which actions the "User" role may do. |
+| 4 | Not started | | | |
+| 5 | Not started | | | Hiten: resolve any duplicates found in step 1. |
+| 6 | Not started | | | |
+| 7 | Not started | | | Hiten: agree totals auto-update; decide empty-sale rule. |
+| 8 | Not started | | | |
+| 9 | Not started | | | |
+| 10 | Not started | | | |
+| 11 | Not started | | | Hiten: keep or drop `/reports/salesorders`. |
+| 12 | Not started | | | |
+| 13 | Not started | | | Hiten: approve the new look of inputs. |
+| 14 | Not started | | | |
+| 15 | Not started | | | Needs decisions on each item. |
+
+**How to start a batch in a new session:** read sections 1–3 of this file, read the batch, run `dotnet build` to confirm the starting point is clean, take the database backup if the batch requires it, then work through the tasks, build, smoke test, commit as `Batch N: ...`, update this table, push.

@@ -383,14 +383,9 @@ namespace Inventory.Migrations
                         principalColumn: "Id");
                 });
 
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "Name", "Password", "Role" },
-                values: new object[,]
-                {
-                    { 1, "Hiten", "J031289", "User" },
-                    { 2, "Admin", "Admin@", "Admin" }
-                });
+            // Seeded users with plain-text passwords were removed from this migration on 2026-11-11.
+            // Databases that already ran it keep their rows (hashed at startup by UserBootstrap);
+            // new databases get an Admin account with a random password from UserBootstrap instead.
 
             migrationBuilder.CreateIndex(
                 name: "IX_Images_VariantEntityId",

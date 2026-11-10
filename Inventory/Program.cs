@@ -29,6 +29,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddSingleton<PasswordService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -72,6 +73,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    await UserBootstrap.RunAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<PasswordService>(),
+        scope.ServiceProvider.GetRequiredService<ILogger<Program>>(),
+        Path.GetDirectoryName(dbPath)!);
 }
 
 // Configure the HTTP request pipeline.

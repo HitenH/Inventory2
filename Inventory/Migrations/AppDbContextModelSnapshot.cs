@@ -493,22 +493,6 @@ namespace Inventory.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Hiten",
-                            Password = "J031289",
-                            Role = "User"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Admin",
-                            Password = "Admin@",
-                            Role = "Admin"
-                        });
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>

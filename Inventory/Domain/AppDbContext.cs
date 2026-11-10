@@ -29,11 +29,8 @@ namespace Inventory.Domain
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<UserEntity>().HasData(new List<UserEntity>()
-            {
-                new UserEntity(){ Id = 1, Name = "Hiten", Password = "J031289", Role = "User"},
-                new UserEntity(){ Id = 2, Name = "Admin", Password = "Admin@", Role = "Admin"}
-            });
+            // Users are no longer seeded here. Passwords are stored hashed; see Authentication/UserBootstrap.cs
+            // for the one-time upgrade of existing rows and creation of the first admin on an empty database.
 
             modelBuilder.Entity<PurchaseOrderEntity>()
                         .Property(p => p.Date)

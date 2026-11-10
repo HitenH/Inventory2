@@ -15,6 +15,10 @@
             <InputText type="password" @bind-Value="loginModel.Password" id="login-password" class="form-control" />
         </div>
         <ValidationMessage For="@(() => loginModel.Password)" />
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger py-2" role="alert">@errorMessage</div>
+        }
         <div class="d-flex justify-content-between">
             <button type="submit" id="button-submit" class="btn btn-success">Login</button>
             <a class="btn btn-secondary" href="/">Close</a>

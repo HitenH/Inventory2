@@ -28,18 +28,35 @@ namespace Inventory.Domain.Repository
             return await context.Users.FirstOrDefaultAsync(u => u.Id == id, default);
         }
 
-        Task<IEnumerable<UserEntity>> IUserRepository.GetAll()
+        public async Task<IEnumerable<UserEntity>> GetAll()
         {
-            throw new NotImplementedException();
+            return await context.Users.AsNoTracking().OrderBy(u => u.Name).ToListAsync();
         }
 
-        Task IUserRepository.Update(UserEntity user)
+        public async Task Update(UserEntity user)
         {
-            throw new NotImplementedException();
+            var existing = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (existing is null)
+            {
+                return;
+            }
+
+            existing.Name = user.Name;
+            existing.Password = user.Password;
+            existing.Role = user.Role;
+            await context.SaveChangesAsync();
         }
-        Task IUserRepository.Delete(UserEntity user)
+
+        public async Task Delete(UserEntity user)
         {
-            throw new NotImplementedException();
+            var existing = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (existing is null)
+            {
+                return;
+            }
+
+            context.Users.Remove(existing);
+            await context.SaveChangesAsync();
         }
     }
 }

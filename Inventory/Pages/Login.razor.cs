@@ -14,10 +14,12 @@ namespace Inventory.Pages
         [Inject] private ILogger<Login> Logger { get; set; }
         [Inject] private AuthenticationStateProvider authStateProvider { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private PasswordService Passwords { get; set; } = default!;
 
         private LoginModel loginModel = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
+        private string? errorMessage;
 
         protected override void OnInitialized()
         {
@@ -27,30 +29,39 @@ namespace Inventory.Pages
         }
         public async Task SignIn()
         {
+            errorMessage = null;
             try
             {
-                var user = await UserRepository.GetByName(loginModel.Name);
-                if (user != null)
+                var user = await UserRepository.GetByName(loginModel.Name?.Trim() ?? string.Empty);
+                var rehashNeeded = false;
+                var ok = user != null && Passwords.Verify(user, loginModel.Password, out rehashNeeded);
+
+                if (!ok)
                 {
-                    if (user.Password != loginModel.Password)
-                        loginModel.Password = "";
-                    else
-                    {
-                        var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
-                        await customAuthStateProvider.UpdateAuthenticationState(new UserSession()
-                        {
-                            UserName = user.Name,
-                            Role = user.Role
-                        });
-                        navManager.NavigateTo("/", true);
-                    }
+                    // Same message for unknown user and wrong password, so names cannot be guessed.
+                    errorMessage = "Invalid user name or password.";
+                    loginModel.Password = "";
+                    return;
                 }
-                else
-                    loginModel = new();
+
+                if (rehashNeeded)
+                {
+                    user!.Password = Passwords.Hash(user, loginModel.Password);
+                    await UserRepository.Update(user);
+                }
+
+                var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
+                await customAuthStateProvider.UpdateAuthenticationState(new UserSession()
+                {
+                    UserName = user!.Name,
+                    Role = user.Role
+                });
+                navManager.NavigateTo("/", true);
             }
             catch (Exception ex)
             {
-                Logger.LogError("Login error: " + ex.Message);
+                Logger.LogError(ex, "Login error");
+                errorMessage = "Login failed because of an unexpected error. Please try again.";
             }
         }
     }
