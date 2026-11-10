@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
@@ -156,7 +156,7 @@ public partial class SalesOrders
             {
                 var isVoucherExist = false;
                 if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
-                    isVoucherExist = SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
+                    isVoucherExist = await SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
 
                 if (!isVoucherExist)
                     salesOrderEntity.VoucherId = salesOrderModel.VoucherId;

@@ -1,4 +1,4 @@
-﻿@inject IDialogService DialogService
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <MudPaper Class="pa-4" Elevation="3">
@@ -72,7 +72,7 @@
         </MudTd>
         <MudTd>@context.VariantId</MudTd>
         <MudTd>@context.Name</MudTd>
-        <MudTd>@stockInHand[context.Id]</MudTd>
+        <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
         <MudTd>@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)

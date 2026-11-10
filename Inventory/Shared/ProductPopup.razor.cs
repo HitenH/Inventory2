@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Components;
@@ -24,7 +24,7 @@ namespace Inventory.Shared
             await Task.Delay(200);
             try
             {
-                var productsDb = await ProductRepository.GetAll();
+                var productsDb = await ProductRepository.GetAllForLookup();
                 if (productsDb.Count != 0)
                 {
                     products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
@@ -40,8 +40,16 @@ namespace Inventory.Shared
 
         public void SearchItem(ChangeEventArgs e)
         {
-            var search = e.Value.ToString().ToLower();
-            productsAfterSearch = products.Where(n => n.ProductId.ToLower().Contains(search) || n.Name.ToLower().Contains(search)).ToList();
+            var search = e.Value?.ToString()?.Trim();
+            if (string.IsNullOrEmpty(search))
+            {
+                productsAfterSearch = products;
+                return;
+            }
+
+            productsAfterSearch = products.Where(n =>
+                (n.ProductId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (n.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
         }
 
         private void Close()

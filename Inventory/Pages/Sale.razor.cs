@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -49,32 +49,36 @@ public partial class Sale
             if (SaleId != null)
             {
                 salesEntity = await SaleRepository.GetById(Guid.Parse(SaleId));
-                if (salesEntity != null)
+                if (salesEntity.Id != Guid.Empty)
                 {
                     salesModel.VoucherId = salesEntity.VoucherId;
-                    salesModel.CustomerId = salesEntity.Customer.CustomerId;
-                    salesModel.CustomerName = salesEntity.Customer.Name;
+                    salesModel.CustomerId = salesEntity.Customer?.CustomerId ?? "";
+                    salesModel.CustomerName = salesEntity.Customer?.Name ?? "";
                     salesModel.Date = salesEntity.Date;
-                    salesModel.Id= salesEntity.Id;
+                    salesModel.Id = salesEntity.Id;
 
-                    customer = salesEntity.Customer;
-                    salesModelVariants = salesEntity.SalesVariants.Select(v => new SalesVariantModel()
+                    customer = salesEntity.Customer ?? new CustomerEntity();
+                    salesModelVariants = salesEntity.SalesVariants?.Select(v => new SalesVariantModel()
                     {
                         Id = v.Id,
                         ProductEntityId = v.ProductEntityId,
-                        ProductId = v.Product.ProductId,
-                        ProductName = v.Product.Name,
+                        ProductId = v.Product?.ProductId ?? "",
+                        ProductName = v.Product?.Name ?? "",
                         Product = v.Product,
                         VariantEntityId = v.VariantEntityId,
-                        VariantId = v.ProductVariant.VariantId,
+                        VariantId = v.ProductVariant?.VariantId ?? "",
                         Variant = v.ProductVariant,
                         Quantity = v.Quantity,
                         IsCreated = true
-                    }).ToList();
+                    }).ToList() ?? new();
 
                     customerModel = Mapper.Map<CustomerModel>(customer);
-
-                    IsDisabled = false;  
+                    IsDisabled = false;
+                }
+                else
+                {
+                    Snackbar.Add("Sale not found.", Severity.Warning);
+                    navManager.NavigateTo("/sales");
                 }
             }
             else
@@ -102,15 +106,15 @@ public partial class Sale
 
                 salesEntityVariants = salesModelVariants.Select(v => new SalesVariantEntity()
                 {
-                    Product = v.Product,
-                    ProductVariant = v.Variant,
+                    ProductEntityId = v.ProductEntityId,
+                    VariantEntityId = v.VariantEntityId!.Value,
                     Quantity = v.Quantity
                 }).ToList();
 
                 salesEntity = new SalesEntity()
                 {
                     Date = salesModel.Date,
-                    Customer = customer,
+                    CustomerEntityId = customer.Id,
                     VoucherId = salesModel.VoucherId,
                     SalesVariants = salesEntityVariants
                 };
@@ -121,8 +125,8 @@ public partial class Sale
             }
             catch (Exception ex)
             {
-                Snackbar.Add("Something went wrong", Severity.Warning);
-                navManager.NavigateTo("/sales");
+                Logger.LogError(ex, "Failed to save sale");
+                Snackbar.Add($"Could not save sale: {ex.Message}", Severity.Error);
             }
         }
         else
@@ -144,14 +148,12 @@ public partial class Sale
                 else
                     salesModel.VoucherId = salesEntity.VoucherId;
 
-                if (salesEntity.Customer.Id != customer.Id)
-                    salesEntity.Customer = customer;
-
+                salesEntity.CustomerEntityId = customer.Id;
                 salesEntity.Date = salesModel.Date;
                 salesEntity.SalesVariants = salesModelVariants.Select(v => new SalesVariantEntity()
                 {
-                    Product = v.Product,
-                    ProductVariant = v.Variant,
+                    ProductEntityId = v.ProductEntityId,
+                    VariantEntityId = v.VariantEntityId!.Value,
                     Quantity = v.Quantity,
                 }).ToList();
 

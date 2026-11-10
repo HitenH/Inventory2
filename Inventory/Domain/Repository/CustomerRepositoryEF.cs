@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,7 +43,21 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<CustomerEntity>> GetAll()
         {
-            return await context.Customers.Include(n => n.Mobiles).Include(c => c.Sales).AsNoTracking().ToListAsync();
+            return await context.Customers
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(n => n.Mobiles)
+                .Include(c => c.Sales)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<CustomerEntity>> GetAllForLookup()
+        {
+            return await context.Customers
+                .AsNoTracking()
+                .OrderBy(c => c.Name)
+                .ToListAsync();
         }
 
         public async Task<CustomerEntity> GetById(Guid id)

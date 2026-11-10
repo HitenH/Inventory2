@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using BlazorBootstrap;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Inventory.Domain.Entities;
@@ -39,10 +39,10 @@ public partial class Variant
         messageStore = new(editContext);
         editContext.OnValidationStateChanged += HandleValidationRequested;
     }
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         GetVariants();
-        GetStockInHandAmount();
+        await LoadStockInHandAsync();
     }
 
     private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
@@ -88,7 +88,7 @@ public partial class Variant
                     await ProductRepository.Update(Product);
                     CancelVariant();
                     GetVariants();
-                    GetStockInHandAmount();
+                    await LoadStockInHandAsync();
                     await ReturnFocusToInput();
                 }
                 catch (Exception ex)
@@ -141,7 +141,7 @@ public partial class Variant
                         await ProductRepository.Update(Product);
                         CancelVariant();
                         GetVariants();
-                        GetStockInHandAmount();
+                        await LoadStockInHandAsync();
                     }
                 }
                 catch (Exception ex)
@@ -174,8 +174,9 @@ public partial class Variant
             if (variant != null)
             {
                 await VariantRepository.Delete(variant);
+                Product.Variants.RemoveAll(v => v.Id == id);
                 GetVariants();
-                GetStockInHandAmount();
+                await LoadStockInHandAsync();
             }
         }
         catch (Exception ex)
@@ -248,12 +249,16 @@ public partial class Variant
         }
     }
 
-    public void GetStockInHandAmount()
+    private async Task LoadStockInHandAsync()
     {
-        stockInHand = variants.ToDictionary(variant => variant.Id, variant =>
-            (variant.PurchaseVariants.Sum(p => p.Quantity ?? 0)) -
-            (variant.SalesVariants.Sum(s => s.Quantity ?? 0))
-        );
+        if (Product?.Variants is not { Count: > 0 })
+        {
+            stockInHand = new Dictionary<Guid, int>();
+            return;
+        }
+
+        stockInHand = await ProductRepository.GetStockInHandByVariantIdsAsync(
+            Product.Variants.Select(v => v.Id));
     }
 
     public void Dispose()

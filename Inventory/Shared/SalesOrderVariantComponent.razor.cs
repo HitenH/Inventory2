@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -12,7 +13,6 @@ namespace Inventory.Shared
     {
         [Parameter] public SalesOrderEntity SalesOrder { get; set; }
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
-        [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private ISalesOrderVariantRepository SalesOrderVariantRepository { get; set; }
         [Inject] private ILogger<SalesOrderVariantComponent> Logger { get; set; }
@@ -35,17 +35,16 @@ namespace Inventory.Shared
 
         protected override void OnParametersSet()
         {
+            SalesOrder.SalesOrderVariants ??= new List<SalesOrderVariantEntity>();
+            SalesOrder.SalesOrderVariants = [.. SalesOrder.SalesOrderVariants.OrderBy(o => o.SerialNumber)];
+
             if (SalesOrder.SalesOrderVariants.Count != 0)
             {
-                serialnumber = SalesOrder.SalesOrderVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
+                serialnumber = SalesOrder.SalesOrderVariants.Max(p => p.SerialNumber) + 1;
             }
-        }
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            GetSalesOrderVariants();
-            GetAmount();
-        }
 
+            GetSalesOrderVariants();
+        }
         public async Task AddVariant()
         {
             if (SalesOrder != null || salesOrderVariantModel != null)
@@ -63,18 +62,28 @@ namespace Inventory.Shared
                     salesOrderVariantEntity.Remarks = salesOrderVariantModel.Remarks;
                     salesOrderVariantEntity.SalesOrderEntityId = SalesOrder.Id;
 
-                    salesOrderVariantEntity.Product = product;
-                    SalesOrder.SalesOrderVariants.Add(salesOrderVariantEntity);
-                    await SalesOrderRepository.Update(SalesOrder);
+                    await SalesOrderVariantRepository.Create(new SalesOrderVariantEntity
+                    {
+                        SalesOrderEntityId = SalesOrder.Id,
+                        ProductEntityId = product.Id,
+                        VariantEntityId = salesOrderVariantModel.VariantEntityId.Value,
+                        SerialNumber = serialnumber,
+                        Quantity = salesOrderVariantModel.Quantity,
+                        ProductRate = salesOrderVariantModel.ProductRate,
+                        Amount = salesOrderVariantModel.Amount,
+                        Discount = salesOrderVariantModel.Discount,
+                        AmountAfterDiscount = salesOrderVariantModel.AmountAfterDiscount,
+                        Remarks = salesOrderVariantModel.Remarks
+                    });
 
                     CancelSalesOrderVariant();
-                    GetSalesOrderVariants();
                     serialnumber += 1;
                     await ChangeState.InvokeAsync(true);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Logger.LogError(ex, "Add sales order line failed");
+                    Snackbar.Add($"Could not add line: {ex.Message}", Severity.Error);
                 }
             }
         }
@@ -85,24 +94,22 @@ namespace Inventory.Shared
             {
                 if (salesOrderVariantModel != null)
                 {
-                    salesOrderVariantEntity = await SalesOrderVariantRepository.GetById(salesOrderVariantModel.Id);
-                    if (salesOrderVariantEntity != null)
+                    await SalesOrderVariantRepository.Update(new SalesOrderVariantEntity
                     {
-                        salesOrderVariantModel.SerialNumber = serialnumber;
-                        salesOrderVariantEntity.SerialNumber = salesOrderVariantModel.SerialNumber;
-                        salesOrderVariantEntity.VariantEntityId = salesOrderVariantModel.VariantEntityId.Value;
-                        salesOrderVariantEntity.Quantity = salesOrderVariantModel.Quantity;
-                        salesOrderVariantEntity.Amount = salesOrderVariantModel.Amount;
-                        salesOrderVariantEntity.Discount = salesOrderVariantModel.Discount;
-                        salesOrderVariantEntity.AmountAfterDiscount = salesOrderVariantModel.AmountAfterDiscount;
-                        salesOrderVariantEntity.ProductRate = salesOrderVariantModel.ProductRate;
-                        salesOrderVariantEntity.Remarks = salesOrderVariantModel.Remarks;
-                        salesOrderVariantEntity.Product = product;
+                        Id = salesOrderVariantModel.Id,
+                        SalesOrderEntityId = SalesOrder.Id,
+                        ProductEntityId = product.Id,
+                        VariantEntityId = salesOrderVariantModel.VariantEntityId.Value,
+                        SerialNumber = salesOrderVariantModel.SerialNumber,
+                        Quantity = salesOrderVariantModel.Quantity,
+                        ProductRate = salesOrderVariantModel.ProductRate,
+                        Amount = salesOrderVariantModel.Amount,
+                        Discount = salesOrderVariantModel.Discount,
+                        AmountAfterDiscount = salesOrderVariantModel.AmountAfterDiscount,
+                        Remarks = salesOrderVariantModel.Remarks
+                    });
 
-                        await SalesOrderVariantRepository.Update(salesOrderVariantEntity);
-                    }
                     CancelSalesOrderVariant();
-                    GetSalesOrderVariants();
                     await ChangeState.InvokeAsync(true);
                 }
             }
@@ -151,30 +158,14 @@ namespace Inventory.Shared
 
         public void GetAmount()
         {
-            if (salesOrderVariantModel.ProductRate == 0 || salesOrderVariantModel.Quantity == 0)
-                salesOrderVariantModel.Amount = 0;
-            else
-                salesOrderVariantModel.Amount = Math.Round(salesOrderVariantModel.ProductRate.Value * salesOrderVariantModel.Quantity.Value, 2);
-            GetAmountAfterDiscount();
+            salesOrderVariantModel.Amount = LineAmounts.ComputeAmount(salesOrderVariantModel.ProductRate, salesOrderVariantModel.Quantity);
+            salesOrderVariantModel.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(salesOrderVariantModel.Amount, salesOrderVariantModel.Discount);
         }
 
         private void DiscountChanged(int? value)
         {
             salesOrderVariantModel.Discount = value;
-            GetAmountAfterDiscount();
-        }
-
-        public void GetAmountAfterDiscount()
-        {
-            if (salesOrderVariantModel.Amount != 0 && salesOrderVariantModel.Discount != 0)
-            {
-                var amount =  salesOrderVariantModel.Amount - (salesOrderVariantModel.Amount * ((decimal)salesOrderVariantModel.Discount / 100));
-                salesOrderVariantModel.AmountAfterDiscount = Math.Round(amount.Value, 2);
-            }
-            else if (salesOrderVariantModel.Amount != 0 && salesOrderVariantModel.Discount == 0)
-            {
-                salesOrderVariantModel.AmountAfterDiscount = Math.Round(salesOrderVariantModel.Amount.Value, 2);
-            }
+            salesOrderVariantModel.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(salesOrderVariantModel.Amount, salesOrderVariantModel.Discount);
         }
 
         public void GetSalesOrderVariants()
@@ -185,13 +176,13 @@ namespace Inventory.Shared
                 AmountAfterDiscount = v.AmountAfterDiscount,
                 Discount = v.Discount,
                 Id = v.Id,
-                ProductId = v.Product.ProductId,
-                ProductName = v.Product.Name,
+                ProductId = v.Product?.ProductId ?? "",
+                ProductName = v.Product?.Name ?? "",
                 ProductRate = v.ProductRate,
                 Quantity = v.Quantity,
                 SerialNumber = v.SerialNumber,
-                ProductVariantId = v.ProductVariant.VariantId,
-                ProductEntityId = v.Product.Id,
+                ProductVariantId = v.ProductVariant?.VariantId ?? "",
+                ProductEntityId = v.ProductEntityId,
                 Remarks = v.Remarks,
                 VariantEntityId = v.VariantEntityId,
                 Product = v.Product

@@ -1,254 +1,241 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
-using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
 
-namespace Inventory.Pages
+namespace Inventory.Pages;
+
+[Authorize]
+public partial class SalesOrder
 {
-    [Authorize]
-    public partial class SalesOrder
+    [Parameter] public string SalesOrderId { get; set; }
+    [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
+    [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private ILogger<SalesOrder> Logger { get; set; }
+    [Inject] private NavigationManager navManager { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private IMapper Mapper { get; set; }
+
+    private CustomerEntity customer = new();
+    private CustomerModel? customerModel;
+    private SalesOrderModel salesOrderModel = new();
+    private SalesOrderEntity salesOrderEntity = new();
+    private ComponentTotalData SalesOrderTotalData = new();
+    private bool IsDisabled { get; set; }
+
+    protected async override Task OnInitializedAsync()
     {
-        [Parameter] public string SalesOrderId { get; set; }
-        [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
-        [Inject] private ICustomerRepository CustomerRepository { get; set; }
-        [Inject] private ILogger<SalesOrder> Logger { get; set; }
-        [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private ISnackbar Snackbar { get; set; }
-        [Inject] private IDialogService DialogService { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
-
-        private CustomerEntity customer = new();
-        private CustomerModel customerModel;
-        private SalesOrderModel salesOrderModel = new();
-        private SalesOrderEntity salesOrderEntity = new();
-        private ComponentTotalData SalesOrderTotalData = new(); 
-        private List<CustomerModel> customers = new();
-        private List<CustomerModel> customersAfterSearch = new();
-        private bool IsDisabled { get; set; }
-
-        protected async override Task OnInitializedAsync()
+        if (SalesOrderId != null)
         {
-            await GetCustomersAsync();
-            if (SalesOrderId != null)
+            await ReloadSalesOrderAsync();
+            IsDisabled = salesOrderEntity.Id == Guid.Empty;
+        }
+        else
+        {
+            IsDisabled = true;
+        }
+    }
+
+    private async Task ReloadSalesOrderAsync()
+    {
+        salesOrderEntity = await SalesOrderRepository.GetById(Guid.Parse(SalesOrderId!));
+        if (salesOrderEntity.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
+        salesOrderModel.OrderStatus = salesOrderEntity.OrderStatus;
+        salesOrderModel.CustomerId = salesOrderEntity.Customer?.CustomerId ?? "";
+        salesOrderModel.CustomerName = salesOrderEntity.Customer?.Name ?? "";
+        salesOrderModel.TotalAmountProduct = salesOrderEntity.TotalAmountProduct;
+        salesOrderModel.Date = salesOrderEntity.Date;
+        salesOrderModel.DueDate = salesOrderEntity.DueDate;
+        salesOrderModel.Id = salesOrderEntity.Id;
+
+        customer = salesOrderEntity.Customer ?? new CustomerEntity();
+        customerModel = Mapper.Map<CustomerModel>(customer);
+
+        GetTotalAmount();
+        if (salesOrderEntity.TotalAmountProduct > 0)
+        {
+            var lineTotal = (salesOrderEntity.SalesOrderVariants ?? new List<SalesOrderVariantEntity>())
+                .Select(v => v.AmountAfterDiscount).Sum() ?? 0;
+            SalesOrderTotalData.Discount = lineTotal - salesOrderEntity.TotalAmountProduct.Value;
+        }
+    }
+
+    public async Task AddOrder()
+    {
+        if (customer.Id == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var voucherIdDb = await SalesOrderRepository.GetLastVoucherIdByDate(salesOrderModel.Date);
+            salesOrderModel.VoucherId = voucherIdDb == 0 ? 1 : voucherIdDb + 1;
+
+            salesOrderEntity = new()
             {
-                salesOrderEntity = await SalesOrderRepository.GetById(Guid.Parse(SalesOrderId));
-                if (salesOrderEntity != null)
-                {
-                    salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
-                    salesOrderModel.OrderStatus = salesOrderEntity.OrderStatus;
-                    salesOrderModel.CustomerId = salesOrderEntity.Customer.CustomerId;
-                    salesOrderModel.CustomerName = salesOrderEntity.Customer.Name;
-                    salesOrderModel.TotalAmountProduct = salesOrderEntity.TotalAmountProduct;
-                    salesOrderModel.Date = salesOrderEntity.Date;
-                    salesOrderModel.DueDate = salesOrderEntity.DueDate;
+                Date = salesOrderModel.Date,
+                DueDate = salesOrderModel.DueDate,
+                CustomerEntityId = customer.Id,
+                VoucherId = salesOrderModel.VoucherId,
+                OrderStatus = salesOrderModel.OrderStatus,
+            };
+            var id = await SalesOrderRepository.Create(salesOrderEntity);
+            SalesOrderId = id.ToString();
+            salesOrderModel.Id = id;
+            await ReloadSalesOrderAsync();
+            IsDisabled = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Create sales order failed");
+            Snackbar.Add($"Saving error: {ex.Message}", Severity.Error);
+        }
+    }
 
-                    customer = salesOrderEntity.Customer;
+    public async Task EditOrder()
+    {
+        if (salesOrderEntity.Id == Guid.Empty || customer.Id == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", Severity.Warning);
+            return;
+        }
 
-                    customerModel = Mapper.Map<CustomerModel>(customer);
+        try
+        {
+            var isVoucherExist = false;
+            if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
+            {
+                isVoucherExist = await SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
+            }
 
-
-                    IsDisabled = false;
-                    GetTotalAmount();
-
-                    if (salesOrderEntity.TotalAmountProduct > 0)
-                        SalesOrderTotalData.Discount = salesOrderEntity.SalesOrderVariants.Select(v => v.AmountAfterDiscount).Sum().Value - salesOrderEntity.TotalAmountProduct.Value;
-                }
+            if (!isVoucherExist)
+            {
+                salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
             }
             else
-                IsDisabled = true;
-        }
-
-        public async Task AddOrder()
-        {
-            if (salesOrderModel != null)
             {
-                try
-                {
-                    var voucherIdDb = await SalesOrderRepository.GetLastVoucherIdByDate(salesOrderModel.Date);
-                    if (voucherIdDb == 0)
-                        salesOrderModel.VoucherId = 1;
-                    else
-                        salesOrderModel.VoucherId = voucherIdDb + 1;
-
-                    salesOrderEntity = new()
-                    {
-                        Date = salesOrderModel.Date,
-                        DueDate = salesOrderModel.DueDate,
-                        Customer = customer,
-                        VoucherId = salesOrderModel.VoucherId,
-                        OrderStatus = salesOrderModel.OrderStatus,
-                    };
-                    var id = await SalesOrderRepository.Create(salesOrderEntity);
-                    SalesOrderId = id.ToString();
-                    salesOrderModel.Id = id;
-                    salesOrderEntity = await SalesOrderRepository.GetById(id);
-                    IsDisabled = false;
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add("Something went wrong", Severity.Warning);
-                }
+                salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
             }
+
+            salesOrderEntity.CustomerEntityId = customer.Id;
+            salesOrderEntity.Date = salesOrderModel.Date;
+            salesOrderEntity.DueDate = salesOrderModel.DueDate;
+            salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
+
+            await SalesOrderRepository.Update(salesOrderEntity);
+            await ReloadSalesOrderAsync();
+            Snackbar.Add("Updated successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Update sales order failed");
+            Snackbar.Add($"Update error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public async Task DeleteOrder()
+    {
+        if (salesOrderEntity.Id == Guid.Empty)
+        {
+            return;
         }
 
-        public async Task EditOrder()
+        try
         {
-            if (salesOrderModel != null)
+            var parameters = new DialogParameters<ConfirmationDialog>
             {
-                try
-                {
-                    var isVoucherExist = false;
-                    if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
-                        isVoucherExist = SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
-
-                    if (!isVoucherExist)
-                        salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
-                    else
-                        salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
-
-                    if (salesOrderEntity.Customer.Id != customer.Id)
-                        salesOrderEntity.Customer = customer;
-
-                    salesOrderEntity.Date = salesOrderModel.Date;
-                    salesOrderEntity.DueDate = salesOrderModel.DueDate;
-                    salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
-
-                    await SalesOrderRepository.Update(salesOrderEntity);
-                    Snackbar.Add("Updated successfully", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add("Something went wrong", Severity.Warning);
-                }
-            }
-        }
-
-        public async Task DeleteOrder()
-        {
-            if (salesOrderEntity != null)
-            {
-                try
-                {
-                    var parameters = new DialogParameters<ConfirmationDialog>
-                {
-                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                    { x => x.ButtonText, "Delete" },
-                    { x => x.Color, Color.Error }
-                };
-
-                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                    var result = await dialog.Result;
-                    if (!result.Canceled)
-                    {
-                        await SalesOrderRepository.Delete(salesOrderEntity);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Snackbar.Add("Something went wrong", Severity.Warning);
-                }
-                navManager.NavigateTo("/salesorders");
-            }
-        }
-
-        public async Task AddTotalAmount()
-        {
-            try
-            {
-                salesOrderEntity.TotalAmountProduct = SalesOrderTotalData.TotalAmount;
-                await SalesOrderRepository.Update(salesOrderEntity);
-                navManager.NavigateTo("/salesorders");
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add("Something went wrong", Severity.Warning);
-            }
-        }
-
-
-        private void DiscountChanged(decimal value)
-        {
-            SalesOrderTotalData.Discount = value;
-            GetTotalAmount();
-        }
-
-        public void GetTotalAmount()
-        {
-            SalesOrderTotalData.TotalQuantity = salesOrderEntity.SalesOrderVariants.Select(x => x.Quantity).Sum().Value;
-            var amount = salesOrderEntity.SalesOrderVariants.Select(v => v.AmountAfterDiscount).Sum().Value;
-            SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
-        }
-
-        public void ChangeStateSalesOrderVariant(bool change)
-        {
-            if (change)
-                GetTotalAmount();
-        }
-
-        public async Task GetCustomerFromPopup()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
+                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+                { x => x.ButtonText, "Delete" },
+                { x => x.Color, Color.Error }
             };
 
-            var dialog = await DialogService.ShowAsync<CustomerDialog>("Customer Dialog", options);
+            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
             var result = await dialog.Result;
-
-
             if (!result.Canceled)
             {
-                var customerFromPopup = (CustomerModel)result.Data;
-                OnCustomerSelected(customerFromPopup);
+                await SalesOrderRepository.Delete(salesOrderEntity);
+                navManager.NavigateTo("/salesorders");
             }
         }
-        private async Task GetCustomersAsync()
+        catch (Exception ex)
         {
-            try
+            Logger.LogError(ex, "Delete sales order failed");
+            Snackbar.Add("Something went wrong", Severity.Warning);
+        }
+    }
+
+    public async Task AddTotalAmount()
+    {
+        try
+        {
+            salesOrderEntity.TotalAmountProduct = SalesOrderTotalData.TotalAmount;
+            await SalesOrderRepository.Update(salesOrderEntity);
+            navManager.NavigateTo("/salesorders");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Save sales order totals failed");
+            Snackbar.Add($"Could not save totals: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void DiscountChanged(decimal value)
+    {
+        SalesOrderTotalData.Discount = value;
+        GetTotalAmount();
+    }
+
+    public void GetTotalAmount()
+    {
+        var lines = salesOrderEntity.SalesOrderVariants ?? new List<SalesOrderVariantEntity>();
+        SalesOrderTotalData.TotalQuantity = lines.Select(x => x.Quantity).Sum() ?? 0;
+        var amount = lines.Select(v => v.AmountAfterDiscount).Sum() ?? 0;
+        SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
+    }
+
+    public async Task ChangeStateSalesOrderVariant(bool change)
+    {
+        if (change && SalesOrderId != null)
+        {
+            await ReloadSalesOrderAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnCustomerSelected(CustomerModel? _customer)
+    {
+        if (_customer != null)
+        {
+            customerModel = _customer;
+            customer = await CustomerRepository.GetById(_customer.Id);
+            salesOrderModel.CustomerId = _customer.CustomerId ?? "";
+            salesOrderModel.CustomerName = _customer.Name ?? "";
+
+            if (salesOrderEntity.Id != Guid.Empty)
             {
-                var customerDb = await CustomerRepository.GetAll();
-                if (customerDb.Count != 0)
-                {
-                    customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
-                    customersAfterSearch = customers;
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add("Something went wrong", Severity.Warning);
+                salesOrderEntity.CustomerEntityId = customer.Id;
             }
         }
-        private async Task OnCustomerSelected(CustomerModel? _customer)
+        else
         {
-            if (_customer != null)
-            {
-                customerModel = _customer;
-
-                customer = await CustomerRepository.GetById(_customer.Id);
-
-                salesOrderModel.CustomerId = _customer.CustomerId;
-                salesOrderModel.CustomerName = _customer.Name;
-            }
-            else
-            {
-                customerModel = null;
-                customer = new();
-                // Clear the fields if no product is selected
-                salesOrderModel.CustomerId = "";
-                salesOrderModel.CustomerName = "";
-            }
+            customerModel = null;
+            customer = new();
+            salesOrderModel.CustomerId = "";
+            salesOrderModel.CustomerName = "";
         }
     }
 }

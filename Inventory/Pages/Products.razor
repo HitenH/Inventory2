@@ -1,9 +1,9 @@
-﻿@page "/products"
+@page "/products"
 @using Inventory.MudBlazorComponents
 
 
 
-@if (productsAfterSearch == null)
+@if (!isLoaded)
 {
     <LoadingComponent />
 }

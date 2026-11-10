@@ -1,5 +1,6 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
+using Inventory.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -46,25 +47,121 @@ namespace Inventory.Domain.Repository
         public async Task<List<ProductEntity>> GetAll()
         {
             return await context.Products
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(p => p.Category)
                 .Include(p => p.Variants)
-                .ThenInclude(p => p.PurchaseVariants)
-                .Include(p => p.Variants).ThenInclude(p => p.SalesVariants).ToListAsync();
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<ProductEntity>> GetAllForLookup()
+        {
+            return await context.Products
+                .AsNoTracking()
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false)
+        {
+            var purchaseQtyByVariant = await context.PurchaseVariant
+                .AsNoTracking()
+                .GroupBy(pv => pv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            var salesQtyByVariant = await context.SalesVariants
+                .AsNoTracking()
+                .GroupBy(sv => sv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            var variants = await context.Variants
+                .AsNoTracking()
+                .Include(v => v.Product)
+                .OrderBy(v => v.Product!.Name)
+                .ThenBy(v => v.VariantId)
+                .ToListAsync();
+
+            var reportItems = new List<ProductReportItem>();
+
+            foreach (var variant in variants)
+            {
+                var product = variant.Product;
+                if (product is null)
+                {
+                    continue;
+                }
+
+                purchaseQtyByVariant.TryGetValue(variant.Id, out var purchasedQty);
+                salesQtyByVariant.TryGetValue(variant.Id, out var soldQty);
+                var stockInHand = purchasedQty - soldQty;
+
+                if (onlyBelowReorderLevel && stockInHand > (variant.ReorderLevel ?? int.MaxValue))
+                {
+                    continue;
+                }
+
+                reportItems.Add(new ProductReportItem
+                {
+                    ProductId = product.ProductId ?? string.Empty,
+                    ProductName = product.Name ?? string.Empty,
+                    VariantId = variant.VariantId,
+                    VariantName = variant.Name ?? string.Empty,
+                    StockInHand = stockInHand,
+                    ReorderLevel = variant.ReorderLevel,
+                    SalesQuantity = soldQty,
+                    SalesAmount = soldQty * product.Rate
+                });
+            }
+
+            return reportItems;
+        }
+
+        public async Task<Dictionary<Guid, int>> GetStockInHandByVariantIdsAsync(IEnumerable<Guid> variantIds)
+        {
+            var idList = variantIds.Distinct().ToList();
+            if (idList.Count == 0)
+            {
+                return new Dictionary<Guid, int>();
+            }
+
+            var purchaseQtyByVariant = await context.PurchaseVariant
+                .AsNoTracking()
+                .Where(pv => idList.Contains(pv.VariantEntityId))
+                .GroupBy(pv => pv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            var salesQtyByVariant = await context.SalesVariants
+                .AsNoTracking()
+                .Where(sv => idList.Contains(sv.VariantEntityId))
+                .GroupBy(sv => sv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            return idList.ToDictionary(
+                id => id,
+                id => purchaseQtyByVariant.GetValueOrDefault(id) - salesQtyByVariant.GetValueOrDefault(id));
         }
 
         public async Task<ProductEntity> GetById(Guid id)
         {
-            return await context.Products.Include(p => p.Category)
-                            .Include(p => p.Variants)
-                            .ThenInclude(v => v.Image)
-                            .Include(p => p.PurchaseVariants)
-                            .Include(p=>p.SalesVariants)
-                            .FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Products
+                .AsSplitQuery()
+                .Include(p => p.Category)
+                .Include(p => p.Variants)
+                .ThenInclude(v => v.Image)
+                .FirstOrDefaultAsync(c => c.Id == id, default) ?? new ProductEntity();
         }
 
         public async Task<ProductEntity> GetByProductId(string productId)
         {
-            return await context.Products.Include(p => p.Variants).FirstOrDefaultAsync(c => c.ProductId == productId, default);
+            return await context.Products
+                .AsNoTracking()
+                .Include(p => p.Variants)
+                .FirstOrDefaultAsync(c => c.ProductId == productId, default) ?? new ProductEntity();
         }
 
         public async Task Update(ProductEntity product)
@@ -77,6 +174,7 @@ namespace Inventory.Domain.Repository
         {
             return context.Products.Any(c => c.ProductId == productId);
         }
+
         public bool IsProductIdExist(string productId, Guid id)
         {
             var result = context.Products.Any(c => c.ProductId == productId && c.Id == id);
@@ -88,8 +186,10 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetProductWithVariantsById(Guid id)
         {
-            return await context.Products.Include(p => p.Variants)
-                            .FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.Products
+                .AsNoTracking()
+                .Include(p => p.Variants)
+                .FirstOrDefaultAsync(c => c.Id == id, default) ?? new ProductEntity();
         }
     }
 }

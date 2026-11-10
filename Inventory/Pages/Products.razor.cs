@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ClosedXML.Excel;
 using CsvHelper;
 using Inventory.Domain.Entities;
@@ -22,39 +22,48 @@ public partial class Products
     [Inject] IDialogService DialogService {get; set;}
     [Inject] ICategoryRepository CategoryRepository { get; set; }
 
-    private List<ProductModel> products;
+    private List<ProductModel> products = new();
     private List<ProductModel> productsAfterSearch = new();
+    private bool isLoaded;
     private IDialogReference dialogReference;
 
-    protected async override Task OnAfterRenderAsync(bool firstRender)
+    protected async override Task OnInitializedAsync()
     {
-        if (firstRender)
+        try
         {
-            products = new();
-            try
-            {
-                var list = await ProductRepository.GetAll();
-                if (list.Count != 0)
-                {
-                    products = list.Select(c => Mapper.Map<ProductModel>(c)).ToList();
-                    productsAfterSearch = [.. products.OrderBy(o => o.Name)];
-                }
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Products error" + ex.Message);
-            }
+            var list = await ProductRepository.GetAllForLookup();
+            products = list
+                .Where(p => !string.IsNullOrWhiteSpace(p.ProductId))
+                .Select(c => Mapper.Map<ProductModel>(c))
+                .OrderBy(o => o.Name)
+                .ToList();
+            productsAfterSearch = products;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Products page error");
+        }
+        finally
+        {
+            isLoaded = true;
         }
     }
+
     public void SearchItem(ChangeEventArgs e)
     {
-        var search = e.Value.ToString().ToLower();
-        productsAfterSearch = products.Where(n => n.ProductId.ToLower().Contains(search)
-                        || n.Name.ToLower().Contains(search)
-                        || (n.Rate.HasValue && n.Rate.Value.ToString("G").ToLower().Contains(search))).ToList();
-    }
+        var search = e.Value?.ToString()?.Trim();
+        if (string.IsNullOrEmpty(search))
+        {
+            productsAfterSearch = products;
+            return;
+        }
 
+        productsAfterSearch = products.Where(n =>
+            (n.ProductId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (n.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (n.Rate.HasValue && n.Rate.Value.ToString("G").Contains(search, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
 
     //file import
     private async Task HandleFilesChanged(IBrowserFile file)
@@ -67,13 +76,10 @@ public partial class Products
 
         try
         {
-            // Implement Excel parsing logic
             await ShowLoadingDialogAsync();
-
 
             using var stream = file.OpenReadStream();
 
-            // Check file type
             if (file.ContentType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
                 file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
             {
@@ -91,7 +97,6 @@ public partial class Products
         }
         catch (Exception ex)
         {
-            //Snackbar message
             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
         finally
@@ -102,42 +107,35 @@ public partial class Products
 
     private async Task ImportFromExcel(Stream stream)
     {
-
-        // Copy the asynchronous stream to a memory stream
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
-        memoryStream.Position = 0; // Reset the position to the beginning of the stream
+        memoryStream.Position = 0;
 
-        // Use the memory stream with ClosedXML
         using var workbook = new XLWorkbook(memoryStream);
-        var worksheet = workbook.Worksheet(1); // Select the first worksheet
+        var worksheet = workbook.Worksheet(1);
         var rowCount = worksheet.LastRowUsed().RowNumber();
 
-        for (int row = 2; row <= rowCount; row++) // Assuming row 1 contains headers
+        for (int row = 2; row <= rowCount; row++)
         {
             var product = new ProductModel
             {
                 Id = Guid.NewGuid(),
-                ProductId = worksheet.Cell(row, 1).GetValue<string>(), // Column 1
-                Name = worksheet.Cell(row, 2).GetValue<string>(),      // Column 2
-                Rate = worksheet.Cell(row, 3).GetValue<decimal>(),    // Column 3
-                Description = worksheet.Cell(row, 4).GetValue<string>(), // Column 4
-                CategoryEntityId = worksheet.Cell(row, 5).GetValue<Guid?>() // Column 5
+                ProductId = worksheet.Cell(row, 1).GetValue<string>(),
+                Name = worksheet.Cell(row, 2).GetValue<string>(),
+                Rate = worksheet.Cell(row, 3).GetValue<decimal>(),
+                Description = worksheet.Cell(row, 4).GetValue<string>(),
+                CategoryEntityId = worksheet.Cell(row, 5).GetValue<Guid?>()
             };
 
-            // Add the customer to the database or a collection
             await SaveProductAsync(product);
-
-            // Snackbar of short duration of progress
             Snackbar.Add($"Imported product {product.Name}", Severity.Info);
         }
-        //Snackbar of completion
+
         Snackbar.Add("Products imported successfully", Severity.Success);
     }
 
     private async Task ImportFromCsv(Stream stream)
     {
-        // Implement CSV parsing logic
         using var reader = new StreamReader(stream);
         using var csv = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture));
 
@@ -147,7 +145,7 @@ public partial class Products
         {
             await SaveProductAsync(product);
         }
-        //Snackbar of completion
+
         Snackbar.Add("Products imported successfully", Severity.Success);
     }
 
@@ -177,7 +175,6 @@ public partial class Products
             }
             catch (Exception ex)
             {
-                //Snackbar message
                 Snackbar.Add("Error while saving product", Severity.Error);
             }
         }

@@ -1,4 +1,4 @@
-﻿@using System.Threading
+@using System.Threading
 @using System.Threading.Tasks
 @using AutoMapper
 @using Inventory.Domain.Entities
@@ -56,27 +56,36 @@
         var dialog = await DialogService.ShowAsync<SuppliersDialog>("Suppliers List", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result.Canceled && result.Data is SupplierModel selected)
         {
-            SelectedSupplier = (SupplierModel)result.Data;
-            name = SelectedSupplier.Name;
+            SelectedSupplier = selected;
+            name = selected.Name ?? "";
             await SelectedSupplierChanged.InvokeAsync(SelectedSupplier);
         }
     }
 
-    private async Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string value, CancellationToken token)
+    private static bool MatchesSearch(string? field, string term) =>
+        !string.IsNullOrEmpty(field) &&
+        field.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string? value, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(value))
-            return suppliersAfterSearch.ToList();
-        return suppliers.Where(n => n.SupplierId.ToLower().Contains(value.ToLower()) || n.Name.ToLower().Contains(value.ToLower()))
-                      .ToList();
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult<IEnumerable<SupplierModel>>(suppliersAfterSearch);
+
+        var term = value.Trim();
+        var results = suppliers.Where(n =>
+            n is not null &&
+            (MatchesSearch(n.SupplierId, term) || MatchesSearch(n.Name, term)));
+
+        return Task.FromResult(results);
     }
 
     private async Task GetSuppliersAsync()
     {
         try
         {
-            var suppliersDb = await SupplierRepository.GetAll();
+            var suppliersDb = await SupplierRepository.GetAllForLookup();
             if (suppliersDb.Count != 0)
             {
                 suppliers = suppliersDb.Select(p => Mapper.Map<SupplierModel>(p)).ToList();
@@ -92,7 +101,7 @@
 
     private async Task<AutoCompleteDataProviderResult<SupplierModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<SupplierModel> request)
     {
-        var prods = await SearchSupplierEntities(request.Filter.Value, request.CancellationToken);
+        var prods = await SearchSupplierEntities(request.Filter?.Value, request.CancellationToken);
 
         return await Task.FromResult(new AutoCompleteDataProviderResult<SupplierModel> { Data = prods });
     }

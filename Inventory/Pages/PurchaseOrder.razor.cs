@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -293,21 +293,32 @@ public partial class PurchaseOrder
             purchaseOrderModel.SupplierId = "";
         }
     }
-    private void OnProductSelected(ProductModel? product)
+    private async Task OnProductSelected(ProductModel? product)
     {
         if (product != null)
         {
-            selectedProduct = product;
-            purchaseOrderModel.ProductId = product.ProductId;
-            purchaseOrderModel.ProductName = product.Name;
-            purchaseOrderModel.VariantId = product.Variants[0].VariantId;
+            var productWithVariants = await ProductRepository.GetProductWithVariantsById(product.Id);
+            selectedProduct = Mapper.Map<ProductModel>(productWithVariants);
+            purchaseOrderModel.ProductId = selectedProduct.ProductId;
+            purchaseOrderModel.ProductName = selectedProduct.Name;
+            purchaseOrderModel.ProductRate ??= selectedProduct.Rate;
+
+            if (selectedProduct.Variants is { Count: > 0 })
+            {
+                purchaseOrderModel.VariantId = selectedProduct.Variants[0].VariantId;
+            }
+            else
+            {
+                purchaseOrderModel.VariantId = null;
+                Snackbar.Add("This product has no variants. Add a variant on the Products page first.", Severity.Warning);
+            }
         }
         else
         {
             selectedProduct = new();
-            // Clear the fields if no product is selected
             purchaseOrderModel.ProductId = "";
             purchaseOrderModel.ProductName = "";
+            purchaseOrderModel.VariantId = null;
         }
     }
 }

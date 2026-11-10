@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Domain.Entities
 {
@@ -8,9 +8,9 @@ namespace Inventory.Domain.Entities
         public Guid Id { get; set; }
         public int SerialNumber { get; set; }
         public Guid ProductEntityId { get; set; }
-        public ProductEntity Product { get; set; } = new();
+        public ProductEntity? Product { get; set; }
         public Guid VariantEntityId { get; set; }
-        public VariantEntity ProductVariant { get; set; }
+        public VariantEntity? ProductVariant { get; set; }
         public int? Quantity { get; set; } = default(int);
         public decimal? ProductRate { get; set; } = default(decimal);
         public decimal? Amount { get; set; } = default(decimal);

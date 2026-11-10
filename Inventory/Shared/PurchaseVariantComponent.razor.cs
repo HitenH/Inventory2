@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Inventory.Shared.Selectors;
 using Microsoft.AspNetCore.Components;
@@ -15,7 +16,6 @@ namespace Inventory.Shared
     {
         [Parameter] public PurchaseEntity Purchase { get; set; }
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
-        [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private IProductRepository ProductRepository { get; set; }
         [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; }
         [Inject] private IDialogService DialogService { get; set; }
@@ -36,81 +36,83 @@ namespace Inventory.Shared
 
         protected override void OnParametersSet()   
         {
+            Purchase.PurchaseVariants ??= new List<PurchaseVariant>();
             Purchase.PurchaseVariants = [.. Purchase.PurchaseVariants.OrderBy(o => o.SerialNumber)];
 
             if (Purchase.PurchaseVariants.Count != 0)
             {
                 serialnumber = Purchase.PurchaseVariants.OrderByDescending(p => p.SerialNumber).First().SerialNumber + 1;
             }
-        }
-        protected override void OnAfterRender(bool firstRender)
-        {
+
             GetPurchaseVariants();
-            GetAmount();
         }
 
         public async Task AddPurchaseVariant()
         {
-            if (Purchase != null && purchaseVariant != null)
+            if (Purchase?.Id == Guid.Empty || product?.Id == Guid.Empty || purchaseVariant?.VariantEntytiId is null)
             {
-                try
+                Snackbar.Add("Select a product and variant before adding a line.", Severity.Warning);
+                return;
+            }
+
+            try
+            {
+                purchaseVariant.SerialNumber = serialnumber;
+                await PurchaseVariantRepository.Create(new PurchaseVariant
                 {
-                    purchaseVariant.SerialNumber = serialnumber;
-                    purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                    purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId.Value;
-                    purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
-                    purchaseVariantEntity.Amount = purchaseVariant.Amount;
-                    purchaseVariantEntity.Discount = purchaseVariant.Discount;
-                    purchaseVariantEntity.AmountAfterDiscount = purchaseVariant.AmountAfterDiscount;
-                    purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
-                    purchaseVariantEntity.PurchaseEntityId = Purchase.Id;
+                    PurchaseEntityId = Purchase.Id,
+                    ProductEntityId = product.Id,
+                    VariantEntityId = purchaseVariant.VariantEntytiId.Value,
+                    SerialNumber = serialnumber,
+                    Quantity = purchaseVariant.Quantity,
+                    Amount = purchaseVariant.Amount,
+                    Discount = purchaseVariant.Discount,
+                    AmountAfterDiscount = purchaseVariant.AmountAfterDiscount,
+                    ProductRate = purchaseVariant.ProductRate
+                });
 
-                    purchaseVariantEntity.Product = product;
-
-                    Purchase.PurchaseVariants.Add(purchaseVariantEntity);
-                    await PurchaseRepository.Update(Purchase);
-
-                    CancelPurchaseVariant();
-                    GetPurchaseVariants();
-                    serialnumber += 1;
-                    await ChangeState.InvokeAsync(true);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                CancelPurchaseVariant();
+                serialnumber += 1;
+                await ChangeState.InvokeAsync(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Add purchase line failed");
+                Snackbar.Add($"Could not add line: {ex.Message}", Severity.Error);
             }
         }
 
         public async Task EditPurchaseVariant()
         {
+            if (purchaseVariant?.Id == Guid.Empty || product?.Id == Guid.Empty || purchaseVariant.VariantEntytiId is null)
+            {
+                Snackbar.Add("Select a product and variant before saving.", Severity.Warning);
+                return;
+            }
+
             try
             {
-                if (purchaseVariant != null)
+                await PurchaseVariantRepository.Update(new PurchaseVariant
                 {
-                    purchaseVariantEntity = await PurchaseVariantRepository.GetById(purchaseVariant.Id);
-                    if (purchaseVariantEntity != null)
-                    {
-                        purchaseVariant.SerialNumber = serialnumber;
-                        purchaseVariantEntity.SerialNumber = purchaseVariant.SerialNumber;
-                        purchaseVariantEntity.VariantEntityId = purchaseVariant.VariantEntytiId.Value;
-                        purchaseVariantEntity.Quantity = purchaseVariant.Quantity;
-                        purchaseVariantEntity.Amount = purchaseVariant.Amount;
-                        purchaseVariantEntity.Discount = purchaseVariant.Discount;
-                        purchaseVariantEntity.AmountAfterDiscount = purchaseVariant.AmountAfterDiscount;
-                        purchaseVariantEntity.ProductRate = purchaseVariant.ProductRate;
+                    Id = purchaseVariant.Id,
+                    PurchaseEntityId = Purchase.Id,
+                    ProductEntityId = product.Id,
+                    VariantEntityId = purchaseVariant.VariantEntytiId.Value,
+                    SerialNumber = purchaseVariant.SerialNumber,
+                    Quantity = purchaseVariant.Quantity,
+                    Amount = purchaseVariant.Amount,
+                    Discount = purchaseVariant.Discount,
+                    AmountAfterDiscount = purchaseVariant.AmountAfterDiscount,
+                    ProductRate = purchaseVariant.ProductRate
+                });
 
-                        purchaseVariantEntity.Product = product;
-
-                        await PurchaseVariantRepository.Update(purchaseVariantEntity);
-                    }
-                    CancelPurchaseVariant();
-                    await ChangeState.InvokeAsync(true);
-                }
+                CancelPurchaseVariant();
+                await ChangeState.InvokeAsync(true);
             }
             catch (Exception ex)
             {
-                Logger.LogError("Update purchase error: " + ex.Message);
+                Logger.LogError(ex, "Update purchase line failed");
+                Snackbar.Add($"Could not update line: {ex.Message}", Severity.Error);
             }
         }
 
@@ -125,17 +127,13 @@ namespace Inventory.Shared
         {
             try
             {
-                var variant = await PurchaseVariantRepository.GetById(id);
-                if (variant != null)
-                {
-                    await PurchaseVariantRepository.Delete(variant);
-                    GetPurchaseVariants();
-                    await ChangeState.InvokeAsync(true);
-                }
+                await PurchaseVariantRepository.Delete(new PurchaseVariant { Id = id });
+                await ChangeState.InvokeAsync(true);
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete purchase variant" + ex.Message);
+                Logger.LogError(ex, "Delete purchase line failed");
+                Snackbar.Add($"Could not delete line: {ex.Message}", Severity.Error);
             }
         }
 
@@ -164,31 +162,14 @@ namespace Inventory.Shared
 
         public void GetAmount()
         {
-            if (purchaseVariant.ProductRate == 0 || purchaseVariant.Quantity == 0)
-                purchaseVariant.Amount = 0;
-            else
-                purchaseVariant.Amount = Math.Round(purchaseVariant.ProductRate.Value * purchaseVariant.Quantity.Value, 2);
-            GetAmountAfterDiscount();
+            purchaseVariant.Amount = LineAmounts.ComputeAmount(purchaseVariant.ProductRate, purchaseVariant.Quantity);
+            purchaseVariant.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(purchaseVariant.Amount, purchaseVariant.Discount);
         }
 
         private void DiscountChanged(int? value)
         {
             purchaseVariant.Discount = value;
-            GetAmountAfterDiscount();
-        }
-
-
-        public void GetAmountAfterDiscount()
-        {
-            if (purchaseVariant.Amount != 0 && purchaseVariant.Discount != 0)
-            {
-                var amount = purchaseVariant.Amount - purchaseVariant.Amount * ((decimal)purchaseVariant.Discount / 100);
-                purchaseVariant.AmountAfterDiscount = Math.Round(amount.Value, 2);
-            }
-            else if (purchaseVariant.Amount != 0 && purchaseVariant.Discount == 0)
-            {
-                purchaseVariant.AmountAfterDiscount = Math.Round(purchaseVariant.Amount.Value, 2);
-            }
+            purchaseVariant.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(purchaseVariant.Amount, purchaseVariant.Discount);
         }
 
         public void GetPurchaseVariants()
@@ -199,14 +180,14 @@ namespace Inventory.Shared
                 AmountAfterDiscount = v.AmountAfterDiscount,
                 Discount = v.Discount,
                 Id = v.Id,
-                ProductId = v.Product.ProductId,
-                ProductName = v.Product.Name,
+                ProductId = v.Product?.ProductId ?? "",
+                ProductName = v.Product?.Name ?? "",
                 ProductRate = v.ProductRate,
                 Quantity = v.Quantity,
                 SerialNumber = v.SerialNumber,
                 VariantEntytiId = v.VariantEntityId,
-                ProductVariantId = v.ProductVariant.VariantId,
-                ProductEntityId = v.Product.Id,
+                ProductVariantId = v.ProductVariant?.VariantId ?? "",
+                ProductEntityId = v.ProductEntityId,
                 Product = v.Product
             }).ToList();
         }
@@ -253,12 +234,12 @@ namespace Inventory.Shared
                 {
                     if (isSortAscending)
                     {
-                        purchaseVariants = purchaseVariants.OrderBy(c => c.ProductId).ToList();
+                        purchaseVariants = purchaseVariants.OrderBy(c => c.ProductName).ToList();
                         isSortAscending = false;
                     }
                     else
                     {
-                        purchaseVariants = purchaseVariants.OrderByDescending(c => c.ProductId).ToList();
+                        purchaseVariants = purchaseVariants.OrderByDescending(c => c.ProductName).ToList();
                         isSortAscending = true;
                     }
                 }

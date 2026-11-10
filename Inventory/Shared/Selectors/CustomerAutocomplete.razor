@@ -1,4 +1,4 @@
-﻿@using AutoMapper
+@using AutoMapper
 @using Inventory.Domain.Repository.Abstract
 @typeparam T
 
@@ -42,7 +42,7 @@
     {
         try
         {
-            var customerDb = await CustomerRepository.GetAll();
+            var customerDb = await CustomerRepository.GetAllForLookup();
             if (customerDb.Count != 0)
             {
                 customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
@@ -57,18 +57,24 @@
     }
 
 
-    //Customer selection
-    private async Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string value, CancellationToken token)
+    private static bool MatchesSearch(string? field, string term) =>
+        !string.IsNullOrEmpty(field) &&
+        field.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string? value, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(value))
-            return customersAfterSearch.ToList();
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult<IEnumerable<CustomerModel>>(customersAfterSearch);
 
-        string loweredValue = value.ToLower();
+        var term = value.Trim();
+        var results = customers.Where(n =>
+            n is not null &&
+            (MatchesSearch(n.Name, term) ||
+             MatchesSearch(n.CustomerId, term) ||
+             MatchesSearch(n.Area, term) ||
+             MatchesSearch(n.Address, term)));
 
-        return customers.Where(n => n.Name.ToLower().Contains(loweredValue)
-                || n.CustomerId.ToLower().Contains(loweredValue) || n.Area.ToLower().Contains(loweredValue)
-                || n.Address.ToLower().Contains(loweredValue))
-                     .ToList() ?? null;
+        return Task.FromResult(results);
     }
 
     public async Task GetCustomerFromPopup()
@@ -85,10 +91,10 @@
         var result = await dialog.Result;
 
 
-        if (!result.Canceled)
+        if (!result.Canceled && result.Data is CustomerModel selected)
         {
-            SelectedCustomer = (CustomerModel)result.Data;
-            name = SelectedCustomer.Name;
+            SelectedCustomer = selected;
+            name = selected.Name ?? "";
             await SelectedCustomerChanged.InvokeAsync(SelectedCustomer);
         }
     }
@@ -96,7 +102,7 @@
 
     private async Task<AutoCompleteDataProviderResult<CustomerModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<CustomerModel> request)
     {
-        var prods = await SearchCustomerEntities(request.Filter.Value, request.CancellationToken);
+        var prods = await SearchCustomerEntities(request.Filter?.Value, request.CancellationToken);
 
         return await Task.FromResult(new AutoCompleteDataProviderResult<CustomerModel> { Data = prods });
     }

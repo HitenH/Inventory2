@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +12,35 @@ namespace Inventory.Domain.Repository
         {
             this.context = context;
         }
+
         public async Task Create(PurchaseVariant variant)
         {
-            await context.PurchaseVariant.AddAsync(variant);
+            var entity = new PurchaseVariant
+            {
+                PurchaseEntityId = variant.PurchaseEntityId,
+                ProductEntityId = variant.ProductEntityId,
+                VariantEntityId = variant.VariantEntityId,
+                SerialNumber = variant.SerialNumber,
+                Quantity = variant.Quantity,
+                ProductRate = variant.ProductRate,
+                Amount = variant.Amount,
+                Discount = variant.Discount,
+                AmountAfterDiscount = variant.AmountAfterDiscount
+            };
+
+            await context.PurchaseVariant.AddAsync(entity);
             await context.SaveChangesAsync();
         }
 
         public async Task Delete(PurchaseVariant variant)
         {
-            context.PurchaseVariant.Remove(variant);
+            var existing = await context.PurchaseVariant.FindAsync(variant.Id);
+            if (existing is null)
+            {
+                return;
+            }
+
+            context.PurchaseVariant.Remove(existing);
             await context.SaveChangesAsync();
         }
 
@@ -31,12 +51,28 @@ namespace Inventory.Domain.Repository
 
         public async Task<PurchaseVariant> GetById(Guid id)
         {
-            return await context.PurchaseVariant.Include(p => p.Product).ThenInclude(p => p.Variants).FirstOrDefaultAsync(c => c.Id == id, default);
+            return await context.PurchaseVariant
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id) ?? new PurchaseVariant();
         }
 
         public async Task Update(PurchaseVariant variant)
         {
-            context.PurchaseVariant.Update(variant);
+            var existing = await context.PurchaseVariant.FindAsync(variant.Id);
+            if (existing is null)
+            {
+                return;
+            }
+
+            existing.SerialNumber = variant.SerialNumber;
+            existing.ProductEntityId = variant.ProductEntityId;
+            existing.VariantEntityId = variant.VariantEntityId;
+            existing.Quantity = variant.Quantity;
+            existing.ProductRate = variant.ProductRate;
+            existing.Amount = variant.Amount;
+            existing.Discount = variant.Discount;
+            existing.AmountAfterDiscount = variant.AmountAfterDiscount;
+
             await context.SaveChangesAsync();
         }
     }

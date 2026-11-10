@@ -1,4 +1,4 @@
-﻿@page "/purchaseorder"
+@page "/purchaseorder"
 @using Inventory.MudBlazorComponents
 @using Inventory.Shared.Selectors
 @using Variant = MudBlazor.Variant
@@ -50,7 +50,7 @@
         <div class="m-1 col-3 text-center">
             <label for="productid" class="form-label">Variant ID</label>
             <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control text-center" id="orderstatus">
-                @if (selectedProduct != null && selectedProduct.Variants.Count != 0)
+                @if (selectedProduct?.Variants is { Count: > 0 })
                 {
                     @foreach (var item in selectedProduct.Variants)
                     {

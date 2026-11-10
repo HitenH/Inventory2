@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -13,69 +12,68 @@ public partial class Suppliers
 {
     [Inject] private ISupplierRepository SupplierRepository { get; set; }
     [Inject] private ILogger<Suppliers> Logger { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
 
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();
     private List<SuppliersDisplayModel> suppliersAfterSearch = new();
+    private bool isLoaded;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        try
         {
-            try
-            {
-                var list = await SupplierRepository.GetAll();
-                if (list.Count != 0)
-                {
-                    foreach (var item in list)
-                    {
-                        suppliersDisplayModels.Add(new SuppliersDisplayModel
-                        {
-                            Id = item.Id,
-                            SupplierId = item.SupplierId,
-                            Name = item.Name,
-                            Mobiles = item.Mobiles,
-                            Area = item.Area,
-                            TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
-                        });
-                    }
+            var list = await SupplierRepository.GetAll();
+            var purchaseTotals = await SupplierRepository.GetPurchaseTotalsBySupplierAsync();
 
-                    suppliersAfterSearch = suppliersDisplayModels;
-                    StateHasChanged();
-                }
-            }
-            catch (Exception ex)
+            suppliersDisplayModels = list.Select(item => new SuppliersDisplayModel
             {
-                Logger.LogError("Suppliers page error" + ex.Message);
-            }
+                Id = item.Id,
+                SupplierId = item.SupplierId ?? "",
+                Name = item.Name ?? "",
+                Mobiles = item.Mobiles ?? new(),
+                Area = item.Area ?? "",
+                TotalAmount = purchaseTotals.GetValueOrDefault(item.Id, 0)
+            }).ToList();
+
+            suppliersAfterSearch = suppliersDisplayModels;
+            isLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Suppliers page error");
+            isLoaded = true;
         }
     }
 
     public void SearchItem(ChangeEventArgs e)
     {
-        var search = e.Value.ToString().ToLower();
-        suppliersAfterSearch = suppliersDisplayModels.Where(n => n.SupplierId.ToLower().Contains(search)
-                    || n.Name.ToLower().Contains(search)
-                    || n.Area.ToLower().Contains(search)
-                    || n.Mobiles.Any(p => p.Phone.ToLower().Contains(search))).ToList();
-    }
+        var search = e.Value?.ToString()?.Trim();
+        if (string.IsNullOrEmpty(search))
+        {
+            suppliersAfterSearch = suppliersDisplayModels;
+            return;
+        }
 
+        suppliersAfterSearch = suppliersDisplayModels.Where(n =>
+            (n.SupplierId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (n.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (n.Area?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (n.Mobiles?.Any(p => p.Phone?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ?? false))
+            .ToList();
+    }
 
     private void RowClickEvent(TableRowClickEventArgs<SuppliersDisplayModel> tableRowClickEventArgs)
     {
         navManager.NavigateTo($"supplier/{tableRowClickEventArgs.Item.Id}");
     }
 
-
-    class SuppliersDisplayModel()
+    class SuppliersDisplayModel
     {
         public Guid Id { get; set; }
-        public string SupplierId { get; set; }
-        public string Name { get; set; }
-        public List<Mobile> Mobiles { get; set; }
-        public string Area { get; set; }
+        public string SupplierId { get; set; } = "";
+        public string Name { get; set; } = "";
+        public List<Mobile> Mobiles { get; set; } = new();
+        public string Area { get; set; } = "";
         public decimal TotalAmount { get; set; }
     }
 }
-

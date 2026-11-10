@@ -1,4 +1,4 @@
-﻿@using System.Threading
+@using System.Threading
 @using System.Threading.Tasks
 @using AutoMapper
 @using Inventory.Domain.Entities
@@ -57,27 +57,36 @@
         var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result.Canceled && result.Data is ProductModel selected)
         {
-            SelectedProduct = (ProductModel)result.Data;
-            name = SelectedProduct.Name;
+            SelectedProduct = selected;
+            name = selected.Name ?? "";
             await SelectedProductChanged.InvokeAsync(SelectedProduct);
         }
     }
 
-    private async Task<IEnumerable<ProductModel>> SearchProductEntities(string value, CancellationToken token)
+    private static bool MatchesSearch(string? field, string term) =>
+        !string.IsNullOrEmpty(field) &&
+        field.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private Task<IEnumerable<ProductModel>> SearchProductEntities(string? value, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(value))
-            return productsAfterSearch.ToList();
-        return products.Where(n => n.ProductId.ToLower().Contains(value.ToLower()) || n.Name.ToLower().Contains(value.ToLower()))
-                      .ToList();
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult<IEnumerable<ProductModel>>(productsAfterSearch);
+
+        var term = value.Trim();
+        var results = products.Where(n =>
+            n is not null &&
+            (MatchesSearch(n.ProductId, term) || MatchesSearch(n.Name, term)));
+
+        return Task.FromResult(results);
     }
 
     private async Task GetProductsAsync()
     {
         try
         {
-            var productsDb = await ProductRepository.GetAll();
+            var productsDb = await ProductRepository.GetAllForLookup();
             if (productsDb.Count != 0)
             {
                 products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
@@ -93,7 +102,7 @@
 
     private async Task<AutoCompleteDataProviderResult<ProductModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<ProductModel> request)
     {
-        var prods = await SearchProductEntities(request.Filter.Value, request.CancellationToken);
+        var prods = await SearchProductEntities(request.Filter?.Value, request.CancellationToken);
 
         return await Task.FromResult(new AutoCompleteDataProviderResult<ProductModel> { Data = prods });
     }

@@ -1,4 +1,4 @@
-﻿@using AutoMapper
+@using AutoMapper
 @using Inventory.Domain.Repository.Abstract
 @using Inventory.Service
 
@@ -53,27 +53,7 @@
     {
         try
         {
-            var products = await ProductRepository.GetAll();
-            foreach (var product in products)
-            {
-                foreach (var variant in product.Variants)
-                {
-                    var salesQuantity = variant.SalesVariants.Sum(sv => sv.Quantity);
-                    var salesAmount = variant.SalesVariants.Sum(sv => sv.Quantity * product.Rate);
-
-                    //Calculate stock in hand from purchase variants and sales variants
-                    var stockInHand = variant.PurchaseVariants.Sum(p => p.Quantity ?? 0) - variant.SalesVariants.Sum(p => p.Quantity ?? 0);
-
-                    productReportItems.Add(new ProductReportItem
-                    {
-                        ProductId = product.ProductId,
-                        ProductName = product.Name,
-                        VariantId = variant.VariantId,
-                        VariantName = variant.Name,
-                        StockInHand = stockInHand
-                    });
-                }
-            }
+            productReportItems = await ProductRepository.GetProductStockReportAsync();
             StateHasChanged();
         }
         catch (Exception ex)

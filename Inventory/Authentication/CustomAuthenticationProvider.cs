@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.Security.Claims;
 
@@ -23,19 +23,24 @@ namespace Inventory.Authentication
                 var userSession = userSessionStorageResult.Success ? userSessionStorageResult.Value : null;
 
                 if (userSession == null)
-                    return await Task.FromResult(new AuthenticationState(anonymous));
+                    return new AuthenticationState(anonymous);
 
                 var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
+                {
+                    new Claim(ClaimTypes.Name, userSession.UserName),
+                    new Claim(ClaimTypes.Role, userSession.Role)
+                }, "CustomAuth"));
+                return new AuthenticationState(claimsPrincipal);
+            }
+            catch (InvalidOperationException)
             {
-                new Claim(ClaimTypes.Name, userSession.UserName),
-                new Claim(ClaimTypes.Role, userSession.Role)
-            }, "CustomAuth"));
-                return await Task.FromResult(new AuthenticationState(claimsPrincipal));
+                // Browser JS is not available yet (e.g. during static render).
+                return new AuthenticationState(anonymous);
             }
             catch (Exception ex)
             {
-                logger.LogError("CustomAuthenticationProvider error: " + ex.Message);
-                return await Task.FromResult(new AuthenticationState(anonymous));
+                logger.LogError(ex, "CustomAuthenticationProvider error");
+                return new AuthenticationState(anonymous);
             }
         }
 

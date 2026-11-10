@@ -1,9 +1,9 @@
-﻿@page "/suppliers"
+@page "/suppliers"
 
 @using Inventory.Models;
 @using Inventory.MudBlazorComponents
 
-@if (suppliersAfterSearch == null)
+@if (!isLoaded)
 {
     <LoadingComponent />
 }
@@ -36,7 +36,7 @@ else
                     </MudTableSortLabel>
                 </MudTh>
                 <MudTh>
-                    <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(x => x.Mobiles.FirstOrDefault().Phone)">
+                    <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(x => x.Mobiles.FirstOrDefault()?.Phone ?? string.Empty)">
                         Mobile
                     </MudTableSortLabel>
                 </MudTh>

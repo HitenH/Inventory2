@@ -13,6 +13,10 @@ using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.WebHost.UseUrls("http://localhost:5000");
+}
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -39,44 +43,48 @@ var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Inventory.db")
 builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
-builder.Services.AddTransient<IUserRepository, UserRepositoryEF>();
-builder.Services.AddTransient<ICustomerRepository, CustomerRepositoryEF>();
-builder.Services.AddTransient<ISupplierRepository, SupplierRepositoryEF>();
-builder.Services.AddTransient<IProductRepository, ProductRepositoryEF>();
-builder.Services.AddTransient<IVariantRepository, VariantRepositoryEF>();
-builder.Services.AddTransient<ICategoryRepository, CategoryRepositoryEF>();
-builder.Services.AddTransient<IMobileRepository, MobileRepositoryEF>();
-builder.Services.AddTransient<IImageRepository, ImageRepositoryEF>();
-builder.Services.AddTransient<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
-builder.Services.AddTransient<IPurchaseRepository, PurchaseRepositoryEF>();
-builder.Services.AddTransient<IPurchaseVariantRepository, PurchaseVariantRepositoryEF>();
-builder.Services.AddTransient<ISalesOrderRepository, SalesOrderRepositoryEF>();
-builder.Services.AddTransient<ISalesOrderVariantRepository, SalesOrderVariantRepositoryEF>();
-builder.Services.AddTransient<ISaleRepository, SaleRepositoryEF>();
+builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepositoryEF>();
+builder.Services.AddScoped<ISupplierRepository, SupplierRepositoryEF>();
+builder.Services.AddScoped<IProductRepository, ProductRepositoryEF>();
+builder.Services.AddScoped<IVariantRepository, VariantRepositoryEF>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
+builder.Services.AddScoped<IMobileRepository, MobileRepositoryEF>();
+builder.Services.AddScoped<IImageRepository, ImageRepositoryEF>();
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
+builder.Services.AddScoped<IPurchaseRepository, PurchaseRepositoryEF>();
+builder.Services.AddScoped<IPurchaseVariantRepository, PurchaseVariantRepositoryEF>();
+builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepositoryEF>();
+builder.Services.AddScoped<ISalesOrderVariantRepository, SalesOrderVariantRepositoryEF>();
+builder.Services.AddScoped<ISaleRepository, SaleRepositoryEF>();
 builder.Services.AddTransient<ProtectedSessionStorage>();
 builder.Services.AddTransient<IMobileService, MobileService>();
-builder.Services.AddSingleton<BackupService>(provider => new BackupService($"{AppDomain.CurrentDomain.BaseDirectory}/Backups"));
+builder.Services.AddSingleton(_ => new BackupService(
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups"),
+    dbPath));
 builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    //app.UseMigrationsEndPoint();
+    app.UseHttpsRedirection();
 }
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-
     OpenBrowser("http://localhost:5000");
 }
-
-app.UseHttpsRedirection();
 
 
 app.UseAuthentication();

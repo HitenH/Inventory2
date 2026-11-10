@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -44,7 +44,29 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SupplierEntity>> GetAll()
         {
-            return await context.Suppliers.Include(n => n.Mobiles).Include(s=>s.Purchases).AsNoTracking().ToListAsync();
+            return await context.Suppliers
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(n => n.Mobiles)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<SupplierEntity>> GetAllForLookup()
+        {
+            return await context.Suppliers
+                .AsNoTracking()
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+        }
+
+        public async Task<Dictionary<Guid, decimal>> GetPurchaseTotalsBySupplierAsync()
+        {
+            return await context.Purchases
+                .AsNoTracking()
+                .GroupBy(p => p.SupplierEntityId)
+                .Select(g => new { SupplierId = g.Key, Total = g.Sum(p => p.TotalAmountProduct ?? 0) })
+                .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
         }
 
         public async Task<SupplierEntity> GetById(Guid id)

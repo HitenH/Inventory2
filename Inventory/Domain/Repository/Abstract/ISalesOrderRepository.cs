@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 
 namespace Inventory.Domain.Repository.Abstract
 {
@@ -11,6 +11,6 @@ namespace Inventory.Domain.Repository.Abstract
         Task Delete(SalesOrderEntity order);
         Task DeleteRange(List<SalesOrderEntity> orders);
         Task<int> GetLastVoucherIdByDate(DateOnly date);
-        bool IsVoucherExistByDate(int voucherId, DateOnly date);
+        Task<bool> IsVoucherExistByDate(int voucherId, DateOnly date);
     }
 }

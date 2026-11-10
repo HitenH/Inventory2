@@ -1,4 +1,4 @@
-﻿@using AutoMapper
+@using AutoMapper
 @using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 @inject IDialogService DialogService
@@ -35,7 +35,7 @@
     <RowTemplate>
         <MudTd>@context.VariantId</MudTd>
         <MudTd>@context.Name</MudTd>
-        <MudTd>@stockInHand[context.Id]</MudTd>
+        <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
         <MudTd>@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
@@ -78,10 +78,10 @@
     private bool bclearinputfile = false;
     private Snackbar snackbar;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         GetVariants();
-        GetStockInHandAmount();
+        await LoadStockInHandAsync();
         CalculateTotalStockInHand();
     }
 
@@ -97,8 +97,14 @@
 
     public void GetVariants()
     {
-        if (Product != null)
+        if (Product?.Variants is { Count: > 0 })
+        {
             variants = Product.Variants.Select(v => Mapper.Map<VariantModel>(v)).ToList();
+        }
+        else
+        {
+            variants = new List<VariantModel>();
+        }
     }
 
     public string GetImage(Image image)
@@ -114,31 +120,16 @@
         }
     }
 
-    public void GetStockInHandAmount()
+    private async Task LoadStockInHandAsync()
     {
-        if (variants.Count != 0)
+        if (Product?.Variants is not { Count: > 0 })
         {
-            var arrival = variants.Select(variant => new
-            {
-                VariantId = variant.Id,
-                Quantity = variant.PurchaseVariants.Sum(purchase => purchase.Quantity ?? 0)
-            }).ToDictionary(result => result.VariantId, result => result.Quantity);
-
-            var shipment = variants.Select(variant => new
-            {
-                VariantId = variant.Id,
-                Quantity = variant.SalesVariants.Sum(sale => sale.Quantity ?? 0)
-            }).ToDictionary(result => result.VariantId, result => result.Quantity);
-
-            stockInHand = arrival.Join(shipment,
-                arrivalItem => arrivalItem.Key,
-                shipmentItem => shipmentItem.Key,
-                (arrivalItem, shipmentItem) => new
-                {
-                    VariantId = arrivalItem.Key,
-                    Quantity = arrivalItem.Value - shipmentItem.Value
-                }).ToDictionary(result => result.VariantId, result => result.Quantity);
+            stockInHand = new Dictionary<Guid, int>();
+            return;
         }
+
+        stockInHand = await ProductRepository.GetStockInHandByVariantIdsAsync(
+            Product.Variants.Select(v => v.Id));
     }
 
     private void CalculateTotalStockInHand()

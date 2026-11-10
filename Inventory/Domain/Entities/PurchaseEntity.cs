@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Domain.Entities
 {
@@ -8,7 +8,7 @@ namespace Inventory.Domain.Entities
         public Guid Id { get; set; }
         public int VoucherId { get; set; }
         public Guid SupplierEntityId { get; set; }
-        public SupplierEntity Supplier { get; set; } = new();
+        public SupplierEntity? Supplier { get; set; }
         public DateOnly Date { get; set; }
         public string? Remarks { get; set; }
         public decimal? Discount { get; set; }

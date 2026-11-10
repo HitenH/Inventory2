@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 
 namespace Inventory.Domain.Repository.Abstract
 {
@@ -7,6 +7,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task Create(CustomerEntity customer);
         Task<CustomerEntity> GetById(Guid id);
         Task<List<CustomerEntity>> GetAll();
+        Task<List<CustomerEntity>> GetAllForLookup();
         Task Update(CustomerEntity customer);
         Task Delete(CustomerEntity customer);
         bool IsCustomIdExist(string customerId);

@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -44,67 +44,56 @@ public partial class SalesSummary
             {
                 Logger.LogError("Sales summary error: " + ex.Message);
             }
-            if (salesEntity != null)
+            if (salesEntity.Id != Guid.Empty && salesEntity.SalesVariants is { Count: > 0 })
             {
-                salesSummaryModelList = salesEntity.SalesVariants.GroupBy(p => p.Product).Select(p => new SalesSummaryModel()
-                {
-                    Product = p.Key,
-                    Quantity = p.Sum(p => p.Quantity.Value),
+                var summaryDict = salesEntity.SalesSummaries?.ToDictionary(s => s.ProductEntityId)
+                    ?? new Dictionary<Guid, SalesSummaryEntity>();
 
-                }).ToList();
-                if (salesSummaryModelList.Count != 0)
-                {
-                    var summaryDict = salesEntity.SalesSummaries?.ToDictionary(s => s.ProductEntityId) ?? new Dictionary<Guid, SalesSummaryEntity>();
-
-                    salesSummaryEntityList = salesEntity.SalesVariants.Select(item =>
+                salesSummaryEntityList = salesEntity.SalesVariants
+                    .GroupBy(v => v.ProductEntityId)
+                    .Select(group =>
                     {
-                        summaryDict.TryGetValue(item.ProductEntityId, out var saleSum);
+                        var first = group.First();
+                        var product = first.Product;
+                        summaryDict.TryGetValue(group.Key, out var savedSummary);
+
                         return new SalesSummaryEntity
                         {
-                            ProductEntityId = item.ProductEntityId,
-                            ProductName = item.Product?.Name ?? "Unknown",
-                            ProductId = item.Product?.ProductId ?? "N/A",
-                            Quantity = item.Quantity ?? 0,
-                            ProductRate = item.Product?.Rate ?? 0m,
-                            Discount = saleSum?.Discount ?? 0,
-                            Amount = saleSum?.Amount ?? 0m,
-                            AmountAfterDiscount = saleSum?.AmountAfterDiscount ?? 0m
+                            ProductEntityId = group.Key,
+                            ProductId = product?.ProductId ?? savedSummary?.ProductId ?? "N/A",
+                            ProductName = product?.Name ?? savedSummary?.ProductName ?? "Unknown",
+                            Quantity = group.Sum(v => v.Quantity ?? 0),
+                            ProductRate = savedSummary?.ProductRate ?? product?.Rate ?? 0m,
+                            Discount = savedSummary?.Discount ?? 0,
+                            Amount = savedSummary?.Amount ?? 0m,
+                            AmountAfterDiscount = savedSummary?.AmountAfterDiscount ?? 0m
                         };
-                    })
-                    .GroupBy(s => s.ProductEntityId) // Group by ProductEntityId
-                    .Select(group => new SalesSummaryEntity
-                    {
-                        ProductEntityId = group.Key,
-                        ProductName = group.First().ProductName, // Take the name from the first item in the group
-                        ProductId = group.First().ProductId, // Take the ProductId from the first item
-                        Quantity = group.Sum(s => s.Quantity), // Sum the quantities
-                        ProductRate = group.First().ProductRate, // Assuming the rate is the same for all items in the group
-                        Discount = group.First().Discount, // Sum the discounts
-                        Amount = group.First().Amount, // Sum the amounts
-                        AmountAfterDiscount = group.Sum(s => s.AmountAfterDiscount) // Sum the amounts after discount
                     })
                     .ToList();
 
-
-                    for (int i = 0; i < salesSummaryEntityList.Count; i++)
+                for (int i = 0; i < salesSummaryEntityList.Count; i++)
+                {
+                    salesSummaryEntityList[i].SerialNumber = i + 1;
+                    if (salesSummaryEntityList[i].ProductRate == 0 || salesSummaryEntityList[i].Quantity == 0)
                     {
-                        salesSummaryEntityList[i].SerialNumber = i + 1;
-                        if (salesSummaryEntityList[i].ProductRate == 0 || salesSummaryEntityList[0].Quantity == 0)
-                            salesSummaryEntityList[i].Amount = 0;
-                        else
-                            salesSummaryEntityList[i].Amount = Math.Round(salesSummaryEntityList[i].ProductRate * salesSummaryEntityList[i].Quantity, 2);
-
-
-                        salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount * (1 - ((decimal)salesSummaryEntityList[i].Discount / 100));
+                        salesSummaryEntityList[i].Amount = 0;
+                    }
+                    else
+                    {
+                        salesSummaryEntityList[i].Amount = Math.Round(
+                            salesSummaryEntityList[i].ProductRate * salesSummaryEntityList[i].Quantity, 2);
                     }
 
-                    SalesTotalData = new()
-                    {
-                        Discount = salesEntity.Discount,
-                    };
-
-                    GetTotalAmount();
+                    salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount
+                        * (1 - (salesSummaryEntityList[i].Discount / 100m));
                 }
+
+                SalesTotalData = new()
+                {
+                    Discount = salesEntity.Discount,
+                };
+
+                GetTotalAmount();
             }
         }
         StateHasChanged();

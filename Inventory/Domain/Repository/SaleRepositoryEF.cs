@@ -1,6 +1,5 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
-using Inventory.Pages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
@@ -16,14 +15,42 @@ namespace Inventory.Domain.Repository
 
         public async Task<Guid> Create(SalesEntity sale)
         {
-            await context.Sales.AddAsync(sale);
+            var customerId = sale.CustomerEntityId != Guid.Empty
+                ? sale.CustomerEntityId
+                : sale.Customer?.Id ?? Guid.Empty;
+
+            var salesEntity = new SalesEntity
+            {
+                CustomerEntityId = customerId,
+                Date = sale.Date,
+                VoucherId = sale.VoucherId,
+                Remarks = sale.Remarks,
+                SalesVariants = sale.SalesVariants?.Select(v => new SalesVariantEntity
+                {
+                    ProductEntityId = v.ProductEntityId,
+                    VariantEntityId = v.VariantEntityId,
+                    Quantity = v.Quantity
+                }).ToList() ?? new()
+            };
+
+            await context.Sales.AddAsync(salesEntity);
             await context.SaveChangesAsync();
-            return sale.Id;
+            return salesEntity.Id;
         }
 
         public async Task Delete(SalesEntity sale)
         {
-            context.Sales.Remove(sale);
+            var existing = await context.Sales
+                .Include(s => s.SalesVariants)
+                .Include(s => s.SalesSummaries)
+                .FirstOrDefaultAsync(s => s.Id == sale.Id);
+
+            if (existing is null)
+            {
+                return;
+            }
+
+            context.Sales.Remove(existing);
             await context.SaveChangesAsync();
         }
 
@@ -35,17 +62,82 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SalesEntity>> GetAll()
         {
-            return await context.Sales.Include(c => c.Customer).ToListAsync();
+            return await context.Sales
+                .AsNoTracking()
+                .Include(c => c.Customer)
+                .ToListAsync();
         }
 
         public async Task<SalesEntity> GetById(Guid id)
         {
-            return await context.Sales.Include(s =>s.SalesSummaries).Include(s => s.Customer).Include(s => s.SalesVariants).ThenInclude(p=>p.Product).ThenInclude(p=>p.Variants).FirstOrDefaultAsync(c => c.Id == id, default);
+            var sale = await context.Sales
+                .AsNoTracking()
+                .Include(s => s.SalesSummaries)
+                .Include(s => s.Customer)
+                .Include(s => s.SalesVariants)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (sale is null)
+            {
+                return new SalesEntity();
+            }
+
+            await HydrateSaleDetailsAsync(sale);
+            return sale;
         }
 
         public async Task Update(SalesEntity sale)
         {
-            context.Sales.Update(sale);
+            var existing = await context.Sales
+                .Include(s => s.SalesVariants)
+                .Include(s => s.SalesSummaries)
+                .FirstOrDefaultAsync(s => s.Id == sale.Id);
+
+            if (existing is null)
+            {
+                return;
+            }
+
+            existing.VoucherId = sale.VoucherId;
+            existing.Date = sale.Date;
+            existing.CustomerEntityId = sale.CustomerEntityId != Guid.Empty
+                ? sale.CustomerEntityId
+                : sale.Customer?.Id ?? existing.CustomerEntityId;
+            existing.Remarks = sale.Remarks;
+            existing.Discount = sale.Discount;
+            existing.TotalQuantity = sale.TotalQuantity;
+            existing.TotalAmountProduct = sale.TotalAmountProduct;
+
+            if (sale.SalesVariants is { Count: > 0 })
+            {
+                context.SalesVariants.RemoveRange(existing.SalesVariants ?? new List<SalesVariantEntity>());
+                existing.SalesVariants = sale.SalesVariants.Select(v => new SalesVariantEntity
+                {
+                    SalesEntityId = existing.Id,
+                    ProductEntityId = v.ProductEntityId,
+                    VariantEntityId = v.VariantEntityId,
+                    Quantity = v.Quantity
+                }).ToList();
+            }
+
+            if (sale.SalesSummaries is not null)
+            {
+                context.SalesSummary.RemoveRange(existing.SalesSummaries ?? new List<SalesSummaryEntity>());
+                existing.SalesSummaries = sale.SalesSummaries.Select(s => new SalesSummaryEntity
+                {
+                    SalesEntityId = existing.Id,
+                    SerialNumber = s.SerialNumber,
+                    ProductEntityId = s.ProductEntityId,
+                    ProductId = s.ProductId,
+                    ProductName = s.ProductName,
+                    Quantity = s.Quantity,
+                    ProductRate = s.ProductRate,
+                    Amount = s.Amount,
+                    Discount = s.Discount,
+                    AmountAfterDiscount = s.AmountAfterDiscount
+                }).ToList();
+            }
+
             await context.SaveChangesAsync();
         }
 
@@ -62,6 +154,45 @@ namespace Inventory.Domain.Repository
         public bool IsVoucherExistByDate(int voucherId, DateOnly date)
         {
             return context.Sales.Any(p => p.VoucherId == voucherId && p.Date == date);
+        }
+
+        private async Task HydrateSaleDetailsAsync(SalesEntity sale)
+        {
+            if (sale.Customer is null || sale.Customer.Id == Guid.Empty)
+            {
+                sale.Customer = await context.Customers.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == sale.CustomerEntityId);
+            }
+
+            var variants = sale.SalesVariants ?? new List<SalesVariantEntity>();
+            if (variants.Count == 0)
+            {
+                return;
+            }
+
+            var productIds = variants.Select(v => v.ProductEntityId).Distinct().ToList();
+            var variantIds = variants.Select(v => v.VariantEntityId).Distinct().ToList();
+
+            var products = await context.Products.AsNoTracking()
+                .Where(p => productIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var variantEntities = await context.Variants.AsNoTracking()
+                .Where(v => variantIds.Contains(v.Id))
+                .ToDictionaryAsync(v => v.Id);
+
+            foreach (var line in variants)
+            {
+                if (products.TryGetValue(line.ProductEntityId, out var product))
+                {
+                    line.Product = product;
+                }
+
+                if (variantEntities.TryGetValue(line.VariantEntityId, out var variant))
+                {
+                    line.ProductVariant = variant;
+                }
+            }
         }
     }
 }

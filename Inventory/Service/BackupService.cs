@@ -1,4 +1,4 @@
-﻿using CsvHelper;
+using CsvHelper;
 using Inventory.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -9,10 +9,12 @@ namespace Inventory.Service;
 public class BackupService
 {
     private readonly string backupDirectory;
+    private readonly string databasePath;
 
-    public BackupService(string backupDirectory)
+    public BackupService(string backupDirectory, string databasePath)
     {
         this.backupDirectory = backupDirectory;
+        this.databasePath = databasePath;
     }
 
     public void BackupDatabase()
@@ -27,7 +29,7 @@ public class BackupService
             }
 
             string backupPath = Path.Combine(backupDirectory, $"backup_{DateTime.Now:yyyyMMddHHmmss}.db");
-            File.Copy("/Inventory.db", backupPath, true);
+            File.Copy(databasePath, backupPath, true);
         }
         catch (Exception ex)
         {
@@ -45,7 +47,7 @@ public class BackupService
             {
                 throw new FileNotFoundException("Backup file not found", backupFilePath);
             }
-            File.Copy(backupFilePath, "/Inventory.db", true);
+            File.Copy(backupFilePath, databasePath, true);
         }
         catch (Exception ex)
         {

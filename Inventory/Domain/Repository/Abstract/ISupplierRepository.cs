@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Models;
 
 namespace Inventory.Domain.Repository.Abstract
@@ -8,6 +8,8 @@ namespace Inventory.Domain.Repository.Abstract
         Task Create(SupplierEntity supplier);
         Task<SupplierEntity> GetById(Guid id);
         Task<List<SupplierEntity>> GetAll();
+        Task<List<SupplierEntity>> GetAllForLookup();
+        Task<Dictionary<Guid, decimal>> GetPurchaseTotalsBySupplierAsync();
         Task Update(SupplierEntity supplier);
         Task Delete(SupplierEntity supplier);
         bool IsSupplierIdExist(string supplierId);

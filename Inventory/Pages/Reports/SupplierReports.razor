@@ -1,4 +1,4 @@
-﻿@using AutoMapper
+@using AutoMapper
 @using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 
@@ -32,46 +32,29 @@
     private bool _sortNameByLength;
     private List<string> _events = new();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        try
         {
-            try
-            {
-                var list = await SupplierRepository.GetAll();
-                if (list.Count != 0)
-                {
-                    foreach (var item in list)
-                    {
-                        suppliersDisplayModels.Add(new SuppliersDisplayModel
-                            {
-                                Id = item.Id,
-                                SupplierId = item.SupplierId,
-                                Name = item.Name,
-                                Mobiles = item.Mobiles,
-                                Area = item.Area,
-                                TotalAmount = item.Purchases.Sum(purchase => purchase.TotalAmountProduct ?? 0)
-                            });
-                    }
+            var list = await SupplierRepository.GetAll();
+            var purchaseTotals = await SupplierRepository.GetPurchaseTotalsBySupplierAsync();
 
-                    suppliersAfterSearch = suppliersDisplayModels;
-                    StateHasChanged();
-                }
-            }
-            catch (Exception ex)
+            suppliersDisplayModels = list.Select(item => new SuppliersDisplayModel
             {
-                Logger.LogError("Suppliers page error" + ex.Message);
-            }
+                Id = item.Id,
+                SupplierId = item.SupplierId ?? "",
+                Name = item.Name ?? "",
+                Mobiles = item.Mobiles ?? new(),
+                Area = item.Area ?? "",
+                TotalAmount = purchaseTotals.GetValueOrDefault(item.Id, 0)
+            }).ToList();
+
+            suppliersAfterSearch = suppliersDisplayModels;
         }
-    }
-
-    public void SearchItem(ChangeEventArgs e)
-    {
-        var search = e.Value.ToString().ToLower();
-        suppliersAfterSearch = suppliersDisplayModels.Where(n => n.SupplierId.ToLower().Contains(search)
-                    || n.Name.ToLower().Contains(search)
-                    || n.Area.ToLower().Contains(search)
-                    || n.Mobiles.Any(p => p.Phone.ToLower().Contains(search))).ToList();
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Supplier reports error");
+        }
     }
 
 
