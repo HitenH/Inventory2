@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ClosedXML.Excel;
 using CsvHelper;
 using Inventory.Domain.Entities;
@@ -51,12 +51,33 @@ namespace Inventory.Pages
         }
         public void SearchItem(ChangeEventArgs e)
         {
-            var search = e.Value.ToString().ToLower();
-            customersAfterSearch = customers.Where(n => n.CustomerId.ToLower().Contains(search)
-                            || n.Name.ToLower().Contains(search)
-                            || n.Mobiles.Any(x => x.Phone.ToLower().Contains(search))
-                            || n.Area.ToLower().Contains(search)).ToList();
+            var search = e.Value?.ToString()?.Trim();
+            if (string.IsNullOrEmpty(search))
+            {
+                customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
+                GetTotalAmount();
+                return;
+            }
+
+            customersAfterSearch = customers.Where(n => MatchesCustomerSearch(n, search)).ToList();
+            GetTotalAmount();
         }
+
+        private static bool MatchesCustomerSearch(CustomerModel n, string term)
+        {
+            if (n is null || string.IsNullOrEmpty(term))
+            {
+                return false;
+            }
+
+            return Matches(n.CustomerId, term)
+                   || Matches(n.Name, term)
+                   || Matches(n.Area, term)
+                   || (n.Mobiles?.Any(m => Matches(m?.Phone, term)) ?? false);
+        }
+
+        private static bool Matches(string? field, string term) =>
+            !string.IsNullOrEmpty(field) && field.Contains(term, StringComparison.OrdinalIgnoreCase);
 
         public void GetTotalAmount()
         {
@@ -65,7 +86,7 @@ namespace Inventory.Pages
                 totalAmount = customersAfterSearch.Select(customer => new
                 {
                     CustomerId = customer.Id,
-                    TotalAmount = customer.Sales.Sum(sale => sale.TotalAmountProduct)
+                    TotalAmount = customer.Sales?.Sum(sale => sale.TotalAmountProduct) ?? 0m
                 }).ToDictionary(result => result.CustomerId, result => result.TotalAmount);
             }
         }
