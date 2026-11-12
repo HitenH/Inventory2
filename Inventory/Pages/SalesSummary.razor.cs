@@ -1,3 +1,4 @@
+using System.Globalization;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
@@ -151,10 +152,27 @@ public partial class SalesSummary
         }
     }
 
-    public async void RateChanged(ChangeEventArgs arg, Guid productId)
+    // Bumped when a typed value is rejected, so the input boxes are redrawn with the previous value.
+    private int inputVersion;
+
+    public void RateChanged(ChangeEventArgs arg, Guid productId)
     {
         var index = salesSummaryEntityList.FindIndex(n => n.ProductEntityId == productId);
-        var value = decimal.Parse(arg.Value.ToString());
+        if (index < 0)
+            return;
+
+        // Empty box = 0. The browser sends numbers with a dot, whatever the PC's regional settings.
+        var text = arg.Value?.ToString()?.Trim();
+        if (string.IsNullOrEmpty(text))
+            text = "0";
+
+        if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) || value < 0)
+        {
+            Snackbar.Add($"Rate must be a number of 0 or more. Kept {salesSummaryEntityList[index].ProductRate}.", Severity.Warning);
+            inputVersion++;
+            return;
+        }
+
         salesSummaryEntityList[index].ProductRate = value;
         AmountChanged(index);
         GetTotalAmount();
@@ -169,10 +187,24 @@ public partial class SalesSummary
         AmountAfterDiscountChanged(index);
     }
 
-    public async void DiscountChanged(ChangeEventArgs arg, Guid productId)
+    public void DiscountChanged(ChangeEventArgs arg, Guid productId)
     {
         var index = salesSummaryEntityList.FindIndex(n => n.ProductEntityId == productId);
-        var value = int.Parse(arg.Value.ToString());
+        if (index < 0)
+            return;
+
+        // Discount is a whole-number percentage. Empty box = 0.
+        var text = arg.Value?.ToString()?.Trim();
+        if (string.IsNullOrEmpty(text))
+            text = "0";
+
+        if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value < 0 || value > 100)
+        {
+            Snackbar.Add($"Discount must be a whole number from 0 to 100 (percent). Kept {salesSummaryEntityList[index].Discount}.", Severity.Warning);
+            inputVersion++;
+            return;
+        }
+
         salesSummaryEntityList[index].Discount = value;
         AmountAfterDiscountChanged(index);
         GetTotalAmount();

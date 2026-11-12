@@ -15,7 +15,7 @@ namespace Inventory.Pages
         private List<PurchaseModel> purchasesAfterSearch = new();
         private bool isSortAscending = false;
 
-        protected async override void OnAfterRender(bool firstRender)
+        protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {

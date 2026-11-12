@@ -189,7 +189,7 @@ namespace Inventory.Shared
             }).ToList();
         }
 
-        public async void UpdateSalesOrderVariant(SalesOrderVariantModel model)
+        public void UpdateSalesOrderVariant(SalesOrderVariantModel model)
         {
             CancelSalesOrderVariant();
             salesOrderVariantModel = model;

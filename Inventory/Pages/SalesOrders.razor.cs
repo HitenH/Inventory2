@@ -145,7 +145,7 @@ public partial class SalesOrders
         var index = salesOrdersAfterSearch.IndexOf((SalesOrderModel)item);
         salesOrdersAfterSearch[index] = salesOrderModelBackup;
     }
-    public async void EditOrder(object e)
+    public async Task EditOrder(object e)
     {
         SalesOrderEntity salesOrderEntity = new();
         SalesOrderModel salesOrderModel = ((SalesOrderModel)e);

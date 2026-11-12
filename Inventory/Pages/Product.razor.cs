@@ -21,6 +21,7 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IDialogService DialogService { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
         private ProductModel productModel = new();
         private ProductEntity productEntity = new();
@@ -141,7 +142,7 @@ namespace Inventory.Pages
             }     
         }
 
-        public async void DeleteProduct()
+        public async Task DeleteProduct()
         {
             if (productEntity != null)
             {
@@ -166,7 +167,8 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Delete Product error: " + ex.Message);
+                    Logger.LogError(ex, "Delete Product error");
+                    Snackbar.Add("Cannot delete this product. " + ex.Message, Severity.Error);
                     titleMessage = "Error Message";
                     messageShort = "Cannot delete Product";
                     messageFull = ex.Message;

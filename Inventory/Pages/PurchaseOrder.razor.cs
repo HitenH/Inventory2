@@ -243,7 +243,11 @@ public partial class PurchaseOrder
         ordersAfterSearch[index] = purchaseOrderModelBackup;
     }
 
-    public async void EditRowPurchaseOrder(object e)
+    // MudTable's RowEditCommit only accepts a plain (non-async) method, so this starts the save
+    // and the async method below catches every error itself (an async void would crash the page).
+    public void EditRowPurchaseOrder(object e) => _ = EditRowPurchaseOrderAsync(e);
+
+    private async Task EditRowPurchaseOrderAsync(object e)
     {
         PurchaseOrderModel editPurchaseOrderModel = ((PurchaseOrderModel)e);
 
@@ -274,8 +278,10 @@ public partial class PurchaseOrder
             }
             catch (Exception ex)
             {
-                Logger.LogError("Update order error: " + ex.Message);
+                Logger.LogError(ex, "Update order error");
+                Snackbar.Add("Could not save the purchase order row. " + ex.Message, Severity.Error);
             }
+            await InvokeAsync(StateHasChanged);
         }
     }
 

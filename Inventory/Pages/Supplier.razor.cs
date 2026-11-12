@@ -154,7 +154,7 @@ namespace Inventory.Pages
         }
 
 
-        public async void DeleteSupplier()
+        public async Task DeleteSupplier()
         {
             if (supplierEntity != null)
             {

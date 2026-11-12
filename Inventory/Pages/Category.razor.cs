@@ -4,6 +4,7 @@ using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -14,6 +15,7 @@ namespace Inventory.Pages
         [Inject] private ILogger<Category> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IMapper Mapper { get; set; }
+        [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
         private CategoryModel category;
 
@@ -30,14 +32,13 @@ namespace Inventory.Pages
                 {
                     await CategoryRepository.Create(Mapper.Map<CategoryEntity>(category));
                 }
+                navManager.NavigateTo("/products");
             }
             catch (Exception ex)
             {
-                Logger.LogError("Create category: " + ex.Message);
-            }
-            finally
-            {
-                navManager.NavigateTo("/products");
+                // Stay on the page so the operator sees the save failed and can try again.
+                Logger.LogError(ex, "Create category");
+                Snackbar.Add("Could not save the category. " + ex.Message, Severity.Error);
             }
         }
     }

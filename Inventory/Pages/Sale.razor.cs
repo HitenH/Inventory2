@@ -94,6 +94,12 @@ public partial class Sale
 
     public async Task AddOrder()
     {
+        if (customer is null || customer.Id == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", Severity.Warning);
+            return;
+        }
+
         if (salesModel != null && salesModelVariants.Count != 0)
         {
             try
@@ -135,6 +141,12 @@ public partial class Sale
 
     public async Task EditOrder()
     {
+        if (customer is null || customer.Id == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", Severity.Warning);
+            return;
+        }
+
         if (salesModel != null && salesEntity != null)
         {
             try
@@ -170,10 +182,20 @@ public partial class Sale
             navManager.NavigateTo("/sales");
     }
 
-    public void CheckIfClickEnter(KeyboardEventArgs keyBoard)
+    public async Task CheckIfClickEnter(KeyboardEventArgs keyBoard)
     {
-        if (keyBoard.Key == "Enter")
-            AddVariant();
+        if (keyBoard.Key != "Enter")
+            return;
+
+        try
+        {
+            await AddVariant();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Scan (Enter) failed");
+            Snackbar.Add("Could not add the scanned item. Please scan again. " + ex.Message, Severity.Error);
+        }
     }
 
     public async Task AddVariant()
@@ -208,6 +230,14 @@ public partial class Sale
                     salesVariantModel.InnerId = lastId;
                     salesModelVariants.Add(salesVariantModel);
                 }
+                else
+                {
+                    Snackbar.Add($"Variant '{salesVariantModel.VariantId}' not found for product '{salesVariantModel.ProductId}'.", Severity.Warning);
+                }
+            }
+            else
+            {
+                Snackbar.Add($"Product '{salesVariantModel.ProductId}' not found (or it has no variants).", Severity.Warning);
             }
         }
         CancelSalesVariant();
@@ -273,7 +303,7 @@ public partial class Sale
         salesModelVariants = new();
     }
 
-    public async void UpdateSalesVariant(SalesVariantModel model)
+    public void UpdateSalesVariant(SalesVariantModel model)
     {
         CancelSalesVariant();
         salesVariantModel = model;
@@ -301,7 +331,7 @@ public partial class Sale
         }
     }
 
-    public async void OpenScanMassDialogAsync()
+    public async Task OpenScanMassDialogAsync()
     {
         var options = new DialogOptions
         {
@@ -317,7 +347,7 @@ public partial class Sale
         //For each scanned item from the returned scanned items list, add it to the salesModelVariants list
         if (!result.Canceled)
         {
-            var scannedItems = result.Data as List<ScannedItem>;
+            var scannedItems = result.Data as List<ScannedItem> ?? new List<ScannedItem>();
             foreach (var item in scannedItems)
             {
                 var productDb = await ProductRepository.GetByProductId(item.ProductId);

@@ -192,7 +192,7 @@ namespace Inventory.Shared
             }).ToList();
         }
 
-        public async void UpdatePurchaseVariant(PurchaseVariantModel model)
+        public void UpdatePurchaseVariant(PurchaseVariantModel model)
         {
             CancelPurchaseVariant();
             purchaseVariant = model;
