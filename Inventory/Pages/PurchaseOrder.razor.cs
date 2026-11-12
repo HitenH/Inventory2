@@ -149,8 +149,12 @@ public partial class PurchaseOrder
         selectedSupplier = new();
     }
 
+    // Batch 14: the list shows one page at a time (see ListPaging).
+    private MudBlazor.MudTable<PurchaseOrderModel>? listTable;
+
     public void SearchItem(ChangeEventArgs e)
     {
+        listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
         var search = e.Value.ToString().ToLower();
         ordersAfterSearch = orders.Where(n => n.SupplierId.ToString().ToLower().Contains(search)
                                            || n.ProductId.ToString().ToLower().Contains(search)
@@ -166,7 +170,7 @@ public partial class PurchaseOrder
         {
             try
             {
-                if (await DialogService.ConfirmDeleteAsync())
+                if (await DialogService.ConfirmDeleteAsync(selectedOrders.Count))
                 {
                     //delete the selected orders
                     ordersDb = ordersDb.Where(o => selectedOrders.Any(p => p.Id == o.Id)).ToList();
@@ -188,7 +192,7 @@ public partial class PurchaseOrder
         {
             try
             {
-                if (await DialogService.ConfirmDeleteAsync())
+                if (await DialogService.ConfirmDeleteAsync(ordersAfterSearch.Count(o => o.OrderStatus == OrderStatus.Completed)))
                 {
                     ordersDb = ordersDb.Where(o => ordersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
                     await PurchaseOrderRepository.DeleteRange(ordersDb);

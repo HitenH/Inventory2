@@ -20,7 +20,7 @@ else
             </MudPaper>
         </div>
 
-        <MudTable style="margin-top:6rem" Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
             <HeaderContent>
                 <MudTh>
                     <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.VoucherId)">
@@ -56,6 +56,9 @@ else
             <NoRecordsContent>
                 <MudText Class="text-center">Not Found!</MudText>
             </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
         </MudTable>
 
     </MudStack>

@@ -54,8 +54,12 @@ public partial class SalesOrders
         }
     }
 
+    // Batch 14: the list shows one page at a time (see ListPaging).
+    private MudBlazor.MudTable<SalesOrderModel>? listTable;
+
     public void SearchItem(ChangeEventArgs e)
     {
+        listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
         var search = e.Value.ToString().ToLower();
         salesOrdersAfterSearch = salesOrders.Where(n => n.CustomerName.ToLower().Contains(search)
                                            || n.VoucherId.ToString().Contains(search)
@@ -69,7 +73,7 @@ public partial class SalesOrders
         {
             try
             {
-                if (await DialogService.ConfirmDeleteAsync())
+                if (await DialogService.ConfirmDeleteAsync(selectedSalesOrders.Count))
                 {
                     salesOrdersDb = salesOrdersDb.Where(q => selectedSalesOrders.Any(p => p.Id == q.Id)).ToList();
                     await SalesOrderRepository.DeleteRange(salesOrdersDb);
@@ -92,7 +96,7 @@ public partial class SalesOrders
         {
             try
             {
-                if (await DialogService.ConfirmDeleteAsync())
+                if (await DialogService.ConfirmDeleteAsync(salesOrdersAfterSearch.Count(o => o.OrderStatus == OrderStatus.Completed)))
                 {
                     salesOrdersDb = salesOrdersDb.Where(o => salesOrdersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
                     await SalesOrderRepository.DeleteRange(salesOrdersDb);

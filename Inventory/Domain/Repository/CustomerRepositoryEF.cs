@@ -55,8 +55,28 @@ namespace Inventory.Domain.Repository
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(n => n.Mobiles)
-                .Include(c => c.Sales)
                 .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
+        // Batch 14: totals are added up in the database instead of loading every sale (was .Include(c => c.Sales)).
+        public async Task<Dictionary<Guid, decimal>> GetSalesTotalsByCustomerAsync()
+        {
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Sales
+                .AsNoTracking()
+                .GroupBy(s => s.CustomerEntityId)
+                .Select(g => new { CustomerId = g.Key, Total = g.Sum(s => s.TotalAmountProduct) })
+                .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
+        }
+
+        public async Task<List<AreaSalesTotal>> GetSalesTotalsByAreaAsync()
+        {
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Sales
+                .AsNoTracking()
+                .GroupBy(s => s.Customer!.Area)
+                .Select(g => new AreaSalesTotal(g.Key, g.Sum(s => s.TotalAmountProduct)))
                 .ToListAsync();
         }
 

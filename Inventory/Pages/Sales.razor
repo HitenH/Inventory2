@@ -20,7 +20,7 @@ else
             </MudPaper>
         </div>
 
-        <MudTable Items="salesAfterSearch"
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" Items="salesAfterSearch"
                   style="margin-top:6rem"
                   Hover="true"
                   Bordered="true"
@@ -40,6 +40,9 @@ else
             <NoRecordsContent>
                 <MudText Class="text-center">Not Found!</MudText>
             </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
         </MudTable>
 
     </MudStack>

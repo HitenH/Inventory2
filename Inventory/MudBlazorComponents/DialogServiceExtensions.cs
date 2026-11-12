@@ -40,4 +40,15 @@ public static class DialogServiceExtensions
     /// <summary>The standard red "Delete" confirmation used before every delete.</summary>
     public static Task<bool> ConfirmDeleteAsync(this IDialogService dialogService)
         => dialogService.ConfirmAsync("Delete", DeleteWarning, "Delete", Color.Error);
+
+    /// <summary>
+    /// Delete confirmation that says how many records will go (batch 14): with paging, "select all"
+    /// can include rows on other pages, so the number is shown before anything is deleted.
+    /// </summary>
+    public static Task<bool> ConfirmDeleteAsync(this IDialogService dialogService, int count)
+        => dialogService.ConfirmAsync("Delete", DeleteWarningFor(count), "Delete", Color.Error);
+
+    public static string DeleteWarningFor(int count) => count == 1
+        ? "Do you really want to delete this 1 record? This process cannot be undone."
+        : $"Do you really want to delete these {count} records? This process cannot be undone.";
 }

@@ -46,8 +46,12 @@ namespace Inventory.Pages
             }
         }
        
+        // Batch 14: the list shows one page at a time (see ListPaging).
+        private MudBlazor.MudTable<PurchaseModel>? listTable;
+
         public void SearchItem(ChangeEventArgs e)
         {
+            listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
             var search = e.Value.ToString().ToLower();
             purchasesAfterSearch = purchases.Where(n => n.VoucherId.ToString().Contains(search) || n.SupplierName.ToLower().Contains(search)
                                                         || n.Date.ToString().Contains(search)).ToList();

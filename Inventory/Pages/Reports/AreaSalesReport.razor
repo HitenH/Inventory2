@@ -18,7 +18,6 @@
 
 @code {
 
-    [Inject] private ISaleRepository SaleRepository { get; set; }
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] private ILogger<AreaSalesReport> Logger { get; set; } = default!;
     private List<SalesByAreaModel> salesByArea = new();
@@ -35,15 +34,12 @@
     {
         try
         {
-            var sales = await SaleRepository.GetAll();
-            var customers = await CustomerRepository.GetAll();
-
-            salesByArea = sales
-                .GroupBy(s => s.Customer.Area)
-                .Select(g => new SalesByAreaModel
+            // Batch 14: added up in the database (used to load every sale and every customer).
+            salesByArea = (await CustomerRepository.GetSalesTotalsByAreaAsync())
+                .Select(t => new SalesByAreaModel
                     {
-                        Area = g.Key,
-                        TotalSales = g.Sum(s => s.TotalAmountProduct)
+                        Area = t.Area!,
+                        TotalSales = t.Total
                     })
                 .ToList();
 

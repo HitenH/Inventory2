@@ -19,7 +19,7 @@ else
                 </MudToolBar>
             </MudPaper>
         </div>
-        <MudTable Items="suppliersAfterSearch" FixedHeader="true"
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" Items="suppliersAfterSearch" FixedHeader="true"
                   style="margin-top:6rem"
                   Dense="true" Bordered="true" Striped="true"
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SuppliersDisplayModel>>(this, RowClickEvent))">
@@ -60,6 +60,9 @@ else
             <NoRecordsContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
             </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
         </MudTable>
     </MudStack>
 

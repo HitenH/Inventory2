@@ -33,9 +33,10 @@ namespace Inventory.Pages
                 try
                 {
                     var list = await CustomerRepository.GetAll();
+                    var salesTotals = await CustomerRepository.GetSalesTotalsByCustomerAsync();
                     if (list.Count != 0)
                     {
-                        customers = list.Select(c => c.ToModel()).ToList();
+                        customers = list.Select(c => c.ToModel(salesTotals)).ToList();
                         customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
                         GetTotalAmount();
                         StateHasChanged();
@@ -47,8 +48,12 @@ namespace Inventory.Pages
                 }
             }
         }
+        // Batch 14: the list shows one page at a time (see ListPaging).
+        private MudBlazor.MudTable<CustomerModel>? listTable;
+
         public void SearchItem(ChangeEventArgs e)
         {
+            listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
             var search = e.Value?.ToString()?.Trim();
             if (string.IsNullOrEmpty(search))
             {

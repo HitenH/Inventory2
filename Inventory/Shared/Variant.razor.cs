@@ -247,10 +247,7 @@ public partial class Variant
             variants = Product.Variants.Select(v => v.ToModel()).ToList();
     }
 
-    public string GetImage(Image image)
-    {
-        return $"data:image/jpg;base64,{Convert.ToBase64String(image.ImageData)}";
-    }
+    public string GetImage(Image image) => Photos.UrlFor(image);   // batch 14: a normal image address, not packed into the page
 
     private async Task ReturnFocusToInput()
     {

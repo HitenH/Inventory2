@@ -47,8 +47,12 @@ public partial class Products
         }
     }
 
+    // Batch 14: the list shows one page at a time (see ListPaging).
+    private MudBlazor.MudTable<ProductModel>? listTable;
+
     public void SearchItem(ChangeEventArgs e)
     {
+        listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
         var search = e.Value?.ToString()?.Trim();
         if (string.IsNullOrEmpty(search))
         {

@@ -73,6 +73,15 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
+        public async Task<decimal> GetTotalBetweenAsync(DateOnly from, DateOnly to)
+        {
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Sales
+                .AsNoTracking()
+                .Where(s => s.Date >= from && s.Date <= to)
+                .SumAsync(s => s.TotalAmountProduct);
+        }
+
         public async Task<List<SalesEntity>> GetAll()
         {
             await using var context = await factory.CreateDbContextAsync();

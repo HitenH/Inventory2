@@ -3,14 +3,12 @@
 
 <MudStack Spacing="20">
     <MudSelect T="string" Label="Filter by Time" Value="selectedTimeFilter" ValueChanged="OnTimeFilterChanged">
-        <MudSelectItem Value="@("Daily")">Today</MudSelectItem>
-        <MudSelectItem Value="@("Yesterday")">Yesterday</MudSelectItem>
-        <MudSelectItem Value="@("Weekly")">This Week</MudSelectItem>
-        <MudSelectItem Value="@("Monthly")">The Last 30 Days</MudSelectItem>
-        <MudSelectItem Value="@("Quarterly")">Last Quarter</MudSelectItem>
-        <MudSelectItem Value="@("HalfYearly")">Last 6 Months</MudSelectItem>
-        <MudSelectItem Value="@("Yearly")">This Year</MudSelectItem>
+        @foreach (var period in ReportPeriods.All)
+        {
+            <MudSelectItem Value="@period.Key">@period.Label</MudSelectItem>
+        }
     </MudSelect>
+    <MudText Typo="Typo.body2">@periodText</MudText>
     <MudGrid Spacing="10">
         <MudItem xs="6">
 
@@ -40,10 +38,8 @@
     [Inject] private ILogger<Sales> Logger { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
 
-    private List<SalesModel> sales = new();
-    private List<SalesModel> salesAfterSearch = new();
-
-    private string selectedTimeFilter = "Daily";
+    private string selectedTimeFilter = ReportPeriods.Today;
+    private string periodText = "";
 
     private decimal totalSales;
     private decimal totalPurchases;
@@ -54,54 +50,30 @@
         await LoadTotals();
     }
 
+    // Batch 14: both totals are added up in the database for the chosen dates
+    // (the screen used to load every sale and purchase and filter them here).
     private async Task LoadTotals()
     {
-        await LoadTotalSales();
-        await LoadTotalPurchases();
-    }
+        var (from, to) = ReportPeriods.Range(selectedTimeFilter, DateOnly.FromDateTime(DateTime.Now));
+        periodText = from == to ? $"{from:dd-MM-yyyy}" : $"{from:dd-MM-yyyy} to {to:dd-MM-yyyy}";
 
-    private async Task LoadTotalSales()
-    {
         try
         {
-            var salesEntities = await SaleRepository.GetAll();
-            var filteredSales = FilterByTime(salesEntities, selectedTimeFilter);
-            totalSales = filteredSales.Sum(s => s.TotalAmountProduct);
+            totalSales = await SaleRepository.GetTotalBetweenAsync(from, to);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading total sales");
         }
-    }
 
-    private async Task LoadTotalPurchases()
-    {
         try
         {
-            var purchaseEntities = await PurchaseRepository.GetAll();
-            var filteredPurchases = FilterByTime(purchaseEntities, selectedTimeFilter);
-            totalPurchases = filteredPurchases.Sum(p => p.TotalAmountProduct ?? 0);
+            totalPurchases = await PurchaseRepository.GetTotalBetweenAsync(from, to);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading total purchases");
         }
-    }
-
-    private IEnumerable<T> FilterByTime<T>(IEnumerable<T> entities, string timeFilter) where T : class
-    {
-        DateTime now = DateTime.Now;
-        return timeFilter switch
-        {
-            "Daily" => entities.Where(e => ((dynamic)e).Date == DateOnly.FromDateTime(now)),
-            "Yesterday" => entities.Where(e => ((dynamic)e).Date == DateOnly.FromDateTime(now.AddDays(-1))),
-            "Weekly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddDays(-7))),
-            "Monthly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-1))),
-            "Quarterly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-3))),
-            "HalfYearly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddMonths(-6))),
-            "Yearly" => entities.Where(e => ((dynamic)e).Date >= DateOnly.FromDateTime(now.AddYears(-1))),
-            _ => entities
-        };
     }
 
     private async Task OnTimeFilterChanged(string value)

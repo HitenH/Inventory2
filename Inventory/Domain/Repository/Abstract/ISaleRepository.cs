@@ -8,6 +8,8 @@ namespace Inventory.Domain.Repository.Abstract
         Task<Guid> Create(SalesEntity sale);
         Task<SalesEntity> GetById(Guid id);
         Task<List<SalesEntity>> GetAll();
+        /// <summary>Sum of sale totals dated from..to (both included), added up in the database (batch 14).</summary>
+        Task<decimal> GetTotalBetweenAsync(DateOnly from, DateOnly to);
         Task Update(SalesEntity sale);
         Task Delete(SalesEntity sale);
         Task DeleteRange(List<SalesEntity> sales);

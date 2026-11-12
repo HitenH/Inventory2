@@ -48,9 +48,10 @@
         try
         {
             var list = await CustomerRepository.GetAll();
+            var salesTotals = await CustomerRepository.GetSalesTotalsByCustomerAsync();
             if (list.Count != 0)
             {
-                customers = list.Select(c => c.ToModel()).ToList();
+                customers = list.Select(c => c.ToModel(salesTotals)).ToList();
                 customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
                 GetTotalAmount();
                 StateHasChanged();

@@ -26,6 +26,14 @@ public static class ModelMapping
         TotalSales = e.Sales?.Sum(s => s.TotalAmountProduct) ?? 0m,
     };
 
+    /// <summary>Batch 14: lists get each customer's sales total from one database query instead of loading every sale.</summary>
+    public static CustomerModel ToModel(this CustomerEntity e, IReadOnlyDictionary<Guid, decimal> salesTotals)
+    {
+        var model = e.ToModel();
+        model.TotalSales = salesTotals.GetValueOrDefault(e.Id, 0m);
+        return model;
+    }
+
     public static CustomerEntity ToEntity(this CustomerModel m) => new()
     {
         Id = m.Id,

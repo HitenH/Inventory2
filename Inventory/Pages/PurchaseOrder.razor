@@ -102,7 +102,7 @@
     </div>
 
 
-    <MudTable Items="ordersAfterSearch"
+    <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" Items="ordersAfterSearch"
               Hover="true"
               Bordered="true"
               Striped="true"
@@ -229,5 +229,8 @@
         <NoRecordsContent>
             <MudText Align="Align.Center">Not Found!</MudText>
         </NoRecordsContent>
+        <PagerContent>
+            <ListPager />
+        </PagerContent>
     </MudTable>
 </MudStack>

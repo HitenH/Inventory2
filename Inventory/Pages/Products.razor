@@ -87,7 +87,7 @@ else
                 </MudToolBar>
             </MudPaper>
         </div>
-        <MudTable style="margin-top:6rem" Items="@productsAfterSearch" FixedHeader="true" Dense="true" Bordered="true" Striped="true" AllowUnsorted="false" SortLabel="Name">
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="@productsAfterSearch" FixedHeader="true" Dense="true" Bordered="true" Striped="true" AllowUnsorted="false" SortLabel="Name">
             <HeaderContent>
                 <MudTh>
                     <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.ProductId)">Product ID</MudTableSortLabel>
@@ -113,6 +113,9 @@ else
             <NoRecordsContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
             </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
         </MudTable>
 
     </MudStack>
