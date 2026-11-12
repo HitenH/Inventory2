@@ -27,10 +27,78 @@ namespace Inventory.Domain
         public DbSet<SalesVariantEntity> SalesVariants { get; set; }
         public DbSet<SalesSummaryEntity> SalesSummary { get; set; }
 
+        /// <summary>
+        /// If a save fails (for example a duplicate ID refused by the database), undo the pending changes in memory.
+        /// This context lives for the whole browser tab (see REVIEW A2), so without this the failed change
+        /// would stay queued and make every later save in the same tab fail too.
+        /// </summary>
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                RejectPendingChanges();
+                throw;
+            }
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            try
+            {
+                return base.SaveChanges(acceptAllChangesOnSuccess);
+            }
+            catch (DbUpdateException)
+            {
+                RejectPendingChanges();
+                throw;
+            }
+        }
+
+        private void RejectPendingChanges()
+        {
+            foreach (var entry in ChangeTracker.Entries().ToList())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.State = EntityState.Detached;
+                        break;
+                    case EntityState.Modified:
+                    case EntityState.Deleted:
+                        entry.CurrentValues.SetValues(entry.OriginalValues);
+                        entry.State = EntityState.Unchanged;
+                        break;
+                }
+            }
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Users are no longer seeded here. Passwords are stored hashed; see Authentication/UserBootstrap.cs
             // for the one-time upgrade of existing rows and creation of the first admin on an empty database.
+
+            // Business IDs must be unique (batch 5). Empty (NULL) IDs are allowed more than once by SQLite,
+            // so the few old blank rows do not block these rules.
+            // Voucher numbers per day are NOT made unique yet: old data has duplicates (decision pinned in PLAN.md).
+            modelBuilder.Entity<ProductEntity>()
+                        .HasIndex(p => p.ProductId)
+                        .IsUnique();
+
+            modelBuilder.Entity<CustomerEntity>()
+                        .HasIndex(c => c.CustomerId)
+                        .IsUnique();
+
+            modelBuilder.Entity<SupplierEntity>()
+                        .HasIndex(s => s.SupplierId)
+                        .IsUnique();
+
+            modelBuilder.Entity<VariantEntity>()
+                        .HasIndex(v => new { v.ProductEntityId, v.VariantId })
+                        .IsUnique();
 
             modelBuilder.Entity<PurchaseOrderEntity>()
                         .Property(p => p.Date)

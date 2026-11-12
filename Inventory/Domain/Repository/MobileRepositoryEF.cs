@@ -1,48 +1,67 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class MobileRepositoryEF : IMobileRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public MobileRepositoryEF(AppDbContext context)
+        public MobileRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
-        public async Task Create(Mobile mobile)
+
+        public async Task Create(Mobile item)
         {
-            await context.Mobiles.AddAsync(mobile);
+            await using var context = await factory.CreateDbContextAsync();
+            await context.Mobiles.AddAsync(item);
             await context.SaveChangesAsync();
         }
 
-        public async Task Delete(Mobile mobile)
+        public async Task Delete(Mobile item)
         {
-            context.Mobiles.Remove(mobile);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Mobiles.FindAsync(item.Id);
+            if (existing is null)
+                return;
+
+            context.Mobiles.Remove(existing);
             await context.SaveChangesAsync();
         }
 
-        public async Task DeleteRange(List<Mobile> mobiles)
+        public async Task DeleteRange(List<Mobile> items)
         {
-            context.Mobiles.RemoveRange(mobiles);
+            await using var context = await factory.CreateDbContextAsync();
+            var ids = items.Select(i => i.Id).ToList();
+            var existing = await context.Mobiles.Where(m => ids.Contains(m.Id)).ToListAsync();
+            context.Mobiles.RemoveRange(existing);
             await context.SaveChangesAsync();
         }
 
         public async Task<List<Mobile>> GetAll()
         {
-             return await context.Mobiles.ToListAsync();
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Mobiles.AsNoTracking().ToListAsync();
         }
 
         public async Task<Mobile> GetById(int id)
         {
-            return await context.Mobiles.FirstOrDefaultAsync(c => c.Id == id, default);
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Mobiles.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task Update(Mobile mobile)
+        /// <summary>Loads the row, copies the changed values onto it, saves.</summary>
+        public async Task Update(Mobile item)
         {
-            context.Mobiles.Update(mobile);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Mobiles.FindAsync(item.Id);
+            if (existing is null)
+                return;
+
+            context.Entry(existing).CurrentValues.SetValues(item);
             await context.SaveChangesAsync();
         }
     }

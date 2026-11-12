@@ -4,17 +4,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class SaleRepositoryEF : ISaleRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public SaleRepositoryEF(AppDbContext context)
+        public SaleRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
 
         public async Task<Guid> Create(SalesEntity sale)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var customerId = sale.CustomerEntityId != Guid.Empty
                 ? sale.CustomerEntityId
                 : sale.Customer?.Id ?? Guid.Empty;
@@ -40,6 +42,7 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(SalesEntity sale)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Sales
                 .Include(s => s.SalesVariants)
                 .Include(s => s.SalesSummaries)
@@ -56,12 +59,21 @@ namespace Inventory.Domain.Repository
 
         public async Task DeleteRange(List<SalesEntity> sales)
         {
-            context.Sales.RemoveRange(sales);
+            await using var context = await factory.CreateDbContextAsync();
+            // Load by ID in this context (the list came from another, already closed context).
+            var ids = sales.Select(s => s.Id).ToList();
+            var existing = await context.Sales
+                .Include(s => s.SalesVariants)
+                .Include(s => s.SalesSummaries)
+                .Where(s => ids.Contains(s.Id))
+                .ToListAsync();
+            context.Sales.RemoveRange(existing);
             await context.SaveChangesAsync();
         }
 
         public async Task<List<SalesEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Sales
                 .AsNoTracking()
                 .Include(c => c.Customer)
@@ -70,6 +82,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<SalesEntity> GetById(Guid id)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var sale = await context.Sales
                 .AsNoTracking()
                 .Include(s => s.SalesSummaries)
@@ -82,12 +95,13 @@ namespace Inventory.Domain.Repository
                 return new SalesEntity();
             }
 
-            await HydrateSaleDetailsAsync(sale);
+            await HydrateSaleDetailsAsync(context, sale);
             return sale;
         }
 
         public async Task Update(SalesEntity sale)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Sales
                 .Include(s => s.SalesVariants)
                 .Include(s => s.SalesSummaries)
@@ -143,6 +157,7 @@ namespace Inventory.Domain.Repository
 
         public int GetLastVoucherIdByDate(DateOnly date)
         {
+            using var context = factory.CreateDbContext();
             var order = context.Sales.OrderByDescending(p => p.VoucherId).FirstOrDefault(s => s.Date == date);
             if (order != null)
             {
@@ -153,10 +168,11 @@ namespace Inventory.Domain.Repository
 
         public bool IsVoucherExistByDate(int voucherId, DateOnly date)
         {
+            using var context = factory.CreateDbContext();
             return context.Sales.Any(p => p.VoucherId == voucherId && p.Date == date);
         }
 
-        private async Task HydrateSaleDetailsAsync(SalesEntity sale)
+        private static async Task HydrateSaleDetailsAsync(AppDbContext context, SalesEntity sale)
         {
             if (sale.Customer is null || sale.Customer.Id == Guid.Empty)
             {

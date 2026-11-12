@@ -5,17 +5,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class ProductRepositoryEF : IProductRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public ProductRepositoryEF(AppDbContext context)
+        public ProductRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
 
         public async Task<Guid> Create(ProductEntity product)
         {
+            await using var context = await factory.CreateDbContextAsync();
+            // The category was loaded by another (closed) context: tell this context it already exists,
+            // otherwise Add would try to insert it again.
+            if (product.Category != null)
+                context.Categories.Attach(product.Category);
+
             await context.Products.AddAsync(product);
             await context.SaveChangesAsync();
             return product.Id;
@@ -23,6 +30,7 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(ProductEntity product)
         {
+            await using var context = await factory.CreateDbContextAsync();
             try
             {
                 var hasRelatedSalesVariant = context.SalesVariants.Any(s => s.ProductEntityId == product.Id);
@@ -34,8 +42,14 @@ namespace Inventory.Domain.Repository
                 }
                 else
                 {
-                    context.Products.Remove(product);
-                    await context.SaveChangesAsync();
+                    var existing = await context.Products
+                        .Include(p => p.Variants!).ThenInclude(v => v.Image)
+                        .FirstOrDefaultAsync(p => p.Id == product.Id);
+                    if (existing != null)
+                    {
+                        context.Products.Remove(existing);   // variants and photos are removed with it (cascade)
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -46,6 +60,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Products
                 .AsNoTracking()
                 .AsSplitQuery()
@@ -57,6 +72,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductEntity>> GetAllForLookup()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Products
                 .AsNoTracking()
                 .OrderBy(p => p.Name)
@@ -65,6 +81,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var purchaseQtyByVariant = await context.PurchaseVariant
                 .AsNoTracking()
                 .GroupBy(pv => pv.VariantEntityId)
@@ -121,6 +138,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<Dictionary<Guid, int>> GetStockInHandByVariantIdsAsync(IEnumerable<Guid> variantIds)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var idList = variantIds.Distinct().ToList();
             if (idList.Count == 0)
             {
@@ -148,7 +166,11 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetById(Guid id)
         {
+            await using var context = await factory.CreateDbContextAsync();
+            // WithIdentityResolution keeps the same object shape as the old tracked query
+            // (each variant's Product points back to this product).
             return await context.Products
+                .AsNoTrackingWithIdentityResolution()
                 .AsSplitQuery()
                 .Include(p => p.Category)
                 .Include(p => p.Variants)
@@ -158,6 +180,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetByProductId(string productId)
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Products
                 .AsNoTracking()
                 .Include(p => p.Variants)
@@ -166,18 +189,113 @@ namespace Inventory.Domain.Repository
 
         public async Task Update(ProductEntity product)
         {
-            context.Products.Update(product);
+            await using var context = await factory.CreateDbContextAsync();
+            // Batch 6: load the product fresh, copy what the screen changed, and save only those rows.
+            // The screen passes the product with its variants (Variant.razor adds or edits one variant and
+            // calls this), so variants and their photos are synced here too. Variants missing from the list
+            // are NOT deleted here – deleting a variant goes through VariantRepository.Delete.
+            var existing = await context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Variants!).ThenInclude(v => v.Image)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(p => p.Id == product.Id);
+            if (existing is null)
+                return;
+
+            existing.ProductId = product.ProductId;
+            existing.Name = product.Name;
+            existing.Rate = product.Rate;
+            existing.Description = product.Description;
+            existing.Category = product.Category is null
+                ? null
+                : await context.Categories.FindAsync(product.Category.Id);
+
+            existing.Variants ??= new List<VariantEntity>();
+            var replacedImages = new List<Image>();
+            var newImages = new List<Image>();
+
+            foreach (var incoming in product.Variants ?? new List<VariantEntity>())
+            {
+                var current = incoming.Id == Guid.Empty ? null : existing.Variants.FirstOrDefault(v => v.Id == incoming.Id);
+                if (current is null)
+                {
+                    // New variant. Give it its ID now, and write the ID back to the screen's object,
+                    // so a later edit of the same variant finds it.
+                    if (incoming.Id == Guid.Empty)
+                        incoming.Id = Guid.NewGuid();
+
+                    var added = new VariantEntity
+                    {
+                        Id = incoming.Id,
+                        ProductEntityId = existing.Id,
+                        VariantId = incoming.VariantId,
+                        Name = incoming.Name,
+                        ReorderLevel = incoming.ReorderLevel
+                    };
+                    context.Variants.Add(added);
+
+                    if (incoming.Image?.ImageData != null)
+                        newImages.Add(NewImageFor(incoming, added.Id));
+                    continue;
+                }
+
+                current.VariantId = incoming.VariantId;
+                current.Name = incoming.Name;
+                current.ReorderLevel = incoming.ReorderLevel;
+
+                var image = incoming.Image;
+                if (image is null)
+                    continue;   // no photo chosen: keep whatever is stored
+
+                if (current.Image != null && current.Image.Id == image.Id)
+                {
+                    current.Image.ImageTitle = image.ImageTitle;   // same photo: update in place if changed
+                    current.Image.ImageData = image.ImageData;
+                }
+                else if (image.ImageData != null)
+                {
+                    // A different photo: the old one is deleted (it used to be left behind as an orphan row).
+                    if (current.Image != null)
+                        replacedImages.Add(current.Image);
+                    newImages.Add(NewImageFor(incoming, current.Id));
+                }
+            }
+
+            // Delete replaced photos first, then add new ones, in one transaction
+            // (one photo per variant is enforced by a unique index).
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            context.Images.RemoveRange(replacedImages);
             await context.SaveChangesAsync();
+            context.Images.AddRange(newImages);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+
+        private static Image NewImageFor(VariantEntity incoming, Guid variantId)
+        {
+            var image = incoming.Image!;
+            if (image.Id == Guid.Empty)
+                image.Id = Guid.NewGuid();
+            image.VariantEntityId = variantId;   // write back to the screen's object as well
+            return new Image
+            {
+                Id = image.Id,
+                ImageTitle = image.ImageTitle,
+                ImageData = image.ImageData,
+                VariantEntityId = variantId
+            };
         }
 
         public bool IsProductIdExist(string productId)
         {
-            return context.Products.Any(c => c.ProductId == productId);
+            using var context = factory.CreateDbContext();
+            return context.Products.Any(c => c.ProductId!.ToLower() == productId.Trim().ToLower());
         }
 
         public bool IsProductIdExist(string productId, Guid id)
         {
-            var result = context.Products.Any(c => c.ProductId == productId && c.Id == id);
+            using var context = factory.CreateDbContext();
+            var result = context.Products.Any(c => c.ProductId!.ToLower() == productId.Trim().ToLower() && c.Id == id);
             if (result)
                 return false;
             else
@@ -186,6 +304,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<ProductEntity> GetProductWithVariantsById(Guid id)
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Products
                 .AsNoTracking()
                 .Include(p => p.Variants)

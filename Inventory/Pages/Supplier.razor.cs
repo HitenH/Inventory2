@@ -24,7 +24,6 @@ namespace Inventory.Pages
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
-        [Inject] private AppDbContext context { get; set; }
         [Inject] IDialogService DialogService { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
 
@@ -78,10 +77,14 @@ namespace Inventory.Pages
         {
             messageStore?.Clear();
 
-            if (String.IsNullOrEmpty(supplierModel.Name))
+            // Spaces around an ID or name are removed; an ID or name of only spaces counts as empty (batch 5).
+            supplierModel.SupplierId = supplierModel.SupplierId?.Trim()!;
+            supplierModel.Name = supplierModel.Name?.Trim()!;
+
+            if (String.IsNullOrWhiteSpace(supplierModel.Name))
                 messageStore?.Add(() => supplierModel.Name!, "The Supplier name is required!");
 
-            if (String.IsNullOrEmpty(supplierModel.SupplierId))
+            if (String.IsNullOrWhiteSpace(supplierModel.SupplierId))
                 messageStore?.Add(() => supplierModel.SupplierId!, "The SupplierID is required!");
             else
             {
@@ -115,7 +118,10 @@ namespace Inventory.Pages
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Create supplier error: " + ex.Message);
+                        // Stay on the page so the operator can correct the entry (batch 5).
+                        Logger.LogError(ex, "Save supplier failed");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "supplier", "Supplier ID"), Severity.Error);
+                        return;
                     }
                 }
                 navManager.NavigateTo("/suppliers");
@@ -142,11 +148,13 @@ namespace Inventory.Pages
                         supplierEntity.Mobiles.AddRange(numbers);
 
                         await SupplierRepository.Update(supplierEntity);
-                        await MobileService.DeleteEmptyNumbers(context);
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Update Supplier error: " + ex.Message);
+                        // Stay on the page so the operator can correct the entry (batch 5).
+                        Logger.LogError(ex, "Save supplier failed");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "supplier", "Supplier ID"), Severity.Error);
+                        return;
                     }
                 }
                 navManager.NavigateTo("/suppliers");

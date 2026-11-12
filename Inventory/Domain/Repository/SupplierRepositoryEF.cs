@@ -6,23 +6,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class SupplierRepositoryEF : ISupplierRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public SupplierRepositoryEF(AppDbContext context)
+        public SupplierRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
 
         public async Task Create(SupplierEntity supplier)
         {
+            await using var context = await factory.CreateDbContextAsync();
             await context.Suppliers.AddAsync(supplier);
             await context.SaveChangesAsync();
         }
 
         public async Task Delete(SupplierEntity supplier)
         {
+            await using var context = await factory.CreateDbContextAsync();
             try
             {
                 var hasRelatedPurchases = context.Purchases.Any(p => p.SupplierEntityId == supplier.Id);  
@@ -32,8 +35,12 @@ namespace Inventory.Domain.Repository
                 }
                 else
                 {
-                    context.Suppliers.Remove(supplier);
-                    await context.SaveChangesAsync();
+                    var existing = await context.Suppliers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == supplier.Id);
+                    if (existing != null)
+                    {
+                        context.Suppliers.Remove(existing);   // its phone numbers are removed with it (cascade)
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -44,6 +51,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SupplierEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Suppliers
                 .AsNoTracking()
                 .AsSplitQuery()
@@ -54,6 +62,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SupplierEntity>> GetAllForLookup()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Suppliers
                 .AsNoTracking()
                 .OrderBy(s => s.Name)
@@ -62,6 +71,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<Dictionary<Guid, decimal>> GetPurchaseTotalsBySupplierAsync()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Purchases
                 .AsNoTracking()
                 .GroupBy(p => p.SupplierEntityId)
@@ -71,22 +81,53 @@ namespace Inventory.Domain.Repository
 
         public async Task<SupplierEntity> GetById(Guid id)
         {
-           return await context.Suppliers.Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            await using var context = await factory.CreateDbContextAsync();
+           return await context.Suppliers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(SupplierEntity supplier)
         {
-            context.Suppliers.Update(supplier);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Suppliers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == supplier.Id);
+            if (existing is null)
+                return;
+
+            existing.SupplierId = supplier.SupplierId;
+            existing.Name = supplier.Name;
+            existing.ContactPerson = supplier.ContactPerson;
+            existing.Address = supplier.Address;
+            existing.Area = supplier.Area;
+            existing.Remarks = supplier.Remarks;
+
+            // Phone numbers of THIS record only: update kept numbers, add new ones, delete removed ones.
+            // (Replaces the old global "delete every empty number in the database" sweep.)
+            var wanted = supplier.Mobiles ?? new List<Mobile>();
+            var current = existing.Mobiles ?? new List<Mobile>();
+            foreach (var old in current.ToList())
+            {
+                var match = wanted.FirstOrDefault(w => w.Id != 0 && w.Id == old.Id);
+                if (match is null)
+                    context.Mobiles.Remove(old);
+                else
+                    old.Phone = match.Phone;
+            }
+            foreach (var add in wanted.Where(w => w.Id == 0 || current.All(c => c.Id != w.Id)))
+            {
+                context.Mobiles.Add(new Mobile { Phone = add.Phone, SupplierEntityId = existing.Id });
+            }
+
             await context.SaveChangesAsync();
         }
 
         public bool IsSupplierIdExist(string supplierId)
         {
-            return context.Suppliers.Any(c => c.SupplierId == supplierId);
+            using var context = factory.CreateDbContext();
+            return context.Suppliers.Any(c => c.SupplierId!.ToLower() == supplierId.Trim().ToLower());
         }
         public bool IsSupplierIdExist(string supplierId, Guid id)
         {
-            var result = context.Suppliers.Any(c => c.SupplierId == supplierId && c.Id == id);
+            using var context = factory.CreateDbContext();
+            var result = context.Suppliers.Any(c => c.SupplierId!.ToLower() == supplierId.Trim().ToLower() && c.Id == id);
             if (result)
                 return false;
             else

@@ -63,6 +63,9 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId")
+                        .IsUnique();
+
                     b.ToTable("Customers");
                 });
 
@@ -137,6 +140,9 @@ namespace Inventory.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductId")
+                        .IsUnique();
 
                     b.ToTable("Products");
                 });
@@ -469,6 +475,9 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SupplierId")
+                        .IsUnique();
+
                     b.ToTable("Suppliers");
                 });
 
@@ -515,7 +524,8 @@ namespace Inventory.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductEntityId");
+                    b.HasIndex("ProductEntityId", "VariantId")
+                        .IsUnique();
 
                     b.ToTable("Variants");
                 });

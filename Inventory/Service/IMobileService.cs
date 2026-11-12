@@ -7,6 +7,5 @@ namespace Inventory.Service
     public interface IMobileService
     {
         List<Mobile> GetMobiles(List<Mobile> list);
-        Task DeleteEmptyNumbers(AppDbContext context);
     }
 }

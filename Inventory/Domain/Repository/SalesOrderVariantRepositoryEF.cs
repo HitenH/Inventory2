@@ -4,17 +4,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class SalesOrderVariantRepositoryEF : ISalesOrderVariantRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public SalesOrderVariantRepositoryEF(AppDbContext context)
+        public SalesOrderVariantRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
 
         public async Task Create(SalesOrderVariantEntity variant)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var entity = new SalesOrderVariantEntity
             {
                 SalesOrderEntityId = variant.SalesOrderEntityId,
@@ -35,6 +37,7 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(SalesOrderVariantEntity variant)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.SalesOrderVariants.FindAsync(variant.Id);
             if (existing is null)
             {
@@ -47,11 +50,13 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<SalesOrderVariantEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.SalesOrderVariants.AsNoTracking().ToListAsync();
         }
 
         public async Task<SalesOrderVariantEntity> GetById(Guid id)
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.SalesOrderVariants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id) ?? new SalesOrderVariantEntity();
@@ -59,6 +64,7 @@ namespace Inventory.Domain.Repository
 
         public async Task Update(SalesOrderVariantEntity variant)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.SalesOrderVariants.FindAsync(variant.Id);
             if (existing is null)
             {

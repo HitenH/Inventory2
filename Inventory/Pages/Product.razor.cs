@@ -5,6 +5,7 @@ using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
 using Inventory.Shared;
+using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
@@ -68,13 +69,17 @@ namespace Inventory.Pages
         {
             messageStore?.Clear();
 
-            if (String.IsNullOrEmpty(productModel.Name))
+            // Spaces around an ID or name are removed; an ID or name of only spaces counts as empty (batch 5).
+            productModel.ProductId = productModel.ProductId?.Trim()!;
+            productModel.Name = productModel.Name?.Trim()!;
+
+            if (String.IsNullOrWhiteSpace(productModel.Name))
                 messageStore?.Add(() => productModel.Name!, "The Product name is required!");
 
             if (productModel.Rate == null)
                 messageStore?.Add(() => productModel.Rate!, "The Rate is required!");
 
-            if (String.IsNullOrEmpty(productModel.ProductId))
+            if (String.IsNullOrWhiteSpace(productModel.ProductId))
                 messageStore?.Add(() => productModel.ProductId!, "The ProductID is required!");
             else
             {
@@ -106,7 +111,8 @@ namespace Inventory.Pages
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Create Product error: " + ex.Message);
+                        Logger.LogError(ex, "Create Product error");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "product", "Product ID"), Severity.Error);
                     }
                 }
             }
@@ -136,7 +142,8 @@ namespace Inventory.Pages
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Update Product error: " + ex.Message);
+                        Logger.LogError(ex, "Update Product error");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "product", "Product ID"), Severity.Error);
                     }
                 }
             }     

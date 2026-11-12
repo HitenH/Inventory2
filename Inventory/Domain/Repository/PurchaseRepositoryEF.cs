@@ -4,17 +4,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class PurchaseRepositoryEF : IPurchaseRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public PurchaseRepositoryEF(AppDbContext context)
+        public PurchaseRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
 
         public async Task<Guid> Create(PurchaseEntity purchase)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var entity = new PurchaseEntity
             {
                 SupplierEntityId = purchase.SupplierEntityId != Guid.Empty
@@ -34,6 +36,7 @@ namespace Inventory.Domain.Repository
 
         public async Task Delete(PurchaseEntity purchase)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Purchases
                 .Include(p => p.PurchaseVariants)
                 .FirstOrDefaultAsync(p => p.Id == purchase.Id);
@@ -49,6 +52,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<PurchaseEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Purchases
                 .AsNoTracking()
                 .Include(p => p.Supplier)
@@ -57,6 +61,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<PurchaseEntity> GetById(Guid id)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var purchase = await context.Purchases
                 .AsNoTracking()
                 .AsSplitQuery()
@@ -75,6 +80,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<int> GetLastVoucherIdByDate(DateOnly date)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var purchase = await context.Purchases
                 .AsNoTracking()
                 .OrderByDescending(p => p.VoucherId)
@@ -85,6 +91,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<bool> IsVoucherExistByDate(int voucherId, DateOnly date)
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Purchases
                 .AsNoTracking()
                 .AnyAsync(p => p.VoucherId == voucherId && p.Date == date);
@@ -92,6 +99,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<Guid> Update(PurchaseEntity purchase)
         {
+            await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Purchases.FirstOrDefaultAsync(p => p.Id == purchase.Id);
             if (existing is null)
             {

@@ -17,13 +17,6 @@ public class MobileService: IMobileService
         return mobiles;
     }
 
-    public async Task DeleteEmptyNumbers(AppDbContext context)
-    {
-        var mobiles = await context.Mobiles.Where(m => m.Phone == "").ToListAsync();
-        if (mobiles.Count > 0)
-        {
-            context.Mobiles.RemoveRange(mobiles);
-            await context.SaveChangesAsync();
-        }
-    }
+    // DeleteEmptyNumbers (a sweep over every phone row in the database) was removed in batch 6:
+    // Customer/Supplier repositories now add, update and delete the phone numbers of the one record being saved.
 }

@@ -4,17 +4,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository;
 
+// Batch 6: each method uses its own short-lived context from the factory.
 public class SalesOrderRepositoryEF : ISalesOrderRepository
 {
-    private readonly AppDbContext context;
+    private readonly IDbContextFactory<AppDbContext> factory;
 
-    public SalesOrderRepositoryEF(AppDbContext context)
+    public SalesOrderRepositoryEF(IDbContextFactory<AppDbContext> factory)
     {
-        this.context = context;
+        this.factory = factory;
     }
 
     public async Task<Guid> Create(SalesOrderEntity order)
     {
+        await using var context = await factory.CreateDbContextAsync();
         var entity = new SalesOrderEntity
         {
             CustomerEntityId = order.CustomerEntityId != Guid.Empty
@@ -34,6 +36,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task Delete(SalesOrderEntity order)
     {
+        await using var context = await factory.CreateDbContextAsync();
         var existing = await context.SalesOrders
             .Include(o => o.SalesOrderVariants)
             .FirstOrDefaultAsync(o => o.Id == order.Id);
@@ -49,12 +52,20 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task DeleteRange(List<SalesOrderEntity> orders)
     {
-        context.SalesOrders.RemoveRange(orders);
+        await using var context = await factory.CreateDbContextAsync();
+        // Load by ID in this context (the list came from another, already closed context).
+        var ids = orders.Select(o => o.Id).ToList();
+        var existing = await context.SalesOrders
+            .Include(o => o.SalesOrderVariants)
+            .Where(o => ids.Contains(o.Id))
+            .ToListAsync();
+        context.SalesOrders.RemoveRange(existing);
         await context.SaveChangesAsync();
     }
 
     public async Task<List<SalesOrderEntity>> GetAll()
     {
+        await using var context = await factory.CreateDbContextAsync();
         return await context.SalesOrders
             .AsNoTracking()
             .Include(p => p.Customer)
@@ -63,6 +74,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task<SalesOrderEntity> GetById(Guid id)
     {
+        await using var context = await factory.CreateDbContextAsync();
         var order = await context.SalesOrders
             .AsNoTracking()
             .AsSplitQuery()
@@ -81,6 +93,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task<int> GetLastVoucherIdByDate(DateOnly date)
     {
+        await using var context = await factory.CreateDbContextAsync();
         var order = await context.SalesOrders
             .AsNoTracking()
             .OrderByDescending(p => p.VoucherId)
@@ -91,6 +104,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task<bool> IsVoucherExistByDate(int voucherId, DateOnly date)
     {
+        await using var context = await factory.CreateDbContextAsync();
         return await context.SalesOrders
             .AsNoTracking()
             .AnyAsync(p => p.VoucherId == voucherId && p.Date == date);
@@ -98,6 +112,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
 
     public async Task<Guid> Update(SalesOrderEntity order)
     {
+        await using var context = await factory.CreateDbContextAsync();
         var existing = await context.SalesOrders.FirstOrDefaultAsync(o => o.Id == order.Id);
         if (existing is null)
         {

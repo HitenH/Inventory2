@@ -22,7 +22,6 @@ namespace Inventory.Pages
         [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
-        [Inject] private AppDbContext context { get; set; }
         [Inject] IDialogService DialogService { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
 
@@ -73,11 +72,15 @@ namespace Inventory.Pages
         private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)
         {
             messageStore?.Clear();
+
+            // Spaces around an ID or name are removed; an ID or name of only spaces counts as empty (batch 5).
+            customerModel.CustomerId = customerModel.CustomerId?.Trim()!;
+            customerModel.Name = customerModel.Name?.Trim()!;
             
-            if (String.IsNullOrEmpty(customerModel.Name))
+            if (String.IsNullOrWhiteSpace(customerModel.Name))
                 messageStore?.Add(() => customerModel.Name!, "The Customer name is required!");
 
-            if (String.IsNullOrEmpty(customerModel.CustomerId))
+            if (String.IsNullOrWhiteSpace(customerModel.CustomerId))
                 messageStore?.Add(() => customerModel.CustomerId!, "The CustomerID is required!");
             else
             {
@@ -110,7 +113,10 @@ namespace Inventory.Pages
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Create Customer error: " + ex.Message);
+                        // Stay on the page so the operator can correct the entry (batch 5).
+                        Logger.LogError(ex, "Save customer failed");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "customer", "Customer ID"), Severity.Error);
+                        return;
                     }
                 }
                 navManager.NavigateTo("/customers");
@@ -138,11 +144,13 @@ namespace Inventory.Pages
 
 
                         await CustomerRepository.Update(customerEntity);
-                        await MobileService.DeleteEmptyNumbers(context);
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError("Update Customer error: " + ex.Message);
+                        // Stay on the page so the operator can correct the entry (batch 5).
+                        Logger.LogError(ex, "Save customer failed");
+                        Snackbar.Add(DbErrors.SaveMessage(ex, "customer", "Customer ID"), Severity.Error);
+                        return;
                     }
                 }
                 navManager.NavigateTo("/customers");

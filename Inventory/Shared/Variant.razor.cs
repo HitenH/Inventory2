@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using BlazorBootstrap;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Inventory.Domain.Entities;
@@ -6,6 +6,7 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
+using Inventory.Service;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
@@ -49,10 +50,14 @@ public partial class Variant
     {
         messageStore?.Clear();
 
-        if (String.IsNullOrEmpty(variantModel.Name))
+        // Spaces around an ID or name are removed; an ID or name of only spaces counts as empty (batch 5).
+        variantModel.VariantId = variantModel.VariantId?.Trim()!;
+        variantModel.Name = variantModel.Name?.Trim()!;
+
+        if (String.IsNullOrWhiteSpace(variantModel.Name))
             messageStore?.Add(() => variantModel.Name!, "The Variant name is required!");
 
-        if (String.IsNullOrEmpty(variantModel.VariantId))
+        if (String.IsNullOrWhiteSpace(variantModel.VariantId))
             messageStore?.Add(() => variantModel.VariantId!, "The VariantID is required!");
         else
         {
@@ -77,6 +82,7 @@ public partial class Variant
         {
             if (variantModel != null)
             {
+                VariantEntity? newVariant = null;
                 try
                 {
                     if (image.ImageData != null)
@@ -84,7 +90,8 @@ public partial class Variant
                     else
                         variantModel.Image = null;
 
-                    Product.Variants.Add(Mapper.Map<VariantEntity>(variantModel));
+                    newVariant = Mapper.Map<VariantEntity>(variantModel);
+                    Product.Variants.Add(newVariant);
                     await ProductRepository.Update(Product);
                     CancelVariant();
                     GetVariants();
@@ -93,7 +100,10 @@ public partial class Variant
                 }
                 catch (Exception ex)
                 {
-                    snackbar = Snackbar.Add($"Create variant error: {ex.Message}");
+                    // The failed variant must not stay in the product's list, or the next save would try it again.
+                    if (newVariant != null)
+                        Product.Variants?.Remove(newVariant);
+                    snackbar = Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
                 }
             }
         }
@@ -146,7 +156,7 @@ public partial class Variant
                 }
                 catch (Exception ex)
                 {
-                    snackbar = Snackbar.Add($"Error: {ex.Message}");
+                    snackbar = Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
                 }
             }
         }
@@ -221,6 +231,12 @@ public partial class Variant
             try
             {
                 await ImageRepository.Delete(image);
+                // Forget the deleted photo on screen too, so the next save of this variant cannot bring it back.
+                foreach (var v in Product.Variants ?? new List<VariantEntity>())
+                {
+                    if (v.Image?.Id == image.Id)
+                        v.Image = null;
+                }
                 GetVariants();
             }
             catch (Exception ex)

@@ -45,7 +45,10 @@ builder.Services.AddAuthentication(options =>
 var dataPaths = DataPaths.FromConfiguration(builder.Configuration);
 var dbPath = dataPaths.DatabasePath;
 builder.Services.AddSingleton(dataPaths);
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Batch 6: a factory instead of one shared context per browser tab. Every repository method creates a
+// short-lived context, does its work and disposes it (Microsoft's guidance for Blazor Server). This removes
+// "a second operation was started on this context" errors and stale data between screens.
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
 builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
@@ -80,8 +83,29 @@ using (var scope = app.Services.CreateScope())
     // One-time move of Inventory.db from the program folder to the data folder (copy only, never deletes).
     dataPaths.MoveLegacyDatabaseIfNeeded(startupLogger);
 
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    using var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
+    try
+    {
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // The update runs in a transaction, so a failure leaves the data exactly as it was.
+        startupLogger.LogCritical(ex, "Database update failed. The data has NOT been changed.");
+        try
+        {
+            foreach (var duplicate in DbErrors.FindDuplicateIds(dbPath))
+            {
+                startupLogger.LogCritical("Must be fixed before this version can start: {Duplicate}", duplicate);
+            }
+        }
+        catch (Exception checkEx)
+        {
+            startupLogger.LogError(checkEx, "Could not check for duplicate IDs");
+        }
+
+        throw;
+    }
 
     await UserBootstrap.RunAsync(
         db,

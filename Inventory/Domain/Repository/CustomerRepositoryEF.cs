@@ -4,22 +4,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class CustomerRepositoryEF : ICustomerRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public CustomerRepositoryEF(AppDbContext context)
+        public CustomerRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
         public async Task Create(CustomerEntity customer)
         {
+            await using var context = await factory.CreateDbContextAsync();
             await context.Customers.AddAsync(customer);
             await context.SaveChangesAsync();
         }
 
         public async Task Delete(CustomerEntity customer)
         {
+            await using var context = await factory.CreateDbContextAsync();
             try
             {
                 var hasRelatedSalesOrder = context.SalesOrders.Any(p => p.CustomerEntityId == customer.Id);
@@ -31,8 +34,12 @@ namespace Inventory.Domain.Repository
                 }
                 else
                 {
-                    context.Customers.Remove(customer);
-                    await context.SaveChangesAsync();
+                    var existing = await context.Customers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == customer.Id);
+                    if (existing != null)
+                    {
+                        context.Customers.Remove(existing);   // its phone numbers are removed with it (cascade)
+                        await context.SaveChangesAsync();
+                    }
                 }  
             }
             catch (Exception ex)
@@ -43,6 +50,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<CustomerEntity>> GetAll()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Customers
                 .AsNoTracking()
                 .AsSplitQuery()
@@ -54,6 +62,7 @@ namespace Inventory.Domain.Repository
 
         public async Task<List<CustomerEntity>> GetAllForLookup()
         {
+            await using var context = await factory.CreateDbContextAsync();
             return await context.Customers
                 .AsNoTracking()
                 .OrderBy(c => c.Name)
@@ -62,22 +71,53 @@ namespace Inventory.Domain.Repository
 
         public async Task<CustomerEntity> GetById(Guid id)
         {
-            return await context.Customers.Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Customers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
         }
 
         public async Task Update(CustomerEntity customer)
         {
-            context.Customers.Update(customer);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Customers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == customer.Id);
+            if (existing is null)
+                return;
+
+            existing.CustomerId = customer.CustomerId;
+            existing.Name = customer.Name;
+            existing.ContactPerson = customer.ContactPerson;
+            existing.Address = customer.Address;
+            existing.Area = customer.Area;
+            existing.Remarks = customer.Remarks;
+
+            // Phone numbers of THIS record only: update kept numbers, add new ones, delete removed ones.
+            // (Replaces the old global "delete every empty number in the database" sweep.)
+            var wanted = customer.Mobiles ?? new List<Mobile>();
+            var current = existing.Mobiles ?? new List<Mobile>();
+            foreach (var old in current.ToList())
+            {
+                var match = wanted.FirstOrDefault(w => w.Id != 0 && w.Id == old.Id);
+                if (match is null)
+                    context.Mobiles.Remove(old);
+                else
+                    old.Phone = match.Phone;
+            }
+            foreach (var add in wanted.Where(w => w.Id == 0 || current.All(c => c.Id != w.Id)))
+            {
+                context.Mobiles.Add(new Mobile { Phone = add.Phone, CustomerEntityId = existing.Id });
+            }
+
             await context.SaveChangesAsync();
         }
 
         public bool IsCustomIdExist(string customerId)
         {
-            return context.Customers.Any(c => c.CustomerId == customerId);
+            using var context = factory.CreateDbContext();
+            return context.Customers.Any(c => c.CustomerId!.ToLower() == customerId.Trim().ToLower());
         }
         public bool IsCustomIdExist(string customerId, Guid id)
         {
-            var result = context.Customers.Any(c => c.CustomerId == customerId && c.Id == id);
+            using var context = factory.CreateDbContext();
+            var result = context.Customers.Any(c => c.CustomerId!.ToLower() == customerId.Trim().ToLower() && c.Id == id);
             if (result)
                 return false;
             else

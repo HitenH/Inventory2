@@ -3,7 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain;
 
-/// <summary>Loads display names for transaction lines without EF tracking conflicts.</summary>
+/// <summary>
+/// Fills in the supplier/customer and each line's product and variant for display, using the caller's
+/// short-lived context. Kept after batch 6 (instead of Include) so screens receive exactly the same object
+/// shapes as before: separate, untracked product/variant objects without extra navigation collections.
+/// </summary>
 public static class TransactionLineHydrator
 {
     public static async Task HydratePurchaseAsync(AppDbContext context, PurchaseEntity purchase)

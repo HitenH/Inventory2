@@ -1,42 +1,58 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
+    // Batch 6: each method uses its own short-lived context from the factory.
     public class CategoryRepositoryEF : ICategoryRepository
     {
-        private readonly AppDbContext context;
+        private readonly IDbContextFactory<AppDbContext> factory;
 
-        public CategoryRepositoryEF(AppDbContext context)
+        public CategoryRepositoryEF(IDbContextFactory<AppDbContext> factory)
         {
-            this.context = context;
+            this.factory = factory;
         }
-        public async Task Create(CategoryEntity category)
+
+        public async Task Create(CategoryEntity item)
         {
-            await context.Categories.AddAsync(category);
+            await using var context = await factory.CreateDbContextAsync();
+            await context.Categories.AddAsync(item);
             await context.SaveChangesAsync();
         }
 
-        public async Task Delete(CategoryEntity category)
+        public async Task Delete(CategoryEntity item)
         {
-            context.Categories.Remove(category);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Categories.FindAsync(item.Id);
+            if (existing is null)
+                return;
+
+            context.Categories.Remove(existing);
             await context.SaveChangesAsync();
         }
 
         public async Task<List<CategoryEntity>> GetAll()
         {
-            return await context.Categories.ToListAsync();
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Categories.AsNoTracking().ToListAsync();
         }
 
         public async Task<CategoryEntity> GetById(Guid id)
         {
-            return await context.Categories.FirstOrDefaultAsync(c => c.Id == id, default);
+            await using var context = await factory.CreateDbContextAsync();
+            return await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task Update(CategoryEntity category)
+        /// <summary>Loads the row, copies the changed values onto it, saves.</summary>
+        public async Task Update(CategoryEntity item)
         {
-            context.Categories.Update(category);
+            await using var context = await factory.CreateDbContextAsync();
+            var existing = await context.Categories.FindAsync(item.Id);
+            if (existing is null)
+                return;
+
+            context.Entry(existing).CurrentValues.SetValues(item);
             await context.SaveChangesAsync();
         }
     }
