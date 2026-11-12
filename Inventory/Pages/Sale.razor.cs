@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -37,7 +37,7 @@ public partial class Sale
     private List<SalesVariantModel> salesModelVariants = new();
     private List<SalesVariantEntity> salesEntityVariants = new();
 
-    private ProductEntity productEntity = new();
+    private ProductModel pickedProduct = new();
     private ElementReference productInput;
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -63,10 +63,9 @@ public partial class Sale
                         ProductEntityId = v.ProductEntityId,
                         ProductId = v.Product?.ProductId ?? "",
                         ProductName = v.Product?.Name ?? "",
-                        Product = v.Product,
+                        Product = v.Product?.ToModel(),
                         VariantEntityId = v.VariantEntityId,
                         VariantId = v.ProductVariant?.VariantId ?? "",
-                        Variant = v.ProductVariant,
                         Quantity = v.Quantity,
                         IsCreated = true
                     }).ToList() ?? new();
@@ -231,8 +230,7 @@ public partial class Sale
                     salesVariantModel.ProductName = productDb.Name;
                     salesVariantModel.ProductEntityId = productDb.Id;
                     salesVariantModel.VariantEntityId = productVariant.Id;
-                    salesVariantModel.Product = productDb;
-                    salesVariantModel.Variant = productVariant;
+                    salesVariantModel.Product = productDb.ToModel();
                     salesVariantModel.IsCreated= true;
                     salesVariantModel.InnerId = lastId;
                     salesModelVariants.Add(salesVariantModel);
@@ -268,24 +266,23 @@ public partial class Sale
 
             if (indexElement != -1)
             {
-                if (productEntity != null && productEntity.Variants.Count != 0)
+                if (pickedProduct != null && pickedProduct.Variants.Count != 0)
                 {
-                    var productVariant = new VariantEntity();
+                    var productVariant = new VariantModel();
                     if (salesVariantModel.VariantEntityId != null)
-                        productVariant = productEntity.Variants.FirstOrDefault(v => v.Id == salesVariantModel.VariantEntityId);
+                        productVariant = pickedProduct.Variants.FirstOrDefault(v => v.Id == salesVariantModel.VariantEntityId);
                     else
-                        productVariant = productEntity.Variants.FirstOrDefault(v => v.VariantId == salesVariantModel.VariantId);
+                        productVariant = pickedProduct.Variants.FirstOrDefault(v => v.VariantId == salesVariantModel.VariantId);
 
                     if (productVariant != null)
                     {
                         salesModelVariants[indexElement].VariantId = productVariant.VariantId;
 
-                        salesModelVariants[indexElement].ProductId = productEntity.ProductId;
-                        salesModelVariants[indexElement].ProductName = productEntity.Name;
-                        salesModelVariants[indexElement].ProductEntityId = productEntity.Id;
+                        salesModelVariants[indexElement].ProductId = pickedProduct.ProductId;
+                        salesModelVariants[indexElement].ProductName = pickedProduct.Name;
+                        salesModelVariants[indexElement].ProductEntityId = pickedProduct.Id;
                         salesModelVariants[indexElement].VariantEntityId = productVariant.Id;
-                        salesModelVariants[indexElement].Product = productEntity;
-                        salesModelVariants[indexElement].Variant = productVariant;
+                        salesModelVariants[indexElement].Product = pickedProduct;
                         salesVariantModel.IsCreated = true;
                     }
                 }
@@ -314,7 +311,7 @@ public partial class Sale
     {
         CancelSalesVariant();
         salesVariantModel = model;
-        productEntity = model.Product;
+        pickedProduct = model.Product;
     }
 
     private async Task OnCustomerSelected(CustomerModel? _customer)
@@ -376,8 +373,7 @@ public partial class Sale
                             ProductEntityId = productDb.Id,
                             VariantId = productVariant.VariantId,
                             VariantEntityId = productVariant.Id,
-                            Product = productDb,
-                            Variant = productVariant,
+                            Product = productDb.ToModel(),
                             Quantity = 1,
                             IsCreated = true,
                             InnerId = lastId
@@ -394,7 +390,7 @@ public partial class Sale
     {
         if (_product != null)
         {
-            productEntity = await ProductRepository.GetProductWithVariantsById(_product.Id);
+            pickedProduct = (await ProductRepository.GetProductWithVariantsById(_product.Id)).ToModel();
             salesVariantModel.ProductId = _product.ProductId;
             salesVariantModel.ProductName = _product.Name;
         }

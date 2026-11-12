@@ -61,7 +61,6 @@ namespace Inventory.Shared
                 VariantEntityId = v.VariantEntityId,
                 ProductVariantId = v.ProductVariant?.VariantId ?? "",
                 ProductEntityId = v.ProductEntityId,
-                Product = v.Product
             }).ToList();
         }
 
@@ -131,7 +130,6 @@ namespace Inventory.Shared
                 VariantEntityId = v.VariantEntityId,
                 ProductVariantId = v.ProductVariant?.VariantId ?? "",
                 ProductEntityId = v.ProductEntityId,
-                Product = v.Product
             }).ToList();
         }
 

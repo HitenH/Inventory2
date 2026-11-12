@@ -68,7 +68,6 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepositoryEF>();
 builder.Services.AddScoped<IProductRepository, ProductRepositoryEF>();
 builder.Services.AddScoped<IVariantRepository, VariantRepositoryEF>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepositoryEF>();
-builder.Services.AddScoped<IMobileRepository, MobileRepositoryEF>();
 builder.Services.AddScoped<IImageRepository, ImageRepositoryEF>();
 builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepositoryEF>();
 builder.Services.AddScoped<IPurchaseRepository, PurchaseRepositoryEF>();

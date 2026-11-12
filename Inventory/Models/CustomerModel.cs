@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 
 namespace Inventory.Models
 {
@@ -12,8 +12,7 @@ namespace Inventory.Models
         public string Area { get; set; }
         public string Remarks { get; set; }
         public List<Mobile> Mobiles { get; set; } = new();
-        public List<SalesOrderEntity>? SalesOrders { get; set; }
-        public List<SalesEntity>? Sales { get; set; } = new();
-
+        /// <summary>Sum of this customer's sale totals (filled only when the sales were loaded, e.g. the Customers list).</summary>
+        public decimal TotalSales { get; set; }
     }
 }

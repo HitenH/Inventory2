@@ -19,7 +19,8 @@ namespace Inventory.Shared
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
         [Inject] private ILogger<TransactionLineEditor> Logger { get; set; } = default!;
 
-        private ProductEntity product = new();
+        // The product being entered: its ID and (after picking it) its variants for the drop-down.
+        private ProductModel product = new();
         private ProductModel selectedProduct;
         private int serialnumber = 1;
 
@@ -131,7 +132,8 @@ namespace Inventory.Shared
             CancelLine();
             line = model;
             serialnumber = model.SerialNumber;
-            product = model.Product;
+            // As before, an existing line keeps its variant (no drop-down): only the product's ID is known here.
+            product = new ProductModel { Id = model.ProductEntityId };
         }
 
         private readonly ColumnSorter<LineEditorModel> sorter = new(
@@ -159,7 +161,7 @@ namespace Inventory.Shared
             if (_product != null)
             {
                 selectedProduct = _product;
-                product = await ProductRepository.GetProductWithVariantsById(_product.Id);
+                product = (await ProductRepository.GetProductWithVariantsById(_product.Id)).ToModel();
                 line.ProductId = _product.ProductId;
                 line.ProductName = _product.Name;
             }

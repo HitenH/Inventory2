@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Models
@@ -11,7 +11,7 @@ namespace Inventory.Models
         public decimal? Rate { get; set; } = default(decimal);
         public string? Description { get; set; }
         public Guid? CategoryEntityId { get; set; }
-        public CategoryEntity? Category { get; set; } = new();
-        public List<VariantEntity>? Variants { get; set; } = new();
+        /// <summary>The product's variants (filled when they were loaded, e.g. after picking a product).</summary>
+        public List<VariantModel> Variants { get; set; } = new();
     }
 }

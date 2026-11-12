@@ -1,4 +1,4 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 
 namespace Inventory.Models;
 
@@ -23,8 +23,7 @@ public static class ModelMapping
         Area = e.Area,
         Remarks = e.Remarks,
         Mobiles = CopyList(e.Mobiles),
-        SalesOrders = CopyList(e.SalesOrders),
-        Sales = CopyList(e.Sales),
+        TotalSales = e.Sales?.Sum(s => s.TotalAmountProduct) ?? 0m,
     };
 
     public static CustomerEntity ToEntity(this CustomerModel m) => new()
@@ -37,8 +36,6 @@ public static class ModelMapping
         Area = m.Area,
         Remarks = m.Remarks,
         Mobiles = CopyList(m.Mobiles),
-        SalesOrders = CopyList(m.SalesOrders),
-        Sales = CopyList(m.Sales),
     };
 
     // ---- Supplier ----
@@ -52,7 +49,6 @@ public static class ModelMapping
         Area = e.Area,
         Remarks = e.Remarks,
         Mobiles = CopyList(e.Mobiles),
-        Purchases = CopyList(e.Purchases),
     };
 
     public static SupplierEntity ToEntity(this SupplierModel m) => new()
@@ -65,11 +61,11 @@ public static class ModelMapping
         Area = m.Area,
         Remarks = m.Remarks,
         Mobiles = CopyList(m.Mobiles),
-        Purchases = CopyList(m.Purchases),
     };
 
     // ---- Product ----
     // CategoryEntityId is only used by the import and was never filled from a record.
+    // The category itself is chosen on the Product page and set by that page when saving.
     public static ProductModel ToModel(this ProductEntity e) => new()
     {
         Id = e.Id,
@@ -78,8 +74,7 @@ public static class ModelMapping
         Rate = e.Rate,
         Description = e.Description,
         CategoryEntityId = null,
-        Category = e.Category,
-        Variants = CopyList(e.Variants),
+        Variants = e.Variants?.Select(v => v.ToModel()).ToList() ?? new List<VariantModel>(),
     };
 
     public static ProductEntity ToEntity(this ProductModel m) => new()
@@ -89,8 +84,7 @@ public static class ModelMapping
         Name = m.Name,
         Rate = m.Rate,
         Description = m.Description,
-        Category = m.Category,
-        Variants = CopyList(m.Variants),
+        Variants = m.Variants.Select(v => v.ToEntity()).ToList(),
     };
 
     // ---- Category ----

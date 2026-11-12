@@ -1,4 +1,3 @@
-using Inventory.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Models
@@ -26,6 +25,5 @@ namespace Inventory.Models
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
         /// <summary>Sales orders only.</summary>
         public string? Remarks { get; set; }
-        public ProductEntity Product { get; set; }
     }
 }

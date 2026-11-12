@@ -26,7 +26,7 @@
 
 The review below is kept as written on 10 Nov 2026. This section tracks what has been fixed since. Details per batch are in `PLAN.md` section 5. All work is on the development PC against a copy of the real data; **nothing has been installed on the counter PC yet** (owner's decision – one rollout at the end).
 
-**Rough health score now: about 7 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication (batch 12) and three UI libraries (batch 13) remain.
+**Rough health score now: about 7 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; three UI libraries (batch 13) remain.
 
 ### Status of each finding
 
@@ -54,7 +54,7 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | S4, Runtime, Logging | Misleading auth config, .NET 9 out of support, console-only logs | **Fixed** – .NET 10 + EF Core 10, MudBlazor 9.12, daily log files (keep 30), friendly error box, dead auth config removed. | 9 |
 | Tests / CI | None | **Fixed** – 32 automatic tests (calculations, stock, vouchers, totals/discounts, data rules, migrations, backup/restore); GitHub runs them on every push (first run green). | 10 |
 | §6 unused code | Dead components, demo code | **Fixed** – unused popups/modals/Chart.js/demo code removed, silent errors now logged; warnings 547 → 458. Sales Orders report added as a Reports tab (owner's choice). | 11 |
-| A3, A4, §6 duplicates | Copy-pasted repositories, components, view models | **Mostly fixed** – one line editor, one picker, one confirm helper, one column sorter, one stock query, Sales Summary uses shared maths; **AutoMapper removed** (security advisory gone). Still open: flatten view models, collapse trivial repositories (batch 12 step 8). | 12 |
+| A3, A4, §6 duplicates | Copy-pasted repositories, components, view models | **Fixed** – one line editor, one picker, one confirm helper, one column sorter, one stock query, Sales Summary uses shared maths, one simple repository for categories/photos/purchase orders; screen models no longer carry database records (except variant photos – batch 14); **AutoMapper removed** (security advisory gone); warnings 458 → 364. | 12 |
 | A5 | Three UI libraries | Open | 13 |
 | P1–P3, P5, P6 | Paging, customer list loads all sales, images in DB, report sums, pickers | Open | 14 |
 | D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |

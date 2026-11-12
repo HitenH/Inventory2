@@ -32,11 +32,18 @@ public class ModelMappingTests
     {
         var model = new SupplierEntity { Id = Guid.NewGuid(), Mobiles = null, Purchases = null }.ToModel();
         Assert.Empty(model.Mobiles);
-        Assert.Empty(model.Purchases);
     }
 
     [Fact]
-    public void Product_and_variant_copies_keep_category_image_and_reorder_level()
+    public void Customer_total_sales_is_the_sum_of_their_sales()
+    {
+        var withSales = new CustomerEntity { Sales = new() { new SalesEntity { TotalAmountProduct = 10.5m }, new SalesEntity { TotalAmountProduct = 4 } } };
+        Assert.Equal(14.5m, withSales.ToModel().TotalSales);
+        Assert.Equal(0m, new CustomerEntity { Sales = null }.ToModel().TotalSales);
+    }
+
+    [Fact]
+    public void Product_and_variant_copies_keep_variants_image_and_reorder_level()
     {
         var category = new CategoryEntity { Id = Guid.NewGuid(), Name = "Bags" };
         var image = new Image();
@@ -45,8 +52,9 @@ public class ModelMappingTests
 
         var pm = product.ToModel();
         Assert.Equal(("P1", "Tote", (decimal?)9.5m, "d"), (pm.ProductId, pm.Name, pm.Rate, pm.Description));
-        Assert.Same(category, pm.Category);
-        Assert.Same(variant, Assert.Single(pm.Variants!));
+        var pv = Assert.Single(pm.Variants);
+        Assert.Equal((variant.Id, "V1", "Red"), (pv.Id, pv.VariantId, pv.Name));
+        Assert.Empty(new ProductEntity { Variants = null }.ToModel().Variants);
 
         var vm = variant.ToModel();
         Assert.Equal(("V1", "Red", (int?)3), (vm.VariantId, vm.Name, vm.ReorderLevel));

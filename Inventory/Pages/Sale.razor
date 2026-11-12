@@ -92,13 +92,13 @@
                 </div>
                 <div class="col-2 mb-2 text-center">
                     <label for="variantid" class="form-label">Variant ID</label>
-                    @if (productEntity.Variants?.Count > 0)
+                    @if (pickedProduct.Variants?.Count > 0)
                     {
                         <InputSelect @bind-Value="salesVariantModel.VariantEntityId" class="form-control text-center" id="variantid">
                             <option value="" class="text-center">-</option>
-                            @if (productEntity.Variants?.Count > 0)
+                            @if (pickedProduct.Variants?.Count > 0)
                             {
-                                @foreach (var item in productEntity.Variants)
+                                @foreach (var item in pickedProduct.Variants)
                                 {
                                     if (item.Id == salesVariantModel.VariantEntityId)
                                     {

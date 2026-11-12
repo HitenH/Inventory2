@@ -23,7 +23,6 @@ public partial class SalesSummary
 
     private SalesEntity salesEntity = new();
     public List<SalesSummaryEntity> salesSummaryEntityList = new();
-    public List<SalesSummaryModel> salesSummaryModelList = new();
     private ComponentTotalData SalesTotalData = new();
 
     protected override async Task OnInitializedAsync()

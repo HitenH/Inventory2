@@ -1,4 +1,4 @@
-﻿@using Inventory.Domain.Repository.Abstract
+@using Inventory.Domain.Repository.Abstract
 @using Inventory.Service
 <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
     <MudTabPanel Text="By Area">
@@ -78,7 +78,7 @@
             totalAmount = customersAfterSearch.Select(customer => new
             {
                 CustomerId = customer.Id,
-                TotalAmount = customer.Sales.Sum(sale => sale.TotalAmountProduct)
+                TotalAmount = customer.TotalSales
             }).ToDictionary(result => result.CustomerId, result => result.TotalAmount);
         }
     }

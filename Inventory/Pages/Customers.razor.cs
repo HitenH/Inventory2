@@ -84,7 +84,7 @@ namespace Inventory.Pages
                 totalAmount = customersAfterSearch.Select(customer => new
                 {
                     CustomerId = customer.Id,
-                    TotalAmount = customer.Sales?.Sum(sale => sale.TotalAmountProduct) ?? 0m
+                    TotalAmount = customer.TotalSales
                 }).ToDictionary(result => result.CustomerId, result => result.TotalAmount);
             }
         }
