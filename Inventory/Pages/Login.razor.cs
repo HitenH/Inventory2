@@ -16,7 +16,25 @@ namespace Inventory.Pages
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private PasswordService Passwords { get; set; } = default!;
 
+        /// <summary>The page the user tried to open before being sent to login (set by RedirectToLogin).</summary>
+        [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
         private LoginModel loginModel = new();
+
+        /// <summary>Only allow going back to a page inside this app (never to another website).</summary>
+        private string SafeReturnUrl()
+        {
+            var url = ReturnUrl?.Trim();
+            if (string.IsNullOrEmpty(url)
+                || url.Contains("://")
+                || url.StartsWith("/") || url.StartsWith("\\")
+                || url.StartsWith("login", StringComparison.OrdinalIgnoreCase))
+            {
+                return "/";
+            }
+
+            return "/" + url;
+        }
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
         private string? errorMessage;
@@ -56,7 +74,7 @@ namespace Inventory.Pages
                     UserName = user!.Name,
                     Role = user.Role
                 });
-                navManager.NavigateTo("/", true);
+                navManager.NavigateTo(SafeReturnUrl(), true);
             }
             catch (Exception ex)
             {

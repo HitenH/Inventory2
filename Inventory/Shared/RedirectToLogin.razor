@@ -1,0 +1,16 @@
+@* Shown by Routes.razor when a page needs a login and nobody is logged in.
+   Sends the browser to the login page and remembers where the user was going. *@
+@inject NavigationManager Navigation
+
+<p class="text-muted">Redirecting to login...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var target = string.IsNullOrEmpty(returnUrl)
+            ? "login"
+            : $"login?returnUrl={Uri.EscapeDataString(returnUrl)}";
+        Navigation.NavigateTo(target);
+    }
+}

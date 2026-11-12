@@ -109,8 +109,13 @@ app.UseAntiforgery();
 app.UseStaticFiles();
 
 app.MapStaticAssets();
+// Login is kept in browser session storage, which only the live Blazor connection can read.
+// So the login check happens inside the app (AuthorizeRouteView in Routes.razor redirects to /login),
+// not on the first HTTP request. AllowAnonymous here stops ASP.NET from trying (and failing) to
+// challenge the plain page request, which caused "No DefaultChallengeScheme found" errors on refresh.
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AllowAnonymous();
 
 app.Run();
 
