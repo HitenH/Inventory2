@@ -1,0 +1,30 @@
+# Batch 10: on every push / pull request to main, build the app and run all automatic tests.
+# Runs on Windows because the shop PC runs Windows.
+name: Build and test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Inventory.sln
+
+      - name: Build
+        run: dotnet build Inventory.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --project Inventory.Tests --configuration Release --no-build
