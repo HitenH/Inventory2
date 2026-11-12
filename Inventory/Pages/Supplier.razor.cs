@@ -60,7 +60,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("GetSupplier error: " + ex.Message);
+                    Logger.LogError(ex, "GetSupplier error");
                 }
             }
             if (supplierModel.Mobiles.Count < NumberPhone)

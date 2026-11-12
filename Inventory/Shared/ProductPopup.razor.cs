@@ -34,7 +34,7 @@ namespace Inventory.Shared
             }
             catch (Exception ex)
             {
-                Logger.LogError("Product popup error: " + ex.Message);
+                Logger.LogError(ex, "Product popup error");
             }
         }
 

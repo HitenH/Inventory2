@@ -61,7 +61,7 @@ namespace Inventory.Pages
             }
             catch (Exception ex)
             {
-                Logger.LogError("Product error:" + ex.Message);
+                Logger.LogError(ex, "Product error");
             }
         }
 

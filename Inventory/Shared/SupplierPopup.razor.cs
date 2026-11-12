@@ -34,7 +34,7 @@ namespace Inventory.Shared
             }
             catch (Exception ex)
             {
-                Logger.LogError("Supplier popup error: " + ex.Message);
+                Logger.LogError(ex, "Supplier popup error");
             }
         }
         public void SearchItem(ChangeEventArgs e)

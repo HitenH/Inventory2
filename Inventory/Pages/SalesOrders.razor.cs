@@ -57,7 +57,7 @@ public partial class SalesOrders
         }
         catch (Exception ex)
         {
-            Logger.LogError("SalesOrders error: " + ex.Message);
+            Logger.LogError(ex, "SalesOrders error");
         }
     }
 
@@ -99,7 +99,7 @@ public partial class SalesOrders
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete selected orders error:" + ex.Message);
+                Logger.LogError(ex, "Delete selected orders error");
             }
         }
     }
@@ -130,7 +130,7 @@ public partial class SalesOrders
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete completed orders error:" + ex.Message);
+                Logger.LogError(ex, "Delete completed orders error");
             }
         }
     }

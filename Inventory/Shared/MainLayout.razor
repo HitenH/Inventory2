@@ -38,7 +38,19 @@ else
                         A backup was restored. Close the Inventory app and start it again before entering anything else.
                     </MudAlert>
                 }
-                @Body
+                @* Batch 9: an error on one screen shows this box (and goes to the log file) instead of stopping the whole app. *@
+                <ErrorBoundary @ref="_errorBoundary">
+                    <ChildContent>
+                        @Body
+                    </ChildContent>
+                    <ErrorContent>
+                        <MudAlert Severity="Severity.Error" Class="my-4">
+                            Something went wrong on this screen. Anything not yet saved on it may be lost.
+                            Press <b>Try again</b>, or open another screen from the menu. The details were written to the log file.
+                        </MudAlert>
+                        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="RecoverFromError">Try again</MudButton>
+                    </ErrorContent>
+                </ErrorBoundary>
             </MudContainer>
         </MudMainContent>
     </MudLayout>
@@ -60,6 +72,13 @@ else
     {
         Backups.RestartRequiredChanged -= OnRestartRequiredChanged;
     }
+
+    private ErrorBoundary? _errorBoundary;
+
+    // Opening another screen clears the error box.
+    protected override void OnParametersSet() => _errorBoundary?.Recover();
+
+    private void RecoverFromError() => _errorBoundary?.Recover();
 
     private bool _layoutReady;
     private bool _isDarkMode;

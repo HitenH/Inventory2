@@ -33,7 +33,7 @@ namespace Inventory.Shared
             }
             catch (Exception ex)
             {
-                Logger.LogError("Customer popup error: " + ex.Message);
+                Logger.LogError(ex, "Customer popup error");
             }
         }
 

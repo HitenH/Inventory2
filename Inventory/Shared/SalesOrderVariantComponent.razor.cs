@@ -115,7 +115,7 @@ namespace Inventory.Shared
             }
             catch (Exception ex)
             {
-                Logger.LogError("Update salesorder variant error: " + ex.Message);
+                Logger.LogError(ex, "Update salesorder variant error");
             }
         }
 
@@ -133,7 +133,7 @@ namespace Inventory.Shared
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete sales order variant" + ex.Message);
+                Logger.LogError(ex, "Delete sales order variant");
             }
         }
 

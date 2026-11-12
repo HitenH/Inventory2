@@ -57,7 +57,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("GetCustomer error: " + ex.Message);
+                    Logger.LogError(ex, "GetCustomer error");
                 }
             }
             if (customerModel.Mobiles.Count < NumberPhone)
@@ -183,7 +183,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Delete Customer error: " + ex.Message);
+                    Logger.LogError(ex, "Delete Customer error");
                     titleMessage = "Error Message";
                     errorMessageShort = "Cannot delete Customer";
                     errorMessageFull = ex.Message;

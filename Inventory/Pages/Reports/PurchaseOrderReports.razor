@@ -84,7 +84,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError("Purchase order error: " + ex.Message);
+            Logger.LogError(ex, "Purchase order error");
         }
     }
 

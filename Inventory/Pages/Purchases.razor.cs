@@ -42,7 +42,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Purchases error" + ex.Message);
+                    Logger.LogError(ex, "Purchases error");
                 }
             }
         }

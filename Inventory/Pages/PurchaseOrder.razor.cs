@@ -64,7 +64,7 @@ public partial class PurchaseOrder
         }
         catch (Exception ex)
         {
-            Logger.LogError("Purchase order error: " + ex.Message);
+            Logger.LogError(ex, "Purchase order error");
         }
     }
     public async Task AddPurchaseOrder()
@@ -97,7 +97,7 @@ public partial class PurchaseOrder
             }
             catch (Exception ex)
             {
-                Logger.LogError("Add new order error: " + ex.Message);
+                Logger.LogError(ex, "Add new order error");
             }
         }
         else
@@ -133,7 +133,7 @@ public partial class PurchaseOrder
             }
             catch (Exception ex)
             {
-                Logger.LogError("Update order error: " + ex.Message);
+                Logger.LogError(ex, "Update order error");
             }
         }
     }
@@ -192,7 +192,7 @@ public partial class PurchaseOrder
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete selected orders error:" + ex.Message);
+                Logger.LogError(ex, "Delete selected orders error");
             }
         }
     }
@@ -226,7 +226,7 @@ public partial class PurchaseOrder
             }
             catch (Exception ex)
             {
-                Logger.LogError("Delete completed orders error:" + ex.Message);
+                Logger.LogError(ex, "Delete completed orders error");
             }
         }
     }

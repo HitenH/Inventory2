@@ -45,7 +45,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError("Customers page error" + ex.Message);
+                    Logger.LogError(ex, "Customers page error");
                 }
             }
         }

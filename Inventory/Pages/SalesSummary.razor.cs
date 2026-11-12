@@ -43,7 +43,7 @@ public partial class SalesSummary
             }
             catch (Exception ex)
             {
-                Logger.LogError("Sales summary error: " + ex.Message);
+                Logger.LogError(ex, "Sales summary error");
             }
             if (salesEntity.Id != Guid.Empty && salesEntity.SalesVariants is { Count: > 0 })
             {

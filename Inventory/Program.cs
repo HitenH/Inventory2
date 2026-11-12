@@ -5,10 +5,10 @@ using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using Serilog;
+using Serilog.Events;
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,31 +20,42 @@ if (!builder.Environment.IsDevelopment())
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-//builder.Services.AddDbContext<AppDbContext>(option =>
-//{
-//    option.UseSqlServer(builder.Configuration.GetSection("ConnectionString").Value);
-//});
 
-
-
+// Login lives in browser session storage and is checked inside the Blazor connection
+// (CustomAuthenticationProvider + AuthorizeRouteView). Batch 9 removed the unused cookie-authentication
+// setup, AddHttpContextAccessor and the transient ProtectedSessionStorage registration (Blazor registers it).
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<PasswordService>();
-
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-});
 
 // Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
 // Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).
 var dataPaths = DataPaths.FromConfiguration(builder.Configuration);
 var dbPath = dataPaths.DatabasePath;
 builder.Services.AddSingleton(dataPaths);
+
+// Batch 9: log file, one per day in <DataFolder>\logs, kept 30 days. Also still shown in the console window.
+// Database (EF Core) and web-server chatter is limited to warnings so the file stays readable.
+var logFolder = Path.Combine(dataPaths.DataFolder, "logs");
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(
+        Path.Combine(logFolder, "inventory-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+builder.Services.AddSerilog();
+AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+{
+    Log.Fatal(e.ExceptionObject as Exception, "The app stopped because of an unexpected error");
+    Log.CloseAndFlush();
+};
 // Batch 6: a factory instead of one shared context per browser tab. Every repository method creates a
 // short-lived context, does its work and disposes it (Microsoft's guidance for Blazor Server). This removes
 // "a second operation was started on this context" errors and stale data between screens.
@@ -65,7 +76,6 @@ builder.Services.AddScoped<IPurchaseVariantRepository, PurchaseVariantRepository
 builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepositoryEF>();
 builder.Services.AddScoped<ISalesOrderVariantRepository, SalesOrderVariantRepositoryEF>();
 builder.Services.AddScoped<ISaleRepository, SaleRepositoryEF>();
-builder.Services.AddTransient<ProtectedSessionStorage>();
 builder.Services.AddTransient<IMobileService, MobileService>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService<BackupScheduler>();
@@ -78,7 +88,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    startupLogger.LogInformation("Database: {Database}  Backups: {Backups}", dataPaths.DatabasePath, dataPaths.BackupFolder);
+    startupLogger.LogInformation("Database: {Database}  Backups: {Backups}  Logs: {Logs}", dataPaths.DatabasePath, dataPaths.BackupFolder, logFolder);
 
     // One-time move of Inventory.db from the program folder to the data folder (copy only, never deletes).
     dataPaths.MoveLegacyDatabaseIfNeeded(startupLogger);
@@ -121,13 +131,12 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // Batch 9: no "/Error" page any more (it never existed as a Blazor page). Errors on a screen are shown
+    // by the ErrorBoundary in MainLayout and written to the log file.
     app.UseHsts();
     OpenBrowser("http://localhost:5000");
 }
 
-
-app.UseAuthentication();
 app.UseAntiforgery();
 
 app.UseStaticFiles();
