@@ -28,11 +28,12 @@ else
                         Add New Customer
                     </MudButton>
                     <MudFileUpload T="IBrowserFile" Accept=".csv, .xlsx" AppendMultipleFiles="false" FilesChanged="HandleFilesChanged">
-                        <ActivatorContent>
-                            <MudButton Size="MudBlazor.Size.Small" Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
+                        <CustomContent Context="fileUpload">
+                            <MudButton OnClick="@fileUpload.OpenFilePickerAsync" Size="MudBlazor.Size.Small" Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
                                 Import Customers
                             </MudButton>
-                        </ActivatorContent>
+                        </CustomContent>
+                        <SelectedTemplate Context="selectedFile"></SelectedTemplate>
                     </MudFileUpload>
                     <MudTooltip>
                         <ChildContent>

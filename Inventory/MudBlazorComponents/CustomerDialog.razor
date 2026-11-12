@@ -44,7 +44,7 @@
 
 @code {
     [CascadingParameter]
-    public MudDialogInstance MudDialog { get; set; }
+    public IMudDialogInstance MudDialog { get; set; }
     public Snackbar snackbar;
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] private IMapper Mapper { get; set; }

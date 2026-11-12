@@ -114,7 +114,7 @@ public partial class Variant
     {
         var parameters = new DialogParameters();
         parameters.Add("ImageHere", image);
-        var dialog = DialogService.Show<ImagePopup>(image.ImageTitle, parameters);
+        var dialog = await DialogService.ShowAsync<ImagePopup>(image.ImageTitle, parameters);
         var result = await dialog.Result;
     }
 

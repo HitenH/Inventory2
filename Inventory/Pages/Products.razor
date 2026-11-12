@@ -20,11 +20,12 @@ else
                         Add New Category
                     </MudButton>
                     <MudFileUpload T="IBrowserFile" Accept=".csv, .xlsx" AppendMultipleFiles="false" FilesChanged="HandleFilesChanged">
-                        <ActivatorContent>
-                            <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
+                        <CustomContent Context="fileUpload">
+                            <MudButton OnClick="@fileUpload.OpenFilePickerAsync" Class="ma-1" Variant="MudBlazor.Variant.Filled" StartIcon="@Icons.Material.Filled.AttachFile" Color="Color.Secondary">
                                 Import Products
                             </MudButton>
-                        </ActivatorContent>
+                        </CustomContent>
+                        <SelectedTemplate Context="selectedFile"></SelectedTemplate>
                     </MudFileUpload>
                     <MudTooltip>
                         <ChildContent>

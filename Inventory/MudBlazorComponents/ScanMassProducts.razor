@@ -51,7 +51,7 @@
     private List<ScannedItem> scannedItems = new();
     private ScannedItem ScannedItem = new();
     [CascadingParameter]
-    private MudDialogInstance MudDialog { get; set; }
+    private IMudDialogInstance MudDialog { get; set; }
     private Snackbar snackbar;
     private ElementReference anotherInput;
     [Inject] private IJSRuntime JSRuntime { get; set; }

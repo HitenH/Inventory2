@@ -98,7 +98,7 @@ else
         if (!_themeWatcherStarted && _mudThemeProvider is not null)
         {
             _themeWatcherStarted = true;
-            await _mudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            await _mudThemeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
             StateHasChanged();
         }
     }
