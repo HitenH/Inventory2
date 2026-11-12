@@ -10,8 +10,9 @@ window.inventoryShortcuts = {
         const handler = function (e) {
             if (e.repeat || e.metaKey) return;
 
-            // Enter in a data-entry area (marked "enter-moves-on": the line forms, Purchase Orders): go to the next
-            // box; on the last box press the area's add button (data-enter-submit). Search boxes have their own Enter.
+            // Enter in a data-entry area (marked "enter-moves-on": the line forms, Purchase Orders), owner's choice:
+            // in a typing box (Quantity, Rate, Discount, Remarks ...) it saves the line at once, as it always did;
+            // on a drop-down (Variant) it moves on to the next box. Search boxes have their own Enter.
             if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
                 const t = e.target;
                 const area = t && t.closest ? t.closest('.enter-moves-on') : null;
@@ -19,7 +20,11 @@ window.inventoryShortcuts = {
                     || (t.tagName === 'INPUT' && !/^(button|submit|checkbox|radio|file)$/i.test(t.type)))) {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.inventoryShortcuts.next(area, t);
+                    if (t.tagName === 'SELECT') {
+                        window.inventoryShortcuts.next(area, t);
+                    } else {
+                        window.inventoryShortcuts.submitArea(area, t);
+                    }
                     return;
                 }
             }
@@ -108,6 +113,11 @@ window.inventoryShortcuts = {
             if (target.select && target.tagName === 'INPUT') target.select();
             return;
         }
+        window.inventoryShortcuts.submitArea(area, from);
+    },
+
+    // Presses the area's add button (data-enter-submit). Leaving the box first makes the app take its value.
+    submitArea: function (area, from) {
         const submit = area.querySelector('[data-enter-submit]');
         if (submit) {
             from.blur();

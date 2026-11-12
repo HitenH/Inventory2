@@ -26,20 +26,21 @@ const lineRows = () => b.eval(`[...document.querySelectorAll('table.table tbody 
 try {
   await login(b);
 
-  log('--- Purchase: whole line by keyboard only');
+  log('--- Purchase: Enter in a typing box saves the line at once');
   await b.goto('/purchase'); await sleep(1500);
-  await pickFromList('BALAJI');
-  await pickFromList('LAZER');
-  log('on variant:', await b.active());
+  await pickFromList('BALAJI');                      // Enter saves the purchase, cursor to Product
+  await pickFromList('LAZER');                       // Enter -> Variant
   await b.key('ArrowDown'); await sleep(300);
   await b.key('Enter'); await sleep(500);
-  log('after Enter on variant:', await b.active());
-  await b.type('2'); await b.key('Enter'); await sleep(500);
-  log('after Enter on quantity:', await b.active());
-  await b.type('50'); await b.key('Enter'); await sleep(500);
-  log('after Enter on rate:', await b.active());
-  await b.key('Enter'); await sleep(2500);            // discount is the last box on a purchase -> adds the line
-  log('after Enter on discount: rows =', JSON.stringify(await lineRows()), '| snack =', await b.snack());
+  log('after Enter on variant (expect quantity):', await b.active());
+  await b.type('2'); await b.key('Enter'); await sleep(2500);
+  log('Enter on quantity: rows =', JSON.stringify(await lineRows()), '| snack =', await b.snack());
+  log('cursor after line added:', await samples());
+  await pickFromList('CUTTING');
+  await b.key('ArrowDown'); await sleep(300);
+  await b.key('Enter'); await sleep(500);
+  await b.type('3'); await b.key('Tab'); await sleep(300); await b.type('40'); await b.key('Enter'); await sleep(2500);
+  log('Enter on rate: rows =', JSON.stringify(await lineRows()));
   log('cursor after line added:', await samples());
 
   log('--- Sale: customer via pop-up');
@@ -75,15 +76,15 @@ try {
   await sleep(1500);
   log('voucher =', await b.eval(`document.querySelector('#voucher').value`), '| cursor over 3 s:', await samples());
 
-  log('--- Purchase order: row by keyboard');
+  log('--- Purchase order: Enter on quantity adds the row');
   await b.goto('/purchaseorder'); await sleep(1500);
+  const before = await b.eval(`document.querySelectorAll('.mud-table-body tr').length`);
   await pickFromList('BALAJI');
   await pickFromList('LAZER');
-  log('on variant:', await b.active());
   await b.key('Enter'); await sleep(400);
-  log('after Enter on variant:', await b.active());
-  await b.type('5'); await b.key('Enter'); await sleep(400);
-  log('after Enter on quantity:', await b.active());
+  log('after Enter on variant (expect quantity):', await b.active());
+  await b.type('5'); await b.key('Enter'); await sleep(2500);
+  log('rows before/after =', before, '/', await b.eval(`document.querySelectorAll('.mud-table-body tr').length`), '| cursor:', await samples());
 } catch (e) {
   log('ERROR', e.message);
   await b.shot(process.env.SCRATCH + '\\error.png');

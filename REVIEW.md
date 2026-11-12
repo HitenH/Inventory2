@@ -1,4 +1,4 @@
-﻿# Inventory App – Technical Review
+# Inventory App – Technical Review
 
 **Reviewed:** 10 November 2026
 **Scope:** The working copy in this folder, including the 49 modified files and 2 new files that have not been committed to Git yet. Every source file was read. The project was compiled to confirm it builds (0 errors, 563 warnings). The app was not run against live data.
@@ -26,7 +26,7 @@
 
 The review below is kept as written on 10 Nov 2026. This section tracks what has been fixed since. Details per batch are in `PLAN.md` section 5. All work is on the development PC against a copy of the real data; **nothing has been installed on the counter PC yet** (owner's decision – one rollout at the end).
 
-**Rough health score now: about 8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13; performance for growth in batch 14. Session 6 (13 Nov, "batch 15 part 1", owner's requests): saved names show on reopened vouchers, dark mode readable, keyboard shortcuts, cursor placement and Enter-to-next-box on the entry screens, keyboard-friendly search pop-ups. The batch 15 data features are next.
+**Rough health score now: about 8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13; performance for growth in batch 14. Session 6 (13 Nov, "batch 15 part 1", owner's requests): saved names show on reopened vouchers, dark mode readable, keyboard shortcuts, cursor placement and Enter on the entry screens, keyboard-friendly search pop-ups. The batch 15 data features are next.
 
 **Still open (13 Nov 2026):** owner's open keyboard offers (Enter on master forms, "unsaved changes" warning, Sale scan-box cursor, existing-record cursor, Sale Summary – see PLAN.md section 0); data features that need owner decisions (D3–D5, M13 – batch 15), users and roles (S3 – batch 16), Import (B5 – batch 8, deliberately last), old duplicate vouchers (B1/D2 – pinned), and smaller items B9, B11, B12, S5, S6, D6. Owner's new request, pinned: several photos and videos per variant.
 
@@ -60,7 +60,7 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | A5 | Three UI libraries | **Fixed** – Blazor.Bootstrap removed; number boxes, date boxes, the customer/supplier/product search box and the Customer error window now use MudBlazor (look approved by the owner). Bootstrap CSS stays only for page layout classes. Warnings 364 → 358. | 13 |
 | P1–P5 | Paging, customer list loads all sales, images in page, report sums, variant save | **Fixed** – lists show 100 rows per page (10–200 selectable; client-side paging, search covers all rows); customer and area totals summed in the database; photos sent as normal images from `/photos/{id}` (still stored in the database, so backups include them); Sales & Purchases report sums in the database with correct period labels (financial year April–March); one-variant saves proven to write one row. Not done: server-side paging (only needed at tens of thousands of rows). | 14 |
 | P6 | Pickers reload their list | Largely fixed in batch 12 (one picker); not re-checked. | 12 |
-| Usability (new, owner) | Keyboard-only entry, dark mode, shortcut keys | **Done** – Alt-key screen shortcuts, Ctrl+S, Esc back, cursor placement, Enter moves box to box and adds lines, keyboard pop-ups, dark mode for the Bootstrap parts. Checked in a real browser with `tools/ui-check`. | 15 part 1 |
+| Usability (new, owner) | Keyboard-only entry, dark mode, shortcut keys | **Done** – Alt-key screen shortcuts, Ctrl+S, Esc back, cursor placement, Enter picks and moves on in search boxes and saves the line from Quantity/Rate (as before), keyboard pop-ups, dark mode for the Bootstrap parts. Checked in a real browser with `tools/ui-check`. | 15 part 1 |
 | D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |
 | B9, B11, B12, S5, S6, D6 | "Not found" returns empty record; PO free text; delete errors show stack trace; HTTPS; raw DB errors; WAL/multi-user | Open (fold into batches 11–15) | – |
 
