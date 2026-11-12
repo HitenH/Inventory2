@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @if (!_layoutReady)
@@ -31,6 +32,12 @@ else
         </MudDrawer>
         <MudMainContent>
             <MudContainer Class="mt-2 px-8" MaxWidth="MaxWidth.ExtraExtraLarge">
+                @if (Backups.RestartRequired)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-2">
+                        A backup was restored. Close the Inventory app and start it again before entering anything else.
+                    </MudAlert>
+                }
                 @Body
             </MudContainer>
         </MudMainContent>
@@ -38,6 +45,22 @@ else
 }
 
 @code {
+    [Inject] private Inventory.Service.BackupService Backups { get; set; } = default!;
+
+    // OnInitialized is already used in MainLayout.razor.cs, so subscribe here instead.
+    protected override Task OnInitializedAsync()
+    {
+        Backups.RestartRequiredChanged += OnRestartRequiredChanged;
+        return Task.CompletedTask;
+    }
+
+    private void OnRestartRequiredChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Backups.RestartRequiredChanged -= OnRestartRequiredChanged;
+    }
+
     private bool _layoutReady;
     private bool _isDarkMode;
     private bool _themeWatcherStarted;

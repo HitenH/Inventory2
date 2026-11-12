@@ -59,7 +59,7 @@ A throwaway database is created in `bin/Debug/net9.0/Inventory.db` when running 
 5. **Smoke test after every batch** (section 3) on a copy of the real database, not on the counter PC. Only then publish to the counter PC.
 6. **If a batch breaks something and the fix is not obvious within an hour, revert the batch** (`git revert <commit>`), publish the previous version, and write what happened in the status log.
 7. **Update section 5 (status log)** at the end of each batch: what was done, what was skipped, anything Hiten must do by hand.
-8. Do not start the next batch until the previous one is on the counter PC and has survived at least one working day, unless Hiten says otherwise.
+8. **Development-only mode (Hiten's decision, 12 Nov 2026):** do not deploy anything to the counter PC batch by batch. All batches are built and smoke-tested on the development PC against a *copy* of the real database (`Desktop\Inventory App\website (1)\Inventory.db` copied to `Inventory\bin\Debug\net9.0\Inventory.db`). The next batch may start once the previous one passes the smoke test here. The counter PC is updated **once**, when Hiten says everything is ready (see section 6).
 
 ---
 
@@ -215,7 +215,7 @@ Customer totals via aggregate query (copy the supplier pattern) and stop includi
 |---|---|---|---|---|
 | 0 | Done | 13ea0be | 2026-11-11 | Review written (REVIEW.md), five months of uncommitted work pushed. |
 | 1 | Done | (see git log, "Batch 1") | 2026-11-11 | **Hiten: after deploying, log in as each user and change both passwords via the new "Change Password" menu item; store them outside Git.** Done: `PasswordService` (PBKDF2 via ASP.NET `PasswordHasher`), `UserBootstrap` hashes legacy plain-text rows at startup and creates a random-password Admin on an empty DB (password printed to console + `initial-admin-password.txt` next to the DB), seed removed from `AppDbContext` and from the 2025 migration, empty migration `RemoveSeededUsers`, login shows "Invalid user name or password", `UserRepositoryEF` fully implemented, `/changepassword` page. Verified: build 0 errors / 563 warnings (unchanged); startup tested on a fresh DB for both paths. **Not verified:** logging in through the browser UI (no browser in the dev session). Old passwords still appear in the 2025 migration *Designer* snapshot files and in Git history; removing them needs a history rewrite (force-push), which was not done. |
-| 2 | Not started | | | Hiten: choose the backup folder (second drive / USB / NAS / cloud). |
+| 2 | Done | (see git log, "Batch 2") | 2026-11-12 | **At rollout, Hiten: choose the backup folder (second drive / USB / NAS / cloud) and set `BackupFolder` in `appsettings.json` of the installed app.** Done: new `Service/DataPaths.cs` (DataFolder/BackupFolder from config; installed default `%ProgramData%\InventoryApp` + `\Backups`; Development uses the build folder via `appsettings.Development.json`, so ProgramData on the dev PC is never touched); one-time copy of `Inventory.db` from the program folder using the SQLite backup API, integrity-checked, old backups copied, `Inventory.db-HAS-MOVED.txt` left next to the old file (old file never deleted); `BackupService` rewritten (SQLite online backup → `.tmp` → `PRAGMA integrity_check` → rename; restore = integrity check, `before-restore_*.db` safety copy, backup API into the live DB, `RestartRequired` flag + red bar in `MainLayout`); `BackupScheduler` hosted service (daily backup 30 s after start if none today, and at `BackupDailyAt` 02:00; keeps newest `BackupKeepDaily`=30 `daily_*` files; manual `backup_*` never pruned); Settings shows DB path, backup folder, last backup, type/date/size, and Restore now asks for confirmation. **Found:** the DB is in WAL mode, so the old `File.Copy` backups could miss recent changes – old backups on the counter PC should not be trusted as complete. Verified: build 0 errors, warnings 563 → 555; move simulated (all 16 table counts identical, second start does not move again); 13-check harness (WAL row captured, restore, safety copy, pruning, damaged-file refusal) all pass; Hiten tested backup + restore + restart in the browser. **Seen, pre-existing (batch 3):** refreshing/typing the URL of an `[Authorize]` page logs "No DefaultChallengeScheme found". |
 | 3 | Not started | | | Hiten: confirm which actions the "User" role may do. |
 | 4 | Not started | | | |
 | 5 | Not started | | | Hiten: resolve any duplicates found in step 1. |
@@ -229,5 +229,16 @@ Customer totals via aggregate query (copy the supplier pattern) and stop includi
 | 13 | Not started | | | Hiten: approve the new look of inputs. |
 | 14 | Not started | | | |
 | 15 | Not started | | | Needs decisions on each item. |
+
+**2026-11-12:** Batch 1 login verified in the browser by Hiten on a copy of the real database (users Hiten and Admin; plain-text passwords upgraded to hashes on first start, old passwords still work). Earlier "cannot log in" was an old 2023 .NET 7 copy of the app (`C:\Users\Hiten\source\repos\Inventory`) running on the same port 5259 – check `netstat -ano | findstr 5259` if login fails again. The .NET 9 runtime is now installed on the dev PC, so the roll-forward commands in section 1 are no longer needed.
+
+---
+
+## 6. Final rollout to the counter PC (only when Hiten says "ready")
+
+1. Take a fresh copy of the live `Inventory.db` from the counter PC and keep it off that PC.
+2. Run the full smoke test (section 3) on *that* fresh copy with the final build.
+3. Publish, install on the counter PC, keep the previous program folder intact for rollback.
+4. Hand-steps collected from the status log (e.g. change both passwords, choose backup folder).
 
 **How to start a batch in a new session:** read sections 1–3 of this file, read the batch, run `dotnet build` to confirm the starting point is clean, take the database backup if the batch requires it, then work through the tasks, build, smoke test, commit as `Batch N: ...`, update this table, push.

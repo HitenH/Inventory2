@@ -40,7 +40,11 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 });
 
-var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Inventory.db");
+// Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
+// Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).
+var dataPaths = DataPaths.FromConfiguration(builder.Configuration);
+var dbPath = dataPaths.DatabasePath;
+builder.Services.AddSingleton(dataPaths);
 builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
@@ -60,9 +64,8 @@ builder.Services.AddScoped<ISalesOrderVariantRepository, SalesOrderVariantReposi
 builder.Services.AddScoped<ISaleRepository, SaleRepositoryEF>();
 builder.Services.AddTransient<ProtectedSessionStorage>();
 builder.Services.AddTransient<IMobileService, MobileService>();
-builder.Services.AddSingleton(_ => new BackupService(
-    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups"),
-    dbPath));
+builder.Services.AddSingleton<BackupService>();
+builder.Services.AddHostedService<BackupScheduler>();
 builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
@@ -71,14 +74,20 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    startupLogger.LogInformation("Database: {Database}  Backups: {Backups}", dataPaths.DatabasePath, dataPaths.BackupFolder);
+
+    // One-time move of Inventory.db from the program folder to the data folder (copy only, never deletes).
+    dataPaths.MoveLegacyDatabaseIfNeeded(startupLogger);
+
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
     await UserBootstrap.RunAsync(
         db,
         scope.ServiceProvider.GetRequiredService<PasswordService>(),
-        scope.ServiceProvider.GetRequiredService<ILogger<Program>>(),
-        Path.GetDirectoryName(dbPath)!);
+        startupLogger,
+        dataPaths.DataFolder);
 }
 
 // Configure the HTTP request pipeline.

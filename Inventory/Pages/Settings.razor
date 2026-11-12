@@ -8,23 +8,53 @@
 <PagesHeader Title="Settings" SubTitle="Reports, backups, overview" />
 
 <MudContainer>
+    @if (backupService.RestartRequired)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-3">
+            A backup has been restored. Close the Inventory app completely and start it again before doing any more work.
+        </MudAlert>
+    }
+
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.body2"><b>Database:</b> @backupService.DatabasePath</MudText>
+        <MudText Typo="Typo.body2"><b>Backup folder:</b> @backupService.BackupFolder</MudText>
+        <MudText Typo="Typo.body2">
+            <b>Last backup:</b>
+            @(lastBackup is null ? "none yet" : lastBackup.Value.ToString("dd MMM yyyy HH:mm"))
+        </MudText>
+        <MudText Typo="Typo.caption">An automatic backup is made every day (when the app starts, and at the scheduled time). The newest 30 automatic backups are kept; manual backups are never removed automatically.</MudText>
+    </MudPaper>
+
     <MudTable Items="backupFiles" Hover="true" Bordered="true" Striped="true">
         <ToolBarContent>
-            <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Backup">
+            <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Backup"
+                       Disabled="@(busy || backupService.RestartRequired)">
                 Backup
             </MudButton>
+            @if (busy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="MudBlazor.Size.Small" Class="ml-2" />
+            }
         </ToolBarContent>
         <HeaderContent>
             <MudTh>Backup File</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Date</MudTh>
+            <MudTh>Size</MudTh>
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Backup File">@context</MudTd>
+            <MudTd DataLabel="Backup File">@context.Name</MudTd>
+            <MudTd DataLabel="Type">@context.KindText</MudTd>
+            <MudTd DataLabel="Date">@context.CreatedAt.ToString("dd MMM yyyy HH:mm")</MudTd>
+            <MudTd DataLabel="Size">@context.SizeText</MudTd>
             <MudTd DataLabel="Actions">
-                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => RestoreBackup(context)">
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => RestoreBackup(context)"
+                           Disabled="@(busy || backupService.RestartRequired)">
                     Restore
                 </MudButton>
-                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => DeleteBackup(context)">
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => DeleteBackup(context)"
+                           Disabled="@busy">
                     Delete
                 </MudButton>
             </MudTd>
@@ -36,64 +66,107 @@
 </MudContainer>
 
 @code {
-    private List<string> backupFiles = new();
+    private List<BackupFileInfo> backupFiles = new();
+    private DateTime? lastBackup;
+    private bool busy;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
+    {
+        Reload();
+    }
+
+    private void Reload()
     {
         backupFiles = backupService.GetBackupFiles();
+        lastBackup = backupService.LastBackupTime;
     }
 
-    //Method to backup at current time
-    private void Backup()
+    private async Task Backup()
     {
+        busy = true;
         try
         {
-            backupService.BackupDatabase();
-            snackbar.Add("Backup created successfully", Severity.Success);
+            await backupService.BackupDatabaseAsync();
+            snackbar.Add("Backup created and checked successfully", Severity.Success);
         }
         catch (Exception ex)
         {
-            snackbar.Add("Failed to create backup", Severity.Error);
+            snackbar.Add("Failed to create backup. " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+            Reload();
         }
     }
 
-    private void RestoreBackup(string backupFilePath)
+    private async Task RestoreBackup(BackupFileInfo backup)
     {
+        var confirmed = await ConfirmAsync(
+            "Restore",
+            $"Replace ALL current data with the backup from {backup.CreatedAt:dd MMM yyyy HH:mm}? " +
+            "Everything entered after that time will disappear. The current data is saved first as a 'Saved before a restore' backup.",
+            "Restore",
+            Color.Warning);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        busy = true;
         try
         {
-            backupService.RestoreDatabase(backupFilePath);
-            snackbar.Add("Restored the backup", Severity.Success);
+            await backupService.RestoreDatabaseAsync(backup.Path);
+            snackbar.Add("Backup restored. Close the app and start it again now.", Severity.Warning,
+                o => o.RequireInteraction = true);
         }
         catch (Exception ex)
         {
-            snackbar.Add("Failed to restore the backup", Severity.Error);
+            snackbar.Add("Failed to restore the backup. Your data was not changed. " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+            Reload();
         }
     }
 
-    private async Task DeleteBackup(string backupFilePath)
+    private async Task DeleteBackup(BackupFileInfo backup)
     {
         try
         {
-            var parameters = new DialogParameters<ConfirmationDialog>
-                    {
-                        { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                        { x => x.ButtonText, "Delete" },
-                        { x => x.Color, Color.Error }
-                    };
-
-            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-            var result = await dialog.Result;
-            if (!result.Canceled)
+            var confirmed = await ConfirmAsync(
+                "Delete",
+                "Do you really want to delete these records? This process cannot be undone.",
+                "Delete",
+                Color.Error);
+            if (confirmed)
             {
-                backupService.DeleteBackup(backupFilePath);
+                backupService.DeleteBackup(backup.Path);
                 snackbar.Add("Deleted the backup", Severity.Success);
             }
         }
         catch (Exception ex)
         {
-            snackbar.Add("Failed to delete the backup", Severity.Error);
+            snackbar.Add("Failed to delete the backup. " + ex.Message, Severity.Error);
         }
+        finally
+        {
+            Reload();
+        }
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string text, string buttonText, Color color)
+    {
+        var parameters = new DialogParameters<ConfirmationDialog>
+        {
+            { x => x.ContentText, text },
+            { x => x.ButtonText, buttonText },
+            { x => x.Color, color }
+        };
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<ConfirmationDialog>(title, parameters, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
     }
 }
