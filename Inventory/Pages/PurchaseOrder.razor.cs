@@ -1,6 +1,7 @@
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -26,8 +27,14 @@ public partial class PurchaseOrder
     private List<PurchaseOrderModel> orders = new();
     private List<PurchaseOrderModel> ordersAfterSearch = new();
     private HashSet<PurchaseOrderModel> selectedOrders = new();
-    private ProductModel selectedProduct;
-    private SupplierModel selectedSupplier;
+    // Start empty (not null): saving before a product was picked crashed the screen (seen Nov 2026).
+    private ProductModel selectedProduct = new();
+    private SupplierModel selectedSupplier = new();
+    [Inject] private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
+
+    // Enter on a chosen name moves the cursor on: Supplier -> Product -> Variant (owner's request).
+    private Task OnSupplierEnter(SupplierModel _) => JS.FocusBoxAsync(".focus-po-product");
+    private Task OnProductEnter(ProductModel _) => JS.FocusBoxAsync("#po-variant");
     private List<PurchaseOrderEntity> ordersDb = new();
 
 
@@ -66,11 +73,18 @@ public partial class PurchaseOrder
     }
     public async Task AddPurchaseOrder()
     {
+        // Stop here when something is missing (it used to show the message and save anyway, or crash).
         if (string.IsNullOrEmpty(purchaseOrderModel.SupplierId))
+        {
             Snackbar.Add("Supplier ID is missing.", Severity.Info);
+            return;
+        }
 
-        if (string.IsNullOrEmpty(selectedProduct.Name))
+        if (string.IsNullOrEmpty(selectedProduct?.Name))
+        {
             Snackbar.Add("Please select a product.", Severity.Info);
+            return;
+        }
 
 
         if (purchaseOrderModel != null)
@@ -91,6 +105,8 @@ public partial class PurchaseOrder
                 await PurchaseOrderRepository.Create(purchaseOrderEntity);
                 CancelOrder();
                 await GetOrders();
+                // Ready for the next order: cursor back in Supplier ID (owner's request).
+                await JS.FocusBoxAsync(".focus-supplier");
             }
             catch (Exception ex)
             {
@@ -126,6 +142,7 @@ public partial class PurchaseOrder
                     await PurchaseOrderRepository.Update(purchaseOrderEntity);
                     CancelOrder();
                     await GetOrders();
+                    await JS.FocusBoxAsync(".focus-supplier");
                 }
             }
             catch (Exception ex)

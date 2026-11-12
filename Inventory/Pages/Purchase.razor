@@ -1,6 +1,9 @@
 ﻿@page "/purchase/{purchaseId?}";
 @using Inventory.Shared.Selectors
 
+@* Cursor: Supplier on a new purchase; once it is saved (or when an existing one is opened), the product box of the line. *@
+<FocusOnOpen Selector="@(PurchaseId == null ? ".focus-supplier" : ".focus-line-product")" />
+
 
 <EditForm Model="@purchaseModel" class="card-header mt-5"
           OnValidSubmit="async ()=>
@@ -18,7 +21,7 @@
     <div class="d-flex justify-content-between">
         <div class="text-center" style="min-width:350px;">
             <label for="voucher" class="form-label"><h4>Supplier</h4></label>
-            <SupplierAutocomplete T="SupplierModel" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
+            <SupplierAutocomplete T="SupplierModel" Class="focus-supplier" EnterPressed="OnSupplierEnter" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
             <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled hidden />
@@ -47,11 +50,11 @@
     <div class="mt-3">
         @if (PurchaseId == null)
         {
-            <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
         }
         else
         {
-            <button type="submit" id="button-submit" class="btn btn-warning">Update</button>
+            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
         }
         <NavLink type="button" href="/purchases" id="button-close" class="btn btn-info ms-2">Close</NavLink>
         @if (PurchaseId != null)

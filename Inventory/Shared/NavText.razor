@@ -1,0 +1,16 @@
+@* A menu item's name with its keyboard shortcut on the right, e.g. "Customers      Alt+C" (Service/Shortcuts.cs). *@
+<span class="nav-with-key">
+    <span>@Text</span>
+    @if (hint is not null)
+    {
+        <span class="shortcut-hint">@hint</span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    /// <summary>The address the menu item opens; its shortcut is looked up from it.</summary>
+    [Parameter, EditorRequired] public string Url { get; set; } = "";
+
+    private string? hint => Shortcuts.HintFor(Url);
+}

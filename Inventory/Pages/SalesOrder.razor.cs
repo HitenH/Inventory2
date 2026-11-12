@@ -1,6 +1,7 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -18,6 +19,21 @@ public partial class SalesOrder
     [Inject] private NavigationManager navManager { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
+
+    // Enter on a chosen customer (owner's request): a new sales order is saved at once, which moves the cursor to
+    // the line's product box (FocusOnOpen); on a saved order the cursor just moves there.
+    private async Task OnCustomerEnter(CustomerModel _)
+    {
+        if (SalesOrderId == null)
+        {
+            await AddOrder();
+        }
+        else
+        {
+            await JS.FocusBoxAsync(".focus-line-product");
+        }
+    }
 
     private CustomerEntity customer = new();
     private CustomerModel? customerModel;

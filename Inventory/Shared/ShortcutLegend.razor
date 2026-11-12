@@ -1,0 +1,32 @@
+@* The keyboard shortcut list (Service/Shortcuts.cs). Shown on the Dashboard and in the floating window
+   opened from the keyboard button next to the dark-mode switch. *@
+<MudText Typo="Typo.h6" Class="mb-2">Keyboard shortcuts</MudText>
+<MudSimpleTable Dense="true" Hover="true">
+    <thead>
+        <tr>
+            <th>Screen</th>
+            <th>Open</th>
+            <th>New</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Shortcuts.Screens)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>Alt+@s.Key</td>
+                <td>@(s.NewUrl is null ? "" : $"Alt+Shift+{s.Key}")</td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+<MudText Typo="Typo.body2" Class="mt-3" Style="max-width:420px;">
+    <b>Ctrl+S</b> saves the screen you are in (same as its Save / Update / Summarize button).
+</MudText>
+<MudText Typo="Typo.body2" Class="mt-1" Style="max-width:420px;">
+    <b>Esc</b> goes back: from a record to its list, from a list to the Dashboard.
+</MudText>
+<MudText Typo="Typo.body2" Class="mt-1" Style="max-width:420px;">
+    <b>Alt+N</b> starts a new one on the screen you are in (new sale on Sales, new purchase on Purchases, ...).
+    Anything not yet saved on the screen you leave is lost.
+</MudText>

@@ -11,6 +11,9 @@
 else
 {
     <MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
+    @* "app-dark" switches the Bootstrap tables, text boxes, panels and icons to dark colours (site.css);
+       the pop-ups are inside it so their contents follow too. *@
+    <div class="@(_isDarkMode ? "app-dark" : null)">
     <MudPopoverProvider />
     <MudDialogProvider />
     <MudSnackbarProvider />
@@ -19,6 +22,15 @@ else
         <MudAppBar Elevation="1">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
             <MudSpacer />
+            @* Keyboard shortcut list in a floating window; a click anywhere else closes it. *@
+            <MudTooltip Text="Keyboard shortcuts">
+                <MudMenu Icon="@Icons.Material.Filled.Keyboard" Color="Color.Inherit" AriaLabel="Keyboard shortcuts"
+                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <div class="pa-4">
+                        <ShortcutLegend />
+                    </div>
+                </MudMenu>
+            </MudTooltip>
             <MudSwitch @bind-Value="_isDarkMode" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode" />
         </MudAppBar>
         <MudDrawer @bind-Open="_drawerOpen"
@@ -54,6 +66,7 @@ else
             </MudContainer>
         </MudMainContent>
     </MudLayout>
+    </div>
 }
 
 @code {
@@ -71,6 +84,43 @@ else
     public void Dispose()
     {
         Backups.RestartRequiredChanged -= OnRestartRequiredChanged;
+        _shortcutsRef?.Dispose();
+    }
+
+    // Keyboard shortcuts (Service/Shortcuts.cs): shortcuts.js catches Alt + letter and calls OnShortcut.
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    private DotNetObjectReference<MainLayout>? _shortcutsRef;
+
+    [JSInvokable]
+    public Task OnShortcut(string letter, bool shift)
+    {
+        if (string.IsNullOrEmpty(letter))
+        {
+            return Task.CompletedTask;
+        }
+
+        var currentPath = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        var target = Inventory.Service.Shortcuts.Target(currentPath, letter[0], shift);
+        if (target is not null)
+        {
+            // Staying on the same screen (e.g. new sale from a sale) reloads it, so the form starts empty.
+            Navigation.NavigateTo(target, forceLoad: Inventory.Service.Shortcuts.NeedsReload(currentPath, target));
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Esc: back to the list, and from a list to the Dashboard (Service/Shortcuts.Back).</summary>
+    [JSInvokable]
+    public Task OnBack()
+    {
+        var currentPath = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        var target = Inventory.Service.Shortcuts.Back(currentPath);
+        if (target is not null)
+        {
+            Navigation.NavigateTo(target);
+        }
+        return Task.CompletedTask;
     }
 
     private ErrorBoundary? _errorBoundary;
@@ -91,6 +141,8 @@ else
         if (firstRender)
         {
             _layoutReady = true;
+            _shortcutsRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("inventoryShortcuts.init", _shortcutsRef, Inventory.Service.Shortcuts.Letters);
             StateHasChanged();
             return;
         }

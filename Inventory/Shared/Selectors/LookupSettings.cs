@@ -115,6 +115,31 @@ namespace Inventory.Shared.Selectors
         public static IEnumerable<TItem> SearchBoxMatches<TItem>(IEnumerable<TItem> items, LookupSettings<TItem> settings, string? search)
             => items.Where(i => i is not null && Matches(settings.SearchBoxFields(i), search)).ToList();
 
+        /// <summary>
+        /// Up/Down in the pop-up: the row <paramref name="step"/> places from <paramref name="current"/>,
+        /// stopping at the first and last row (no wrap-around, so holding a key never jumps to the other end).
+        /// </summary>
+        public static TItem? MoveHighlight<TItem>(IList<TItem> rows, TItem? current, int step)
+        {
+            if (rows.Count == 0)
+            {
+                return default;
+            }
+            var index = current is null ? -1 : rows.IndexOf(current);
+            if (index < 0)
+            {
+                return rows[0];
+            }
+            return rows[Math.Clamp(index + step, 0, rows.Count - 1)];
+        }
+
+        /// <summary>
+        /// What the search box shows for the item a page has chosen: the item itself, or nothing when the page
+        /// passes no item or an empty one (pages use new() for "nothing chosen").
+        /// </summary>
+        public static TItem? ShownSelection<TItem>(TItem? chosen, LookupSettings<TItem> settings)
+            => chosen is null || string.IsNullOrWhiteSpace(settings.NameOf(chosen)) ? default : chosen;
+
         /// <summary>Case-insensitive "contains" on any of the fields; empty fields never match; an empty search matches all.</summary>
         public static bool Matches(IEnumerable<string?> fields, string? search)
         {

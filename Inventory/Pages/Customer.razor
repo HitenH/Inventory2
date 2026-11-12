@@ -2,6 +2,8 @@
 
 
 <h2 class="d-flex justify-content-center mb-5">Customer</h2>
+@* New customer: the cursor starts in Name (owner's request). *@
+<FocusOnOpen Selector="#name" When="CustomerId == null" />
 
 <EditForm EditContext="editContext" class="card-header mx-5"
           OnSubmit="async ()=>
@@ -54,7 +56,7 @@
 
         <div class="position-fixed bottom-0 mb-5 start-50">
             <MudPaper Class="p-4">
-                <button type="submit" id="button-submit" class="btn btn-success">Save</button>
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
                 <NavLink type="button" href="/customers" id="button-close" class="btn btn-info ms-3">Close</NavLink>
                 @if (CustomerId != null)
                 {

@@ -1,8 +1,8 @@
-﻿@* Shared line editor for Purchase and Sales Order (batch 12). *@
+@* Shared line editor for Purchase and Sales Order (batch 12). *@
 @using Inventory.Shared.Selectors
 
 
-<EditForm Model="@line" class="card-header mt-5"
+<EditForm Model="@line" class="card-header mt-5 enter-moves-on"
           OnValidSubmit="async ()=>
                 {
                     if(line.Id == Guid.Empty){
@@ -14,7 +14,7 @@
     <DataAnnotationsValidator />
     <div class="d-flex flex-row justify-content-between">
         <div class="d-flex justify-content-around align-items-center">
-            <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
+            <button type="submit" id="button-submit" class="btn btn-light btn-order-add" data-enter-submit>
                 <img src="img/add.png" alt="add" class="order-add-img" />
             </button>
             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelLine">
@@ -28,7 +28,7 @@
         <div class="col-2 text-center">
             
             <label for="variantid" class="form-label">Product Selection</label>
-            <ProductAutocomplete T="ProductModel" 
+            <ProductAutocomplete T="ProductModel" Class="focus-line-product" EnterPressed="OnProductEnter"
                         SelectedProduct="selectedProduct"
                         SelectedProductChanged="OnProductSelected" />
 
@@ -60,7 +60,7 @@
             }
             else
             {
-                <input class="form-control text-center" value="@line.VariantEntityId" disabled />
+                <input class="form-control text-center" value="@line.ProductVariantId" disabled />
             }
 
         </div>

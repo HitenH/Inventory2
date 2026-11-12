@@ -1,0 +1,22 @@
+@* Puts the cursor in a box when the screen opens (keyboard-friendly entry, owner's request Nov 2026).
+   Selector = the box (an id like "#name", or a class put on a field such as ".focus-supplier");
+   When = only on some screens, e.g. only for a new record.
+   If the selector changes while the screen stays open (e.g. a new purchase has just been saved, so the cursor
+   should now go to the product box), the cursor moves to the new box. *@
+@inject IJSRuntime JS
+
+@code {
+    [Parameter, EditorRequired] public string Selector { get; set; } = "";
+    [Parameter] public bool When { get; set; } = true;
+
+    private string? focusedSelector;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (When && Selector != focusedSelector)
+        {
+            focusedSelector = Selector;
+            await JS.InvokeVoidAsync("inventoryShortcuts.focus", Selector);
+        }
+    }
+}

@@ -8,7 +8,7 @@
 
                 <div class="mb-2 col-5 d-flex justify-content-center flex-column">
                     <label for="productid" class="form-label text-center">Product ID</label>
-                    <input type="text" @bind-value="ScannedItem.ProductId" id="productid" class="form-control" required @ref="anotherInput" autocomplete="off" />
+                    <input type="text" @bind-value="ScannedItem.ProductId" id="productid" class="form-control scan-mass-product" required @ref="anotherInput" autocomplete="off" />
                 </div>
                 <div class="mb-2 col-5 d-flex justify-content-center flex-column">
                     <label for="variantid" class="form-label text-center">Variant ID</label>
@@ -59,7 +59,9 @@
     {
         if (firstRender)
         {
-            await FocusInput();
+            // On opening, the pop-up's own cursor handling took the cursor away again, so use the helper that
+            // waits for the window to settle and puts it back (owner's request). After each scan: unchanged.
+            await JSRuntime.FocusBoxAsync(".scan-mass-product");
         }
     }
 

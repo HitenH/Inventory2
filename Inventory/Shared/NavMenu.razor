@@ -1,10 +1,10 @@
-@using Inventory.Authentication
+﻿@using Inventory.Authentication
 @implements IDisposable
 
 @inject NavigationManager NavigationManager
 
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Dashboard</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home"><NavText Text="Dashboard" Url="/" /></MudNavLink>
 
     <AuthorizeView>
         <Authorized>
@@ -12,22 +12,22 @@
                 @context.User.Identity?.Name
             </MudNavLink>
             <MudNavLink Icon="@Icons.Material.Filled.Key" Href="/changepassword">Change Password</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Report" Href="/reports">Reports</MudNavLink>
-            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Report" Href="/reports"><NavText Text="Reports" Url="/reports" /></MudNavLink>
+            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings"><NavText Text="Settings" Url="/settings" /></MudNavLink>
             <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">Logout</MudNavLink>
 
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Masters</MudText>
-            <MudNavLink Icon="@Icons.Material.Filled.People" Href="/customers">Customers</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Support" Href="/suppliers">Suppliers</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products">Products</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.People" Href="/customers"><NavText Text="Customers" Url="/customers" /></MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Support" Href="/suppliers"><NavText Text="Suppliers" Url="/suppliers" /></MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products"><NavText Text="Products" Url="/products" /></MudNavLink>
 
             <MudDivider Class="my-2" />
             <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
-            <MudNavLink Icon="@Icons.Material.Filled.BorderTop" Href="/purchaseorder">Purchase Orders</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Shop" Href="/purchases">Purchases</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Money" Href="/salesorders">Sale Orders</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales">Sales</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.BorderTop" Href="/purchaseorder"><NavText Text="Purchase Orders" Url="/purchaseorder" /></MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Shop" Href="/purchases"><NavText Text="Purchases" Url="/purchases" /></MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Money" Href="/salesorders"><NavText Text="Sale Orders" Url="/salesorders" /></MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales"><NavText Text="Sales" Url="/sales" /></MudNavLink>
         </Authorized>
         <NotAuthorized>
             <MudNavLink Icon="@Icons.Material.Filled.Login" Href="/login">Login</MudNavLink>

@@ -2,7 +2,10 @@
 @using Inventory.Shared.Selectors
 @using Variant = MudBlazor.Variant
 
-<EditForm Model="@purchaseOrderModel" class="card-header"
+@* Cursor starts in Supplier ID (owner's request). *@
+<FocusOnOpen Selector=".focus-supplier" />
+
+<EditForm Model="@purchaseOrderModel" class="card-header enter-moves-on"
           OnValidSubmit="async ()=>
                 {
                     if(purchaseOrderModel.Id == Guid.Empty){
@@ -14,7 +17,7 @@
     <DataAnnotationsValidator />
     <div class="d-flex flex-row justify-content-between">
         <div class="col-3 d-flex justify-content-around align-items-center">
-            <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
+            <button type="submit" id="button-submit" class="btn btn-light btn-order-add" data-enter-submit>
                 <img src="img/add.png" alt="add" class="variant-add-img" />
             </button>
             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelOrder">
@@ -29,7 +32,7 @@
             <label for="supplierid" class="form-label">Supplier ID</label>
             <div class="d-flex justify-content-between">
 
-                <SupplierAutocomplete T="SupplierModel" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
+                <SupplierAutocomplete T="SupplierModel" Class="focus-supplier" EnterPressed="OnSupplierEnter" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
                 <InputText @bind-Value="purchaseOrderModel.SupplierId" class="form-control text-center" disabled hidden />
             </div>
@@ -38,7 +41,7 @@
             <label for="productid" class="form-label">Product ID</label>
             <div class="d-flex justify-content-between">
 
-                <ProductAutocomplete T="ProductModel" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
+                <ProductAutocomplete T="ProductModel" Class="focus-po-product" EnterPressed="OnProductEnter" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
 
                 <InputText @bind-Value="purchaseOrderModel.ProductId" class="form-control text-center" disabled hidden />
                 <InputText @bind-Value="purchaseOrderModel.ProductName" class="form-control text-center" disabled hidden />
@@ -48,7 +51,7 @@
     <div class="d-flex flex-row justify-content-between">
         <div class="m-1 col-3 text-center">
             <label for="productid" class="form-label">Variant ID</label>
-            <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control text-center" id="orderstatus">
+            <InputSelect @bind-Value="purchaseOrderModel.VariantId" class="form-control text-center" id="po-variant">
                 @if (selectedProduct?.Variants is { Count: > 0 })
                 {
                     @foreach (var item in selectedProduct.Variants)

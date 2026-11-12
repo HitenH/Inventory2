@@ -3,6 +3,7 @@ using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Inventory.Shared
@@ -18,6 +19,13 @@ namespace Inventory.Shared
         [Inject] private IProductRepository ProductRepository { get; set; } = default!;
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
         [Inject] private ILogger<TransactionLineEditor> Logger { get; set; } = default!;
+        [Inject] private IJSRuntime JS { get; set; } = default!;
+
+        /// <summary>After a line is saved the cursor goes back to the product box, ready for the next item (owner's request).</summary>
+        private Task FocusProductAsync() => JS.FocusBoxAsync(".focus-line-product");
+
+        /// <summary>Enter on a chosen product: the cursor moves to the Variant ID drop-down.</summary>
+        private Task OnProductEnter(ProductModel _) => JS.FocusBoxAsync("#variantid");
 
         // The product being entered: its ID and (after picking it) its variants for the drop-down.
         private ProductModel product = new();
@@ -52,6 +60,7 @@ namespace Inventory.Shared
                 CancelLine();
                 serialnumber += 1;
                 await ChangeState.InvokeAsync(true);
+                await FocusProductAsync();
             }
             catch (Exception ex)
             {
@@ -74,6 +83,7 @@ namespace Inventory.Shared
 
                 CancelLine();
                 await ChangeState.InvokeAsync(true);
+                await FocusProductAsync();
             }
             catch (Exception ex)
             {
@@ -127,13 +137,28 @@ namespace Inventory.Shared
             line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.Discount);
         }
 
-        public void EditLineClicked(LineEditorModel model)
+        public async Task EditLineClicked(LineEditorModel model)
         {
             CancelLine();
             line = model;
             serialnumber = model.SerialNumber;
-            // As before, an existing line keeps its variant (no drop-down): only the product's ID is known here.
+            // Batch 15: show the line's product name in the search box and its variants in the drop-down
+            // (by Variant ID, current one chosen). Used to show an empty box and the variant's internal code.
             product = new ProductModel { Id = model.ProductEntityId };
+            selectedProduct = new ProductModel { Id = model.ProductEntityId, ProductId = model.ProductId, Name = model.ProductName };
+            try
+            {
+                var loaded = await ProductRepository.GetProductWithVariantsById(model.ProductEntityId);
+                if (loaded != null && loaded.Id != Guid.Empty)
+                {
+                    product = loaded.ToModel();
+                }
+            }
+            catch (Exception ex)
+            {
+                // The line can still be edited; only the variant drop-down is missing.
+                Logger.LogError(ex, "Loading the product of a {Kind} line failed", Lines.Kind);
+            }
         }
 
         private readonly ColumnSorter<LineEditorModel> sorter = new(
@@ -164,6 +189,13 @@ namespace Inventory.Shared
                 product = (await ProductRepository.GetProductWithVariantsById(_product.Id)).ToModel();
                 line.ProductId = _product.ProductId;
                 line.ProductName = _product.Name;
+                // A variant of the previously chosen product does not belong to this one: make the user pick again
+                // (otherwise the save is refused by the "variant must belong to the product" rule).
+                if (line.VariantEntityId is Guid v && !product.Variants.Any(x => x.Id == v))
+                {
+                    line.VariantEntityId = null;
+                    line.ProductVariantId = "";
+                }
             }
         }
     }

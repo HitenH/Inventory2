@@ -3,7 +3,8 @@
 @typeparam TItem
 
 @* The button takes only its own width; the name box gets all the rest (batch 13: names were cut off). *@
-<div class="d-flex align-items-center">
+@* "lookup-box": Enter in here picks a name and must not also press the screen's Save button (shortcuts.js). *@
+<div id="@boxId" class="d-flex align-items-center lookup-box @Class">
     <div class="me-2">
         <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenDialogAsync"
                        Icon="@Icons.Material.Filled.AdsClick">
@@ -25,7 +26,8 @@
                          Dense="true"
                          Adornment="Adornment.None"
                          Variant="MudBlazor.Variant.Outlined"
-                         Margin="Margin.Dense" />
+                         Margin="Margin.Dense"
+                         OnKeyDown="OnKeyDownAsync" />
     </div>
 </div>
 
@@ -36,12 +38,56 @@
     /// <summary>Loads the list shown in the pop-up.</summary>
     [Parameter, EditorRequired] public Func<Task<List<TItem>>> LoadForDialog { get; set; } = default!;
     [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
+    /// <summary>Extra CSS class on the outer box (used to put the cursor in this box, see FocusOnOpen).</summary>
+    [Parameter] public string? Class { get; set; }
+    /// <summary>
+    /// Enter was pressed in the box and a name is chosen (just picked from the list with Enter, or already there):
+    /// the screen moves on, e.g. a new purchase is saved and the cursor goes to the product box.
+    /// </summary>
+    [Parameter] public EventCallback<TItem> EnterPressed { get; set; }
+
+    // The page's handling of the latest pick (it may still be loading the record) - Enter waits for it.
+    private Task pendingPick = Task.CompletedTask;
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || !EnterPressed.HasDelegate)
+        {
+            return;
+        }
+        // The search box picks the highlighted name on the same Enter; give it a moment, then wait for the page.
+        await Task.Delay(150);
+        await pendingPick;
+        if (selected is not null)
+        {
+            await EnterPressed.InvokeAsync(selected);
+        }
+    }
+    /// <summary>
+    /// The item the page has chosen (e.g. the saved supplier of a reopened voucher). Shown in the box whenever
+    /// the page hands over a different item; an item without a name (the pages' "nothing chosen" new()) empties the box.
+    /// Before batch 15 this was never passed on, so reopened vouchers showed an empty box.
+    /// </summary>
+    [Parameter] public TItem? Selected { get; set; }
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ILogger<LookupAutocomplete<TItem>> Logger { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    private readonly string boxId = "lookup-" + Guid.NewGuid().ToString("N");
     private TItem? selected;
+    private TItem? lastSelectedFromPage;
     private List<TItem> items = new();
+
+    protected override void OnParametersSet()
+    {
+        // Only react when the page hands over a different item, so a normal re-render never undoes what the user picked.
+        if (!ReferenceEquals(Selected, lastSelectedFromPage))
+        {
+            lastSelectedFromPage = Selected;
+            selected = Lookups.ShownSelection(Selected, Settings);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,7 +119,9 @@
             MaxWidth = MaxWidth.Large,
             CloseOnEscapeKey = true,
             CloseButton = true,
-            Position = DialogPosition.Center
+            Position = DialogPosition.Center,
+            // The pop-up puts the cursor in its own search bar; stop MudBlazor taking it away (to the window itself).
+            DefaultFocus = DefaultFocus.None
         };
         var parameters = new DialogParameters<LookupDialog<TItem>>
         {
@@ -86,13 +134,23 @@
         if (result is { Canceled: false, Data: TItem selected })
         {
             this.selected = selected;
-            await SelectedItemChanged.InvokeAsync(selected);
+            pendingPick = SelectedItemChanged.InvokeAsync(selected);
+            await pendingPick;
+            // A pick in the pop-up moves on exactly like Enter on a picked name (next box / save a new voucher).
+            if (EnterPressed.HasDelegate)
+            {
+                await EnterPressed.InvokeAsync(selected);
+                return;
+            }
         }
+        // Cancelled, or nothing to move on to: back to this box so the keyboard can carry on from here.
+        await JS.FocusBoxAsync("#" + boxId);
     }
 
     private async Task OnAutoCompleteChanged(TItem? item)
     {
         selected = item;
-        await SelectedItemChanged.InvokeAsync(item!);
+        pendingPick = SelectedItemChanged.InvokeAsync(item!);
+        await pendingPick;
     }
 }

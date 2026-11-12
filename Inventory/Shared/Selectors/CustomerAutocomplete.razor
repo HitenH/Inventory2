@@ -2,11 +2,15 @@
 @using Inventory.Domain.Repository.Abstract
 @typeparam T
 
-<LookupAutocomplete TItem="CustomerModel" Settings="Lookups.Customer"
+<LookupAutocomplete Class="@Class" EnterPressed="EnterPressed" TItem="CustomerModel" Settings="Lookups.Customer"
                     LoadForSearch="LoadForSearch" LoadForDialog="LoadForDialog"
-                    SelectedItemChanged="SelectedCustomerChanged" />
+                    Selected="SelectedCustomer" SelectedItemChanged="SelectedCustomerChanged" />
 
 @code {
+    /// <summary>Extra CSS class, e.g. to put the cursor in this box when the screen opens.</summary>
+    [Parameter] public string? Class { get; set; }
+    /// <summary>Enter pressed with a name chosen: the screen moves on (see LookupAutocomplete).</summary>
+    [Parameter] public EventCallback<CustomerModel> EnterPressed { get; set; }
     [Parameter] public EventCallback<CustomerModel> SelectedCustomerChanged { get; set; }
     [Parameter] public CustomerModel SelectedCustomer { get; set; }
     [Inject] private ICustomerRepository CustomerRepository { get; set; } = default!;

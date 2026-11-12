@@ -2,6 +2,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -81,7 +82,8 @@ public partial class Sale
             }
             else
                 IsDisabled = true;
-            await FocusInput();
+            // Cursor (owner's request): Customer on a new sale; the line's Product ID search box on an existing one.
+            await JSRuntime.FocusBoxAsync(SaleId == null ? ".focus-customer" : ".focus-line-product");
             StateHasChanged();
         }
     }
@@ -195,7 +197,7 @@ public partial class Sale
 
         try
         {
-            await AddVariant();
+            await AddVariant(fromScan: true);
         }
         catch (Exception ex)
         {
@@ -204,7 +206,9 @@ public partial class Sale
         }
     }
 
-    public async Task AddVariant()
+    /// <param name="fromScan">True for the barcode scan boxes (cursor returns there for the next scan);
+    /// false for the line form below them (cursor returns to its Product ID search box).</param>
+    public async Task AddVariant(bool fromScan = false)
     {
         if (salesVariantModel.ProductId != null && (salesVariantModel.VariantId != null || salesVariantModel.VariantEntityId != null))
         {
@@ -246,10 +250,22 @@ public partial class Sale
             }
         }
         CancelSalesVariant();
-        await productInput.FocusAsync();
-        await FocusInput();
         StateHasChanged();
+        if (fromScan)
+        {
+            await FocusInput();
+        }
+        else
+        {
+            await JSRuntime.FocusBoxAsync(".focus-line-product");
+        }
     }
+
+    // Enter on a chosen customer, or picking one: on to the line's Product ID search box (owner's request).
+    private Task OnCustomerEnter(CustomerModel _) => JSRuntime.FocusBoxAsync(".focus-line-product");
+
+    // Enter on a chosen product in the line form: on to its Variant ID drop-down.
+    private Task OnProductEnter(ProductModel _) => JSRuntime.FocusBoxAsync(".sale-line-variant");
 
     public async Task EditVariant()
     {
@@ -290,10 +306,12 @@ public partial class Sale
         }
         CancelSalesVariant();
         StateHasChanged();
+        await JSRuntime.FocusBoxAsync(".focus-line-product");
     }
     public void CancelSalesVariant()
     {
         salesVariantModel = new();
+        selectedProduct = new();   // empties the product search box (batch 15)
     }
 
     public void DeleteVariant(SalesVariantModel model)
@@ -307,11 +325,29 @@ public partial class Sale
         salesModelVariants = new();
     }
 
-    public void UpdateSalesVariant(SalesVariantModel model)
+    public async Task UpdateSalesVariant(SalesVariantModel model)
     {
         CancelSalesVariant();
         salesVariantModel = model;
-        pickedProduct = model.Product;
+        pickedProduct = model.Product ?? new();
+        // Batch 15: show the line's product name in the search box and its variants (by Variant ID) in the drop-down.
+        selectedProduct = new ProductModel { Id = model.ProductEntityId, ProductId = model.ProductId, Name = model.ProductName };
+        if (pickedProduct.Variants is not { Count: > 0 } && model.ProductEntityId != Guid.Empty)
+        {
+            try
+            {
+                var loaded = await ProductRepository.GetProductWithVariantsById(model.ProductEntityId);
+                if (loaded != null && loaded.Id != Guid.Empty)
+                {
+                    pickedProduct = loaded.ToModel();
+                    model.Product = pickedProduct;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Loading the product of a sale line failed");
+            }
+        }
     }
 
     private async Task OnCustomerSelected(CustomerModel? _customer)
@@ -324,6 +360,7 @@ public partial class Sale
 
             salesModel.CustomerId = _customer.CustomerId;
             salesModel.CustomerName = _customer.Name;
+            await JSRuntime.FocusBoxAsync(".focus-line-product");
         }
         else
         {

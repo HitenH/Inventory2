@@ -4,6 +4,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 
 using Inventory.Models;
+using Inventory.Service;
 
 using Inventory.MudBlazorComponents;
 
@@ -38,6 +39,22 @@ public partial class Purchase
     [Inject] private IDialogService DialogService { get; set; }
 
     [Inject] private ISnackbar Snackbar { get; set; }
+
+    [Inject] private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
+
+    // Enter on a chosen supplier (owner's request): a new purchase is saved at once, which moves the cursor to the
+    // line's product box (FocusOnOpen); on a saved purchase the cursor just moves there.
+    private async Task OnSupplierEnter(SupplierModel _)
+    {
+        if (PurchaseId == null)
+        {
+            await AddPurchase();
+        }
+        else
+        {
+            await JS.FocusBoxAsync(".focus-line-product");
+        }
+    }
 
 
 

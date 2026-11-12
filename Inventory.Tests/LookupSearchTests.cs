@@ -62,4 +62,28 @@ public class LookupSearchTests
         Assert.Equal("X1", Assert.Single(Lookups.SearchBoxMatches(products, Lookups.Product, "TROU")).ProductId);
         Assert.Empty(Lookups.SearchBoxMatches(products, Lookups.Product, "zzz"));
     }
+
+    [Fact]
+    public void Popup_arrow_keys_move_the_highlight_and_stop_at_the_ends()
+    {
+        var rows = new List<string> { "A", "B", "C" };
+        Assert.Equal("A", Lookups.MoveHighlight(rows, null, 1));     // nothing highlighted yet: first row
+        Assert.Equal("B", Lookups.MoveHighlight(rows, "A", 1));
+        Assert.Equal("C", Lookups.MoveHighlight(rows, "C", 1));      // stays on the last row
+        Assert.Equal("A", Lookups.MoveHighlight(rows, "A", -1));     // stays on the first row
+        Assert.Equal("A", Lookups.MoveHighlight(rows, "Z", 1));      // row no longer in the list (new search): first row
+        Assert.Null(Lookups.MoveHighlight(new List<string>(), null, 1));
+    }
+
+    [Fact]
+    public void Search_box_shows_the_saved_choice_of_a_reopened_voucher()
+    {
+        // Batch 15 bug fix: reopening a voucher showed an empty supplier/customer/product box.
+        var supplier = new SupplierModel { SupplierId = "S1", Name = "Acme Traders" };
+        Assert.Same(supplier, Lookups.ShownSelection(supplier, Lookups.Supplier));
+
+        // Pages use new() or null for "nothing chosen": the box stays empty.
+        Assert.Null(Lookups.ShownSelection(new SupplierModel(), Lookups.Supplier));
+        Assert.Null(Lookups.ShownSelection<CustomerModel>(null, Lookups.Customer));
+    }
 }

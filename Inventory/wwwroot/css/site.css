@@ -121,6 +121,135 @@ a, .btn-link {
     z-index: 100;
     background-color: #fff;
 }
+/* Dark mode for the Bootstrap parts of the screens.
+   MudBlazor switches its own parts, but this app's Bootstrap (5.1) has no dark mode: its tables, text boxes
+   and panels kept black text, which disappeared on the dark page. Everything below applies only while
+   MainLayout puts "app-dark" around the app, and borrows MudBlazor's dark colours so both libraries match.
+   Light mode is untouched. */
+.app-dark {
+    color-scheme: dark; /* dark scrollbars, date/number pop-ups and drop-down lists drawn by the browser */
+}
+
+/* Tables (lines on Sale, Purchase, Sales Order ...) */
+.app-dark .table {
+    color: var(--mud-palette-text-primary);
+    border-color: var(--mud-palette-table-lines);
+    --bs-table-bg: transparent;
+    --bs-table-accent-bg: transparent;
+    --bs-table-striped-color: var(--mud-palette-text-primary);
+    --bs-table-striped-bg: var(--mud-palette-table-striped);
+    --bs-table-active-color: var(--mud-palette-text-primary);
+    --bs-table-active-bg: var(--mud-palette-table-hover);
+    --bs-table-hover-color: var(--mud-palette-text-primary);
+    --bs-table-hover-bg: var(--mud-palette-table-hover);
+}
+
+    .app-dark .table > :not(:first-child) {
+        border-top-color: var(--mud-palette-table-lines);
+    }
+
+/* Text boxes and drop-downs */
+.app-dark .form-control,
+.app-dark .form-select,
+.app-dark .form-control:focus,
+.app-dark .form-select:focus {
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+    border-color: var(--mud-palette-lines-inputs);
+}
+
+    .app-dark .form-control::placeholder {
+        color: var(--mud-palette-text-disabled);
+    }
+
+    .app-dark .form-control:disabled,
+    .app-dark .form-control[readonly],
+    .app-dark .form-select:disabled {
+        color: var(--mud-palette-text-secondary);
+        background-color: var(--mud-palette-background-gray);
+    }
+
+.app-dark option {
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+}
+
+/* Panels */
+.app-dark .card,
+.app-dark .fixed-header {
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+}
+
+.app-dark .card-header {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: var(--mud-palette-lines-default);
+}
+
+.app-dark .text-muted {
+    color: var(--mud-palette-text-secondary) !important;
+}
+
+/* Plain links: the light-mode blue is too dark on a dark page (MudBlazor's own links keep their colour).
+   Buttons made from links (Close, Home ...) keep their normal button colours. */
+.app-dark :where(a:not(.btn), .btn-link) {
+    color: #5aa9ff;
+}
+
+/* The add / cancel / edit / delete / select icons are black drawings: draw them white,
+   and keep their buttons see-through so the icon stays visible (also on hover). */
+.app-dark img[src^="img/"] {
+    filter: invert(1);
+}
+
+.app-dark .btn-light {
+    color: var(--mud-palette-text-primary);
+    background-color: transparent;
+    border-color: transparent;
+}
+
+    .app-dark .btn-light:hover,
+    .app-dark .btn-light:focus {
+        background-color: var(--mud-palette-action-default-hover);
+    }
+
+/* Drop-down lists (customer/supplier/product search boxes, period and status drop-downs):
+   MudBlazor marks the highlighted item with dark-mode blue text on a faint tint, hard to read on dark grey.
+   Plain light text for every item, and a solid highlight with white text for the chosen one. */
+.app-dark .mud-popover .mud-list-item {
+    color: var(--mud-palette-text-primary) !important;
+}
+
+    .app-dark .mud-popover .mud-list-item.mud-selected-item {
+        color: var(--mud-palette-primary-text) !important;
+        background-color: var(--mud-palette-primary-darken) !important;
+    }
+
+/* Search pop-ups: a click on a row picks it; the row Up/Down moved to is clearly marked (light and dark mode). */
+.lookup-dialog .lookup-row {
+    cursor: pointer;
+}
+
+    .lookup-dialog .lookup-row.lookup-row-active > td {
+        background-color: var(--mud-palette-primary) !important;
+        color: var(--mud-palette-primary-text) !important;
+    }
+
+/* Keyboard shortcut hints in the menu ("Customers      Alt+C"). */
+.nav-with-key {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+}
+
+.shortcut-hint {
+    margin-left: 12px;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    white-space: nowrap;
+}
+
 /* Batch 13: MudBlazor number/date boxes keep the old centred text. */
 .box-center input.mud-input-slot {
     text-align: center;

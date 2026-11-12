@@ -19,7 +19,7 @@
         
         <div class="col-3 text-center">
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
-            <CustomerAutocomplete T="CustomerModel"
+            <CustomerAutocomplete T="CustomerModel" Class="focus-customer" EnterPressed="OnCustomerEnter"
                                   SelectedCustomer="customerModel"
                                   SelectedCustomerChanged="OnCustomerSelected" />
 
@@ -65,7 +65,7 @@
     </div>
 
         <div class="d-flex justify-content-center">
-        <EditForm Model="@salesVariantModel" class="card-header mt-5 col-12" Context="SalesVariantForm"
+        <EditForm Model="@salesVariantModel" class="card-header mt-5 col-12 enter-moves-on" Context="SalesVariantForm"
                   OnValidSubmit="async ()=>
                 {
                     if(!salesVariantModel.IsCreated){
@@ -77,7 +77,7 @@
             <DataAnnotationsValidator />
             <div class="d-flex flex-row justify-content-between">
                 <div class="d-flex justify-content-around align-items-center col-1">
-                    <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
+                    <button type="submit" id="button-submit" class="btn btn-light btn-order-add" data-enter-submit>
                         <img src="img/add.png" alt="add" class="order-add-img" />
                     </button>
                     <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelSalesVariant">
@@ -86,7 +86,7 @@
                 </div>
                 <div class="text-center col-4">
                     <label for="productid" class="form-label">Product ID</label>
-                    <ProductAutocomplete T="ProductModel" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
+                    <ProductAutocomplete T="ProductModel" Class="focus-line-product" EnterPressed="OnProductEnter" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected"/>
                         <InputText @bind-Value="salesVariantModel.ProductId" id="productid" class="form-control text-center" required hidden />
                         <InputText @bind-Value="salesVariantModel.ProductName" id="productname" class="form-control text-center" required hidden />
                 </div>
@@ -94,7 +94,7 @@
                     <label for="variantid" class="form-label">Variant ID</label>
                     @if (pickedProduct.Variants?.Count > 0)
                     {
-                        <InputSelect @bind-Value="salesVariantModel.VariantEntityId" class="form-control text-center" id="variantid">
+                        <InputSelect @bind-Value="salesVariantModel.VariantEntityId" class="form-control text-center sale-line-variant" id="variantid">
                             <option value="" class="text-center">-</option>
                             @if (pickedProduct.Variants?.Count > 0)
                             {
@@ -114,7 +114,7 @@
                     }
                     else
                     {
-                        <input class="form-control text-center" value="@salesVariantModel.VariantEntityId" disabled />
+                        <input class="form-control text-center" value="@salesVariantModel.VariantId" disabled />
                     }
                 </div>
                 <div class="col-2 text-center">
@@ -130,11 +130,11 @@
         <div class="my-1">
             @if (SaleId == null)
             {
-                <button type="submit" id="button-submit" class="btn btn-success">Summarize</button>
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Summarize</button>
             }
             else
             {
-                <button type="submit" id="button-submit" class="btn btn-warning">Summarize</button>
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Summarize</button>
             }
             <NavLink type="button" @onclick="OpenScanMassDialogAsync" id="button-close" class="btn btn-primary ms-2">Scan Mass Products</NavLink>
             <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>

@@ -1,6 +1,9 @@
 ﻿@page "/product/{productId?}";
 
 
+@* New product: the cursor starts in Name (owner's request). *@
+<FocusOnOpen Selector=".product-name" When="ProductId == null" />
+
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
     <MudGrid Spacing="2">
         <MudItem xs="12" md="@(ProductId != null && productEntity != null ? 3 : 12)"
@@ -11,7 +14,7 @@
                     <DataAnnotationsValidator />
 
                     <MudStack Spacing="2">
-                        <MudTextField Label="Name" @bind-Value="productModel.Name" Variant="MudBlazor.Variant.Filled" />
+                        <MudTextField Label="Name" @bind-Value="productModel.Name" Variant="MudBlazor.Variant.Filled" Class="product-name" />
                         <MudTextField Label="Product ID" @bind-Value="productModel.ProductId" Variant="MudBlazor.Variant.Filled" />
                         <MudTextField Label="Rate" @bind-Value="productModel.Rate" Variant="MudBlazor.Variant.Filled" />
                         <MudTextField Label="Description" @bind-Value="productModel.Description" Variant="MudBlazor.Variant.Filled" />
@@ -28,7 +31,7 @@
                     </MudStack>
                     <ValidationSummary />
 
-                    <MudButton Class="ma-1" Color="Color.Primary" ButtonType="MudBlazor.ButtonType.Submit">
+                    <MudButton Class="ma-1" Color="Color.Primary" ButtonType="MudBlazor.ButtonType.Submit" data-shortcut="save">
                         @(ProductId == null ? "Save" : "Update")
                     </MudButton>
                     <MudButton Class="ma-1" Href="/Products">Close</MudButton>

@@ -1,13 +1,19 @@
-@* The pop-up list behind the customer / supplier / product pickers (batch 12; one copy instead of three). *@
+@* The pop-up list behind the customer / supplier / product pickers (batch 12; one copy instead of three).
+   Keyboard-friendly (owner's request Nov 2026): the cursor starts in the search bar; Up/Down move the highlighted row,
+   Enter picks it; a click on a row picks it too (no Select button). *@
 @using Inventory.Shared.Selectors
 @typeparam TItem
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <MudDialog DialogActions="ActionsBar">
     <DialogContent>
-        <MudTable T="TItem" Items="itemsAfterSearch" Dense="Settings.Dense" Hover="Settings.Hover" Striped="Settings.Striped" Bordered="true" Class="@Settings.TableClass">
+        <MudTable @ref="table" T="TItem" Items="itemsAfterSearch" Dense="Settings.Dense" Hover="Settings.Hover" Striped="Settings.Striped" Bordered="true"
+                  Class="@($"lookup-dialog {Settings.TableClass}")"
+                  OnRowClick="OnRowClick" RowClassFunc="RowClass">
             <ToolBarContent>
-                <Search SearchItemCallBack="SearchItem" />
+                <input class="border rounded px-2 py-1 w-75 lookup-dialog-search" type="text" placeholder="Enter search term"
+                       autocomplete="off" @oninput="SearchItem" @onkeydown="OnSearchKeyDown" />
             </ToolBarContent>
             <HeaderContent>
                 @if (Settings.SortableHeaders)
@@ -28,16 +34,10 @@
                     <MudTh>@Settings.IdHeader</MudTh>
                     <MudTh>@Settings.NameHeader</MudTh>
                 }
-                <MudTh>@Settings.ActionHeader</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="@Settings.IdHeader">@Settings.IdOf(context)</MudTd>
                 <MudTd DataLabel="@Settings.NameHeader">@Settings.NameOf(context)</MudTd>
-                <MudTd DataLabel="@Settings.ActionDataLabel">
-                    <MudButton Class="mx-2" OnClick="@(() => Select(context))">
-                        Select
-                    </MudButton>
-                </MudTd>
             </RowTemplate>
             <NoRecordsContent>
                 <MudText Typo="Settings.NotFoundTypo" Align="Align.Center">Not Found!</MudText>
@@ -52,8 +52,13 @@
     [Parameter] public Func<Task<List<TItem>>> LoadItems { get; set; } = default!;
     [Inject] private ILogger<LookupDialog<TItem>> Logger { get; set; } = default!;
 
+    private MudTable<TItem>? table;
     private List<TItem> items = new();
     private List<TItem> itemsAfterSearch = new();
+    // The row Up/Down moved to and Enter picks; the first row until the operator moves.
+    private TItem? highlighted;
+    private bool scrollToHighlighted;
+    private bool focusAfterLoad;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -65,6 +70,8 @@
                 items = loaded;
                 itemsAfterSearch = items;
             }
+            highlighted = default;
+            focusAfterLoad = true;
             StateHasChanged();
         }
         catch (Exception ex)
@@ -74,10 +81,77 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Into the search bar when the pop-up opens, and again once the list has loaded (that redraws the window).
+        if (firstRender || focusAfterLoad)
+        {
+            focusAfterLoad = false;
+            await JS.FocusBoxAsync(".lookup-dialog-search");
+        }
+        if (scrollToHighlighted)
+        {
+            scrollToHighlighted = false;
+            try
+            {
+                await JS.InvokeVoidAsync("inventoryShortcuts.scrollIntoView", ".lookup-dialog .lookup-row-active");
+            }
+            catch (JSException)
+            {
+            }
+        }
+    }
+
     private void SearchItem(ChangeEventArgs e)
     {
         var search = e.Value?.ToString();
         itemsAfterSearch = items.Where(i => Lookups.Matches(Settings.DialogFields(i), search)).ToList();
+        highlighted = default;   // back to the first row of the new list
+    }
+
+    /// <summary>The rows in the order shown on screen (after a click on a column heading the order changes).</summary>
+    private List<TItem> ShownRows() => (table?.FilteredItems ?? itemsAfterSearch).ToList();
+
+    private TItem? Current(List<TItem> rows)
+        => highlighted is not null && rows.Contains(highlighted) ? highlighted : rows.FirstOrDefault();
+
+    private void OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        var rows = ShownRows();
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+            case "ArrowUp":
+                highlighted = Lookups.MoveHighlight(rows, Current(rows), e.Key == "ArrowDown" ? 1 : -1);
+                scrollToHighlighted = true;
+                break;
+            case "Enter":
+                var pick = Current(rows);
+                if (pick is not null)
+                {
+                    Select(pick);
+                }
+                break;
+        }
+    }
+
+    private string RowClass(TItem item, int index)
+    {
+        var rows = ShownRows();
+        return EqualityComparer<TItem>.Default.Equals(item, Current(rows)) ? "lookup-row lookup-row-active" : "lookup-row";
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<TItem> e)
+    {
+        if (e.Item is not null)
+        {
+            Select(e.Item);
+        }
     }
 
     private void Select(TItem item) => MudDialog.Close(DialogResult.Ok(item));
