@@ -3,6 +3,7 @@ using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service;
 using Inventory.MudBlazorComponents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -139,18 +140,7 @@ public partial class SalesSummary
         {
             try
             {
-                var parameters = new DialogParameters<ConfirmationDialog>
-                {
-                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                    { x => x.ButtonText, "Delete" },
-                    { x => x.Color, Color.Error }
-                };
-
-                var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                var result = await dialog.Result;
-                if (!result.Canceled)
+                if (await DialogService.ConfirmDeleteAsync())
                 {
                     await SaleRepository.Delete(salesEntity);
                     Snackbar.Add("Deleted sale successfully", Severity.Success);
@@ -192,10 +182,8 @@ public partial class SalesSummary
 
     public void AmountChanged(int index)
     {
-        if (salesSummaryEntityList[index].ProductRate == 0 || salesSummaryEntityList[index].Quantity == 0)
-            salesSummaryEntityList[index].Amount = 0;
-        else
-            salesSummaryEntityList[index].Amount = Math.Round(salesSummaryEntityList[index].ProductRate * salesSummaryEntityList[index].Quantity, 2);
+        var line = salesSummaryEntityList[index];
+        line.Amount = LineAmounts.ComputeAmount(line.ProductRate, line.Quantity);
         AmountAfterDiscountChanged(index);
     }
 
@@ -224,15 +212,8 @@ public partial class SalesSummary
 
     public void AmountAfterDiscountChanged(int index)
     {
-        if (salesSummaryEntityList[index].Amount != 0 && salesSummaryEntityList[index].Discount != 0)
-        {
-            var amount = salesSummaryEntityList[index].Amount - (salesSummaryEntityList[index].Amount * ((decimal)salesSummaryEntityList[index].Discount / 100));
-            salesSummaryEntityList[index].AmountAfterDiscount = Math.Round(amount, 2);
-        }
-        else
-        {
-            salesSummaryEntityList[index].AmountAfterDiscount = Math.Round(salesSummaryEntityList[index].Amount, 2);
-        }
+        var line = salesSummaryEntityList[index];
+        line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.Discount) ?? 0;
     }
 
     private void DiscountForTotalAmountChanged(decimal value)

@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -24,7 +23,6 @@ public partial class Sale
     [Inject] private IJSRuntime JSRuntime { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
 
     private bool IsDisabled { get; set; }
     private CustomerEntity customer = new();
@@ -73,7 +71,7 @@ public partial class Sale
                         IsCreated = true
                     }).ToList() ?? new();
 
-                    customerModel = Mapper.Map<CustomerModel>(customer);
+                    customerModel = customer.ToModel();
                     IsDisabled = false;
                 }
                 else

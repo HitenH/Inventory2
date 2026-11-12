@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -20,7 +19,6 @@ namespace Inventory.Pages
         [Inject] private ICategoryRepository CategoryRepository { get; set; }
         [Inject] private ILogger<Product> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private IDialogService DialogService { get; set; }
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
@@ -48,11 +46,11 @@ namespace Inventory.Pages
                         navManager.NavigateTo("/products");
                     if (productEntity.Category != null)
                         categoryId = productEntity.Category.Id;
-                    productModel = Mapper.Map<ProductModel>(productEntity);
+                    productModel = productEntity.ToModel();
                 }
                 var categoriesDb = await CategoryRepository.GetAll();
                 if (categoriesDb.Count != 0)
-                    categories = categoriesDb.Select(c => Mapper.Map<CategoryModel>(c)).ToList();
+                    categories = categoriesDb.Select(c => c.ToModel()).ToList();
             }
             catch (Exception ex)
             {
@@ -97,7 +95,7 @@ namespace Inventory.Pages
                 {
                     try
                     {
-                        productEntity = Mapper.Map<ProductEntity>(productModel);
+                        productEntity = productModel.ToEntity();
                         productEntity.Category = await GetCategory(categoryId);
                         var id = await ProductRepository.Create(productEntity);
                         ProductId = id.ToString();
@@ -144,18 +142,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var parameters = new DialogParameters<ConfirmationDialog>
-                {
-                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                    { x => x.ButtonText, "Delete" },
-                    { x => x.Color, Color.Error }
-                };
-
-                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                    var result = await dialog.Result;
-                    if (!result.Canceled)
+                    if (await DialogService.ConfirmDeleteAsync())
                     {
                         await ProductRepository.Delete(productEntity);
                         navManager.NavigateTo("/products");

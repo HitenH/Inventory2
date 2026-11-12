@@ -1,121 +1,16 @@
-@using System.Threading
-@using System.Threading.Tasks
-@using AutoMapper
-@using Inventory.Domain.Entities
+@* Product picker: the shared search box + pop-up (batch 12) with the product settings. *@
 @using Inventory.Domain.Repository.Abstract
-@using MudBlazor
-
 @typeparam T
 
-<div class="row">
-    <div class="col-3">
-        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenProductDialogAsync"
-                       Icon="@Icons.Material.Filled.AdsClick">
-        </MudIconButton>
-    </div>
-    <div class="col-9">
-        <AutoComplete @bind-Value="name"
-                      TItem="ProductModel"
-                      @ref="autoComplete"
-                      DataProvider="CustomersDataProvider"
-                      PropertyName="Name"
-                      Placeholder="Search a product..."
-                      StringComparison="StringComparison.Ordinal"
-                      OnChanged="(ProductModel customer) => OnAutoCompleteChanged(customer)" />
-    </div>
-</div>
+<LookupAutocomplete TItem="ProductModel" Settings="Lookups.Product"
+                    LoadForSearch="LoadProducts" LoadForDialog="LoadProducts"
+                    SelectedItemChanged="SelectedProductChanged" />
 
 @code {
     [Parameter] public EventCallback<ProductModel> SelectedProductChanged { get; set; }
     [Parameter] public ProductModel SelectedProduct { get; set; }
-    [Inject] private IDialogService DialogService { get; set; }
-    [Inject] private IProductRepository ProductRepository { get; set; }
-    [Inject] private ILogger<ProductAutocomplete<T>> Logger { get; set; } = default!;
-    [Inject] private IMapper Mapper { get; set; }
-    [Inject] private ISnackbar Snackbar { get; set; }
-    [Inject] private IJSRuntime JSRuntime { get; set; }
+    [Inject] private IProductRepository ProductRepository { get; set; } = default!;
 
-    private AutoComplete<ProductModel> autoComplete;
-    private string name;
-    private ProductEntity product = new();
-    private List<ProductModel> products = new();
-    private List<ProductModel> productsAfterSearch = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await GetProductsAsync();
-    }
-
-    public async Task OpenProductDialogAsync()
-    {
-        var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-        var dialog = await DialogService.ShowAsync<ProductsDialog>("Products List", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled && result.Data is ProductModel selected)
-        {
-            SelectedProduct = selected;
-            name = selected.Name ?? "";
-            await SelectedProductChanged.InvokeAsync(SelectedProduct);
-        }
-    }
-
-    private static bool MatchesSearch(string? field, string term) =>
-        !string.IsNullOrEmpty(field) &&
-        field.Contains(term, StringComparison.OrdinalIgnoreCase);
-
-    private Task<IEnumerable<ProductModel>> SearchProductEntities(string? value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Task.FromResult<IEnumerable<ProductModel>>(productsAfterSearch);
-
-        var term = value.Trim();
-        var results = products.Where(n =>
-            n is not null &&
-            (MatchesSearch(n.ProductId, term) || MatchesSearch(n.Name, term)));
-
-        return Task.FromResult(results);
-    }
-
-    private async Task GetProductsAsync()
-    {
-        try
-        {
-            var productsDb = await ProductRepository.GetAllForLookup();
-            if (productsDb.Count != 0)
-            {
-                products = productsDb.Select(p => Mapper.Map<ProductModel>(p)).ToList();
-                productsAfterSearch = products;
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Product search: loading products failed");
-            Snackbar.Add("Something went wrong while getting products.", Severity.Error);
-        }
-    }
-
-    private async Task<AutoCompleteDataProviderResult<ProductModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<ProductModel> request)
-    {
-        var prods = await SearchProductEntities(request.Filter?.Value, request.CancellationToken);
-
-        return await Task.FromResult(new AutoCompleteDataProviderResult<ProductModel> { Data = prods });
-    }
-
-    private async Task OnAutoCompleteChanged(ProductModel product)
-    {
-        await SelectedProductChanged.InvokeAsync(product);
-    }
-    // Expose a method to set focus to the AutoComplete
-    public async Task SetFocusAsync()
-    {
-        await JSRuntime.InvokeVoidAsync("setFocus", autoComplete);
-    }
+    private async Task<List<ProductModel>> LoadProducts() =>
+        (await ProductRepository.GetAllForLookup()).Select(p => p.ToModel()).ToList();
 }

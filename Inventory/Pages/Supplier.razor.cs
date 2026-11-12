@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain;
+﻿using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -21,7 +20,6 @@ namespace Inventory.Pages
         [Inject] private ISupplierRepository SupplierRepository { get; set; }
         [Inject] private ILogger<Supplier> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
         [Inject] IDialogService DialogService { get; set; }
@@ -55,7 +53,7 @@ namespace Inventory.Pages
                     if (supplierEntity == null)
                         navManager.NavigateTo("/suppliers");
 
-                    supplierModel = Mapper.Map<SupplierModel>(supplierEntity);
+                    supplierModel = supplierEntity.ToModel();
 
                 }
                 catch (Exception ex)
@@ -107,7 +105,7 @@ namespace Inventory.Pages
                 {
                     try
                     {
-                        supplierEntity = Mapper.Map<SupplierEntity>(supplierModel);
+                        supplierEntity = supplierModel.ToEntity();
                         var numbers = MobileService.GetMobiles(supplierEntity.Mobiles);
                         supplierEntity.Mobiles = new();
 
@@ -168,18 +166,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var parameters = new DialogParameters<ConfirmationDialog>
-                {
-                    { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                    { x => x.ButtonText, "Delete" },
-                    { x => x.Color, Color.Error }
-                };
-
-                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                    var result = await dialog.Result;
-                    if (!result.Canceled)
+                    if (await DialogService.ConfirmDeleteAsync())
                     {
                         await SupplierRepository.Delete(supplierEntity);
                         navManager.NavigateTo("/suppliers");

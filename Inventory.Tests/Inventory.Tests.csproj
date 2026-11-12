@@ -19,11 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Same AutoMapper advisory as the app (see Inventory.csproj); delete when AutoMapper is removed in batch 12. -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

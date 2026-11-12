@@ -1,4 +1,3 @@
-using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -18,7 +17,6 @@ public partial class PurchaseOrder
     [Inject] ISupplierRepository SupplierRepository { get; set; }
     [Inject] IProductRepository ProductRepository { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
-    [Inject] IMapper Mapper { get; set; }
     //Get enums list to populate order status
     private List<OrderStatus> orderStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
 
@@ -168,18 +166,7 @@ public partial class PurchaseOrder
         {
             try
             {
-                var parameters = new DialogParameters<ConfirmationDialog>
-            {
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                { x => x.ButtonText, "Delete" },
-                { x => x.Color, Color.Error }
-            };
-
-                var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                var result = await dialog.Result;
-                if (!result.Canceled)
+                if (await DialogService.ConfirmDeleteAsync())
                 {
                     //delete the selected orders
                     ordersDb = ordersDb.Where(o => selectedOrders.Any(p => p.Id == o.Id)).ToList();
@@ -201,18 +188,7 @@ public partial class PurchaseOrder
         {
             try
             {
-                var parameters = new DialogParameters<ConfirmationDialog>
-            {
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                { x => x.ButtonText, "Delete" },
-                { x => x.Color, Color.Error }
-            };
-
-                var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                var result = await dialog.Result;
-                if (!result.Canceled)
+                if (await DialogService.ConfirmDeleteAsync())
                 {
                     ordersDb = ordersDb.Where(o => ordersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
                     await PurchaseOrderRepository.DeleteRange(ordersDb);
@@ -303,7 +279,7 @@ public partial class PurchaseOrder
         if (product != null)
         {
             var productWithVariants = await ProductRepository.GetProductWithVariantsById(product.Id);
-            selectedProduct = Mapper.Map<ProductModel>(productWithVariants);
+            selectedProduct = productWithVariants.ToModel();
             purchaseOrderModel.ProductId = selectedProduct.ProductId;
             purchaseOrderModel.ProductName = selectedProduct.Name;
             purchaseOrderModel.ProductRate ??= selectedProduct.Rate;

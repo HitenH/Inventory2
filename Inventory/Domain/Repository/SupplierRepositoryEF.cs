@@ -1,4 +1,3 @@
-using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;

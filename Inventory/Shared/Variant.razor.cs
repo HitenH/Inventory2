@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using BlazorBootstrap;
+﻿using BlazorBootstrap;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
@@ -19,7 +18,6 @@ public partial class Variant
     [Inject] private IVariantRepository VariantRepository { get; set; }
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IImageRepository ImageRepository { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
     [Inject] private IConfiguration config { get; set; }
 
     private VariantModel variantModel = new();
@@ -88,7 +86,7 @@ public partial class Variant
                     else
                         variantModel.Image = null;
 
-                    newVariant = Mapper.Map<VariantEntity>(variantModel);
+                    newVariant = variantModel.ToEntity();
                     Product.Variants.Add(newVariant);
                     await ProductRepository.Update(Product);
                     CancelVariant();
@@ -247,7 +245,7 @@ public partial class Variant
     public void GetVariants()
     {
         if (Product != null)
-            variants = Product.Variants.Select(v => Mapper.Map<VariantModel>(v)).ToList();
+            variants = Product.Variants.Select(v => v.ToModel()).ToList();
     }
 
     public string GetImage(Image image)

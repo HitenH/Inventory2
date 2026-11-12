@@ -79,7 +79,6 @@ builder.Services.AddScoped<ISaleRepository, SaleRepositoryEF>();
 builder.Services.AddTransient<IMobileService, MobileService>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService<BackupScheduler>();
-builder.Services.AddAutoMapper(typeof(AppMappingProfile));
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddMudServices();
 

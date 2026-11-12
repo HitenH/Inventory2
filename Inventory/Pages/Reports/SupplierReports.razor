@@ -1,4 +1,3 @@
-@using AutoMapper
 @using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 
@@ -12,7 +11,7 @@
         <SelectColumn T="SuppliersDisplayModel" />
         <PropertyColumn Property="x => x.SupplierId" Title="Supplier ID" SortBy="@_sortBy" />
         <PropertyColumn Property="x => x.Name" Title="Name" />
-        <PropertyColumn Property="x => x.Mobiles.FirstOrDefault().Phone.ToString()" Title="Mobiles" />
+        <PropertyColumn Property="x => x.Mobiles != null && x.Mobiles.Count > 0 ? x.Mobiles[0].Phone : string.Empty" Title="Mobiles" />
         <PropertyColumn Property="x => x.TotalAmount" Title="Total Amount" />
     </Columns>
     <PagerContent>
@@ -23,7 +22,6 @@
 @code {
     [Inject] private ISupplierRepository SupplierRepository { get; set; }
     [Inject] private ILogger<Suppliers> Logger { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
 
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();

@@ -14,6 +14,5 @@ namespace Inventory.Models
         public string CustomerName { get; set; }
         [Required]
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-        public List<SalesVariantEntity>? SalesVariants { get; set; } = new();
     }
 }

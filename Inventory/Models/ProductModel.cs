@@ -13,6 +13,5 @@ namespace Inventory.Models
         public Guid? CategoryEntityId { get; set; }
         public CategoryEntity? Category { get; set; } = new();
         public List<VariantEntity>? Variants { get; set; } = new();
-        public List<PurchaseVariant>? PurchaseVariants { get; set; } = new();
     }
 }

@@ -1,0 +1,94 @@
+@* The pop-up list behind the customer / supplier / product pickers (batch 12; one copy instead of three). *@
+@using Inventory.Shared.Selectors
+@typeparam TItem
+@inject ISnackbar Snackbar
+
+<MudDialog DialogActions="ActionsBar">
+    <DialogContent>
+        <MudTable T="TItem" Items="itemsAfterSearch" Dense="Settings.Dense" Hover="Settings.Hover" Striped="Settings.Striped" Bordered="true" Class="@Settings.TableClass">
+            <ToolBarContent>
+                <Search SearchItemCallBack="SearchItem" />
+            </ToolBarContent>
+            <HeaderContent>
+                @if (Settings.SortableHeaders)
+                {
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<TItem, object>(x => Settings.IdOf(x)!)">
+                            @Settings.IdHeader
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<TItem, object>(x => Settings.NameOf(x)!)">
+                            @Settings.NameHeader
+                        </MudTableSortLabel>
+                    </MudTh>
+                }
+                else
+                {
+                    <MudTh>@Settings.IdHeader</MudTh>
+                    <MudTh>@Settings.NameHeader</MudTh>
+                }
+                <MudTh>@Settings.ActionHeader</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="@Settings.IdHeader">@Settings.IdOf(context)</MudTd>
+                <MudTd DataLabel="@Settings.NameHeader">@Settings.NameOf(context)</MudTd>
+                <MudTd DataLabel="@Settings.ActionDataLabel">
+                    <MudButton Class="mx-2" OnClick="@(() => Select(context))">
+                        Select
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Settings.NotFoundTypo" Align="Align.Center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public LookupSettings<TItem> Settings { get; set; } = default!;
+    [Parameter] public Func<Task<List<TItem>>> LoadItems { get; set; } = default!;
+    [Inject] private ILogger<LookupDialog<TItem>> Logger { get; set; } = default!;
+
+    private List<TItem> items = new();
+    private List<TItem> itemsAfterSearch = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            var loaded = await LoadItems();
+            if (loaded.Count != 0)
+            {
+                items = loaded;
+                itemsAfterSearch = items;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "{What}", Settings.DialogLoadFailedLog);
+            Snackbar.Add(Settings.DialogLoadFailedMessage, Settings.DialogLoadFailedSeverity);
+        }
+    }
+
+    private void SearchItem(ChangeEventArgs e)
+    {
+        var search = e.Value?.ToString();
+        itemsAfterSearch = items.Where(i => Lookups.Matches(Settings.DialogFields(i), search)).ToList();
+    }
+
+    private void Select(TItem item) => MudDialog.Close(DialogResult.Ok(item));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    // Bottom bar: a Cancel button (suppliers), an empty bar (customers) or none (products), as before batch 12.
+    private RenderFragment? ActionsBar => Settings.ActionsBar switch
+    {
+        PickerActionsBar.Cancel => @<MudButton OnClick="Cancel">Cancel</MudButton>,
+        PickerActionsBar.Empty => @<text></text>,
+        _ => null
+    };
+}

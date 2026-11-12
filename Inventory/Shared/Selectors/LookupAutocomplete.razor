@@ -1,0 +1,89 @@
+@* Search box + "pick from list" button for customers, suppliers and products (batch 12; one copy instead of three). *@
+@using Inventory.MudBlazorComponents
+@typeparam TItem
+
+<div class="row">
+    <div class="col-3">
+        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenDialogAsync"
+                       Icon="@Icons.Material.Filled.AdsClick">
+        </MudIconButton>
+    </div>
+    <div class="col-9">
+        <AutoComplete @bind-Value="name"
+                      TItem="TItem"
+                      DataProvider="DataProvider"
+                      PropertyName="Name"
+                      Placeholder="@Settings.Placeholder"
+                      StringComparison="StringComparison.Ordinal"
+                      OnChanged="(TItem item) => OnAutoCompleteChanged(item)" />
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public LookupSettings<TItem> Settings { get; set; } = default!;
+    /// <summary>Loads the list the search box searches.</summary>
+    [Parameter, EditorRequired] public Func<Task<List<TItem>>> LoadForSearch { get; set; } = default!;
+    /// <summary>Loads the list shown in the pop-up.</summary>
+    [Parameter, EditorRequired] public Func<Task<List<TItem>>> LoadForDialog { get; set; } = default!;
+    [Parameter] public EventCallback<TItem> SelectedItemChanged { get; set; }
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ILogger<LookupAutocomplete<TItem>> Logger { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private string name;
+    private List<TItem> items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var loaded = await LoadForSearch();
+            if (loaded.Count != 0)
+            {
+                items = loaded;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "{What}", Settings.SearchBoxLoadFailedLog);
+            Snackbar.Add(Settings.SearchBoxLoadFailedMessage, Settings.SearchBoxLoadFailedSeverity);
+        }
+    }
+
+    private Task<AutoCompleteDataProviderResult<TItem>> DataProvider(AutoCompleteDataProviderRequest<TItem> request)
+    {
+        var search = request.Filter?.Value;
+        var matches = items.Where(i => i is not null && Lookups.Matches(Settings.SearchBoxFields(i), search));
+        return Task.FromResult(new AutoCompleteDataProviderResult<TItem> { Data = matches });
+    }
+
+    private async Task OpenDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+        var parameters = new DialogParameters<LookupDialog<TItem>>
+        {
+            { x => x.Settings, Settings },
+            { x => x.LoadItems, LoadForDialog }
+        };
+        var dialog = await DialogService.ShowAsync<LookupDialog<TItem>>(Settings.DialogTitle, parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: TItem selected })
+        {
+            name = Settings.NameOf(selected) ?? "";
+            await SelectedItemChanged.InvokeAsync(selected);
+        }
+    }
+
+    private async Task OnAutoCompleteChanged(TItem item)
+    {
+        await SelectedItemChanged.InvokeAsync(item);
+    }
+}

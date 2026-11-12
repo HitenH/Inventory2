@@ -1,115 +1,19 @@
-@using System.Threading
-@using System.Threading.Tasks
-@using AutoMapper
-@using Inventory.Domain.Entities
+@* Supplier picker: the shared search box + pop-up (batch 12) with the supplier settings. *@
 @using Inventory.Domain.Repository.Abstract
-@using MudBlazor
-
 @typeparam T
 
-<div class="row">
-    <div class="col-3">
-        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenSupplierDialogAsync"
-                       Icon="@Icons.Material.Filled.AdsClick">
-        </MudIconButton>
-    </div>
-    <div class="col-9">
-        <AutoComplete @bind-Value="name"
-                      TItem="SupplierModel"
-                      @ref="autoComplete"
-                      DataProvider="CustomersDataProvider"
-                      PropertyName="Name"
-                      Placeholder="Search a supplier..."
-                      StringComparison="StringComparison.Ordinal"
-                      OnChanged="(SupplierModel customer) => OnAutoCompleteChanged(customer)" />
-    </div>
-</div>
+<LookupAutocomplete TItem="SupplierModel" Settings="Lookups.Supplier"
+                    LoadForSearch="LoadForSearch" LoadForDialog="LoadForDialog"
+                    SelectedItemChanged="SelectedSupplierChanged" />
 
 @code {
     [Parameter] public EventCallback<SupplierModel> SelectedSupplierChanged { get; set; }
     [Parameter] public SupplierModel SelectedSupplier { get; set; }
-    [Inject] private IDialogService DialogService { get; set; }
-    [Inject] private ISupplierRepository SupplierRepository { get; set; }
-    [Inject] private ILogger<SupplierAutocomplete<T>> Logger { get; set; } = default!;
-    [Inject] private IMapper Mapper { get; set; }
-    [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private ISupplierRepository SupplierRepository { get; set; } = default!;
 
-    private AutoComplete<SupplierModel> autoComplete;
-    private string name;
-    private SupplierEntity supplier = new();
-    private List<SupplierModel> suppliers = new();
-    private List<SupplierModel> suppliersAfterSearch = new();
+    private async Task<List<SupplierModel>> LoadForSearch() =>
+        (await SupplierRepository.GetAllForLookup()).Select(s => s.ToModel()).ToList();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await GetSuppliersAsync();
-    }
-
-    public async Task OpenSupplierDialogAsync()
-    {
-        var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-        var dialog = await DialogService.ShowAsync<SuppliersDialog>("Suppliers List", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled && result.Data is SupplierModel selected)
-        {
-            SelectedSupplier = selected;
-            name = selected.Name ?? "";
-            await SelectedSupplierChanged.InvokeAsync(SelectedSupplier);
-        }
-    }
-
-    private static bool MatchesSearch(string? field, string term) =>
-        !string.IsNullOrEmpty(field) &&
-        field.Contains(term, StringComparison.OrdinalIgnoreCase);
-
-    private Task<IEnumerable<SupplierModel>> SearchSupplierEntities(string? value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Task.FromResult<IEnumerable<SupplierModel>>(suppliersAfterSearch);
-
-        var term = value.Trim();
-        var results = suppliers.Where(n =>
-            n is not null &&
-            (MatchesSearch(n.SupplierId, term) || MatchesSearch(n.Name, term)));
-
-        return Task.FromResult(results);
-    }
-
-    private async Task GetSuppliersAsync()
-    {
-        try
-        {
-            var suppliersDb = await SupplierRepository.GetAllForLookup();
-            if (suppliersDb.Count != 0)
-            {
-                suppliers = suppliersDb.Select(p => Mapper.Map<SupplierModel>(p)).ToList();
-                suppliersAfterSearch = suppliers;
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Supplier search: loading suppliers failed");
-            Snackbar.Add("Something went wrong while getting suppliers.", Severity.Error);
-        }
-    }
-
-    private async Task<AutoCompleteDataProviderResult<SupplierModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<SupplierModel> request)
-    {
-        var prods = await SearchSupplierEntities(request.Filter?.Value, request.CancellationToken);
-
-        return await Task.FromResult(new AutoCompleteDataProviderResult<SupplierModel> { Data = prods });
-    }
-
-    private async Task OnAutoCompleteChanged(SupplierModel supplier)
-    {
-        await SelectedSupplierChanged.InvokeAsync(supplier);
-    }
+    private async Task<List<SupplierModel>> LoadForDialog() =>
+        (await SupplierRepository.GetAll()).Select(s => s.ToModel()).ToList();
 }

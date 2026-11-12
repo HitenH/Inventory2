@@ -82,17 +82,7 @@ namespace Inventory.Domain.Repository
         public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false)
         {
             await using var context = await factory.CreateDbContextAsync();
-            var purchaseQtyByVariant = await context.PurchaseVariant
-                .AsNoTracking()
-                .GroupBy(pv => pv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
-
-            var salesQtyByVariant = await context.SalesVariants
-                .AsNoTracking()
-                .GroupBy(sv => sv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+            var (purchaseQtyByVariant, salesQtyByVariant) = await GetPurchasedAndSoldAsync(context, variantIds: null);
 
             var variants = await context.Variants
                 .AsNoTracking()
@@ -145,23 +135,39 @@ namespace Inventory.Domain.Repository
                 return new Dictionary<Guid, int>();
             }
 
-            var purchaseQtyByVariant = await context.PurchaseVariant
-                .AsNoTracking()
-                .Where(pv => idList.Contains(pv.VariantEntityId))
-                .GroupBy(pv => pv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
-
-            var salesQtyByVariant = await context.SalesVariants
-                .AsNoTracking()
-                .Where(sv => idList.Contains(sv.VariantEntityId))
-                .GroupBy(sv => sv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+            var (purchaseQtyByVariant, salesQtyByVariant) = await GetPurchasedAndSoldAsync(context, idList);
 
             return idList.ToDictionary(
                 id => id,
                 id => purchaseQtyByVariant.GetValueOrDefault(id) - salesQtyByVariant.GetValueOrDefault(id));
+        }
+
+        /// <summary>
+        /// The one place stock is worked out: total purchased and total sold per variant.
+        /// Stock in hand = purchased - sold. Pass null to get every variant.
+        /// </summary>
+        private static async Task<(Dictionary<Guid, int> Purchased, Dictionary<Guid, int> Sold)> GetPurchasedAndSoldAsync(
+            AppDbContext context, List<Guid>? variantIds)
+        {
+            var purchaseLines = context.PurchaseVariant.AsNoTracking();
+            var salesLines = context.SalesVariants.AsNoTracking();
+            if (variantIds is not null)
+            {
+                purchaseLines = purchaseLines.Where(pv => variantIds.Contains(pv.VariantEntityId));
+                salesLines = salesLines.Where(sv => variantIds.Contains(sv.VariantEntityId));
+            }
+
+            var purchased = await purchaseLines
+                .GroupBy(pv => pv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            var sold = await salesLines
+                .GroupBy(sv => sv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
+
+            return (purchased, sold);
         }
 
         public async Task<ProductEntity> GetById(Guid id)

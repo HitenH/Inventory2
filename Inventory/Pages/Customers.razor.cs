@@ -1,4 +1,3 @@
-using AutoMapper;
 using ClosedXML.Excel;
 using CsvHelper;
 using Inventory.Domain.Entities;
@@ -17,7 +16,6 @@ namespace Inventory.Pages
     {
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private ILogger<Customers> Logger { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private ISnackbar Snackbar { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private IDialogService DialogService { get; set; }
@@ -37,7 +35,7 @@ namespace Inventory.Pages
                     var list = await CustomerRepository.GetAll();
                     if (list.Count != 0)
                     {
-                        customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
+                        customers = list.Select(c => c.ToModel()).ToList();
                         customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
                         GetTotalAmount();
                         StateHasChanged();
@@ -210,7 +208,7 @@ namespace Inventory.Pages
 
         private async Task SaveCustomer(CustomerModel customer)
         {
-            CustomerEntity customerEntity = Mapper.Map<CustomerEntity>(customer);
+            CustomerEntity customerEntity = customer.ToEntity();
             var numbers = MobileService.GetMobiles(customerEntity.Mobiles);
             customerEntity.Mobiles = new();
 

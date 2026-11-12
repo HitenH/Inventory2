@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +13,6 @@ namespace Inventory.Pages
         [Inject] private ICategoryRepository CategoryRepository { get; set; }
         [Inject] private ILogger<Category> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
         private CategoryModel category;
@@ -30,7 +28,7 @@ namespace Inventory.Pages
             {
                 if (category != null)
                 {
-                    await CategoryRepository.Create(Mapper.Map<CategoryEntity>(category));
+                    await CategoryRepository.Create(category.ToEntity());
                 }
                 navManager.NavigateTo("/products");
             }

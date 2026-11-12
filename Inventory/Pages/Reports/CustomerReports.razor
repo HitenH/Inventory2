@@ -1,5 +1,4 @@
-﻿@using AutoMapper
-@using Inventory.Domain.Repository.Abstract
+﻿@using Inventory.Domain.Repository.Abstract
 @using Inventory.Service
 <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
     <MudTabPanel Text="By Area">
@@ -17,7 +16,7 @@
                 <SelectColumn T="CustomerModel" />
                 <PropertyColumn Property="x => x.CustomerId" Title="Customer ID" Sortable="false" Filterable="false" />
                 <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
-                <PropertyColumn Property="x => x.Mobiles.FirstOrDefault().Phone.ToString()" />
+                <PropertyColumn Property="x => x.Mobiles != null && x.Mobiles.Count > 0 ? x.Mobiles[0].Phone : string.Empty" Title="Mobiles" />
                 <PropertyColumn Property="x => x.Area" Title="Area" />
                 <PropertyColumn Property="x => totalAmount[x.Id]" Title="Amount" />
             </Columns>
@@ -34,7 +33,6 @@
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] private ISaleRepository SaleRepository { get; set; }
     [Inject] private ILogger<Customers> Logger { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
     [Inject] private IMobileService MobileService { get; set; }
@@ -52,7 +50,7 @@
             var list = await CustomerRepository.GetAll();
             if (list.Count != 0)
             {
-                customers = list.Select(c => Mapper.Map<CustomerModel>(c)).ToList();
+                customers = list.Select(c => c.ToModel()).ToList();
                 customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
                 GetTotalAmount();
                 StateHasChanged();

@@ -1,145 +1,15 @@
-﻿@using Inventory.Domain.Entities
-@using Inventory.Shared.Selectors
+@* Purchase lines: the shared line editor (batch 12) pointed at this purchase. *@
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
 
+<TransactionLineEditor Lines="lines" ChangeState="ChangeState" />
 
-<EditForm Model="@purchaseVariant" class="card-header mt-5"
-          OnValidSubmit="async ()=>
-                {
-                    if(purchaseVariant.Id == Guid.Empty){
-                        await AddPurchaseVariant();
-                }
-                    else{
-                        await EditPurchaseVariant();
-                } }">
-    <DataAnnotationsValidator />
-    <div class="d-flex flex-row justify-content-between">
-        <div class="d-flex justify-content-around align-items-center">
-            <button type="submit" id="button-submit" class="btn btn-light btn-order-add">
-                <img src="img/add.png" alt="add" class="purchase-add-img" />
-            </button>
-            <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelPurchaseVariant">
-                <img src="img/cancel.png" alt="cancel" class="purchase-cancel-img" />
-            </button>
-        </div>
-        <div class="col-1 text-center">
-            <label for="serialnumber" class="form-label">Sl.</label>
-            <InputNumber @bind-Value="serialnumber" id="serialnumber" class="form-control text-center" />
-        </div>
-        <div class="col-2 text-center">
-            
-            <label for="variantid" class="form-label">Product Selection</label>
-            <ProductAutocomplete T="ProductModel" 
-                        @ref="productAutocompleteReference"
-                        SelectedProduct="selectedProduct"
-                        SelectedProductChanged="OnProductSelected" />
+@code {
+    [Parameter] public PurchaseEntity Purchase { get; set; } = default!;
+    [Parameter] public EventCallback<bool> ChangeState { get; set; }
+    [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; } = default!;
 
-            <InputText @bind-Value="purchaseVariant.ProductId" class="form-control text-center" disabled hidden />
-            <InputText @bind-Value="purchaseVariant.ProductName" class="form-control text-center" disabled hidden />
+    private TransactionLines lines = default!;
 
-        </div>
-        <div class="mb-2 col-1 text-center">
-            <label for="variantid" class="form-label">Variant ID</label>
-            @if (product.Variants.Count != 0)
-            {
-                <InputSelect @bind-Value="purchaseVariant.VariantEntytiId" class="form-control text-center" id="variantid" requred>
-                    <option value="" class="text-center">-</option>
-                    @if (product.Variants.Count != 0)
-                    {
-                        @foreach (var item in product.Variants)
-                        {
-                            if (item.Id == purchaseVariant.VariantEntytiId)
-                            {
-                                <option selected value="@item.Id" class="text-center">@item.VariantId</option>
-                            }
-                            else
-                            {
-                                <option value="@item.Id" class="text-center">@item.VariantId</option>
-                            }
-                        }
-                    }
-                </InputSelect>
-            }
-            else
-            {
-                <input class="form-control text-center" value="@purchaseVariant.VariantEntytiId" disabled />
-            }
-
-        </div>
-        <div class="col-1 text-center">
-            <label for="quantity" class="form-label">Quantity</label>
-            <NumberInput TValue="int?" Value="purchaseVariant.Quantity" id="quantity" class="form-control text-center" ValueChanged="(value)=>QuantityChanged(value)" ValueExpression="()=>purchaseVariant.Quantity" />
-        </div>
-        <div class="col-1 text-center">
-            <label for="rate" class="form-label">Rate</label>
-            <NumberInput TValue="decimal?" Value="purchaseVariant.ProductRate" id="rate" class="form-control text-center" ValueChanged="(value)=>RateChanged(value)" ValueExpression="()=>purchaseVariant.ProductRate" />
-        </div>
-        <div class="col-1 text-center">
-            <label for="amount" class="form-label">Amount</label>
-            <NumberInput @bind-Value="purchaseVariant.Amount" id="amount" class="form-control text-center" disabled />
-        </div>
-        <div class="col-1 text-center">
-            <label for="discount" class="form-label">Discount (%)</label>
-            <NumberInput TValue="int?" Value="purchaseVariant.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>purchaseVariant.Discount" />
-        </div>
-        <div class="col-1 text-center">
-            <label for="amountafterdiscount" class="form-label">Amount</label>
-            <InputNumber @bind-Value="purchaseVariant.AmountAfterDiscount" id="amountafterdiscount" class="form-control text-center" disabled />
-        </div>
-    </div>
-    <ValidationSummary />
-</EditForm>
-
-
-<table class="table table-striped table-bordered mt-2">
-    <thead>
-        <tr>
-            <th class="text-center"></th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("SerialNumber"))">Sl.</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductId"))">Product ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductName"))">Product Name</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Quantity"))">Quantity</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Amount"))">Amount</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("Discount"))">Discount (%)</th>
-            <th class="text-center column-item" @onclick="@(()=>SortItem("AmmountAfterDiscount"))">Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (purchaseVariants.Count != 0)
-        {
-            @foreach (var variant in purchaseVariants.AsQueryable())
-            {
-                <tr>
-                    <td class="text-center col-1">
-                        <div>
-                            <button class="btn btn-light btn-variant-edit">
-                                <img src="img/edit.png" alt="add" class="variant-edit-img" @onclick="()=>UpdatePurchaseVariant(variant)" />
-                            </button>
-                            <button class="btn btn-light btn-variant-delete">
-                                <img src="img/delete.png" alt="add" class="variant-delete-img" @onclick="()=>DeletePurchaseVariant(variant.Id)" />
-                            </button>
-                        </div>
-                    </td>
-                    <td class="text-center">@variant.SerialNumber</td>
-                    <td class="text-center">@variant.ProductId</td>
-                    <td class="text-center">@variant.ProductName</td>
-                    <td class="text-center">@variant.ProductVariantId</td>
-                    <td class="text-center">@variant.Quantity</td>
-                    <td class="text-center">@variant.ProductRate</td>
-                    <td class="text-center">@variant.Amount</td>
-                    <td class="text-center">@variant.Discount</td>
-                    <td class="text-center">@variant.AmountAfterDiscount</td>
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="12" class="text-center">
-                    Not Found!
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    protected override void OnParametersSet() => lines = new PurchaseLines(Purchase, PurchaseVariantRepository);
+}

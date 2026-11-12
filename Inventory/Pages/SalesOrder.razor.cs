@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
@@ -19,7 +18,6 @@ public partial class SalesOrder
     [Inject] private NavigationManager navManager { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
 
     private CustomerEntity customer = new();
     private CustomerModel? customerModel;
@@ -69,7 +67,7 @@ public partial class SalesOrder
         salesOrderModel.Id = salesOrderEntity.Id;
 
         customer = salesOrderEntity.Customer ?? new CustomerEntity();
-        customerModel = Mapper.Map<CustomerModel>(customer);
+        customerModel = customer.ToModel();
 
         // Batch 7: the discount is stored. Orders saved before batch 7 had it worked out backwards
         // from the total; the migration stored that same value, so the screen shows what it showed before.
@@ -162,18 +160,7 @@ public partial class SalesOrder
 
         try
         {
-            var parameters = new DialogParameters<ConfirmationDialog>
-            {
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                { x => x.ButtonText, "Delete" },
-                { x => x.Color, Color.Error }
-            };
-
-            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-            var result = await dialog.Result;
-            if (!result.Canceled)
+            if (await DialogService.ConfirmDeleteAsync())
             {
                 await SalesOrderRepository.Delete(salesOrderEntity);
                 navManager.NavigateTo("/salesorders");

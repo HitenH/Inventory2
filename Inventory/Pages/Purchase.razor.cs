@@ -1,4 +1,3 @@
-using AutoMapper;
 
 using Inventory.Domain.Entities;
 
@@ -40,7 +39,6 @@ public partial class Purchase
 
     [Inject] private ISnackbar Snackbar { get; set; }
 
-    [Inject] private IMapper Mapper { get; set; }
 
 
 
@@ -138,7 +136,7 @@ public partial class Purchase
 
         supplier = purchaseEntity.Supplier ?? new SupplierEntity();
 
-        selectedSupplier = Mapper.Map<SupplierModel>(supplier);
+        selectedSupplier = supplier.ToModel();
 
 
 
@@ -312,29 +310,7 @@ public partial class Purchase
 
         {
 
-            var parameters = new DialogParameters<ConfirmationDialog>
-
-            {
-
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-
-                { x => x.ButtonText, "Delete" },
-
-                { x => x.Color, Color.Error }
-
-            };
-
-
-
-            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-
-
-            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
+            if (await DialogService.ConfirmDeleteAsync())
 
             {
 

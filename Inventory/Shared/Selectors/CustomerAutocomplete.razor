@@ -1,115 +1,20 @@
-@using AutoMapper
+@* Customer picker: the shared search box + pop-up (batch 12) with the customer settings. *@
 @using Inventory.Domain.Repository.Abstract
 @typeparam T
 
-<div class="row">
-    <div class="col-3">
-        <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="GetCustomerFromPopup"
-                       Icon="@Icons.Material.Filled.AdsClick">
-        </MudIconButton>
-    </div>
-    <div class="col-9">
-        <AutoComplete @bind-Value="name"
-                      TItem="CustomerModel"
-                      DataProvider="CustomersDataProvider"
-                      PropertyName="Name"
-                      Placeholder="Search a customer..."
-                      StringComparison="StringComparison.Ordinal"
-                      OnChanged="(CustomerModel customer) => OnAutoCompleteChanged(customer)" />
-    </div>
-</div>
+<LookupAutocomplete TItem="CustomerModel" Settings="Lookups.Customer"
+                    LoadForSearch="LoadForSearch" LoadForDialog="LoadForDialog"
+                    SelectedItemChanged="SelectedCustomerChanged" />
 
 @code {
     [Parameter] public EventCallback<CustomerModel> SelectedCustomerChanged { get; set; }
     [Parameter] public CustomerModel SelectedCustomer { get; set; }
-    [Inject] private IDialogService DialogService { get; set; }
-    [Inject] private ICustomerRepository CustomerRepository { get; set; }
-    [Inject] private ILogger<CustomerAutocomplete<T>> Logger { get; set; } = default!;
-    [Inject] private IMapper Mapper { get; set; }
-    [Inject] private ISnackbar Snackbar { get; set; }
+    [Inject] private ICustomerRepository CustomerRepository { get; set; } = default!;
 
-    private string name;
-    private List<CustomerModel> customers = new();
-    private List<CustomerModel> customersAfterSearch = new();
+    private async Task<List<CustomerModel>> LoadForSearch() =>
+        (await CustomerRepository.GetAllForLookup()).Select(c => c.ToModel()).ToList();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await GetCustomersAsync();
-    }
-
-
-    private async Task GetCustomersAsync()
-    {
-        try
-        {
-            var customerDb = await CustomerRepository.GetAllForLookup();
-            if (customerDb.Count != 0)
-            {
-                customers = customerDb.Select(s => Mapper.Map<CustomerModel>(s)).ToList();
-                customersAfterSearch = customers;
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Customer search: loading customers failed");
-            Snackbar.Add("Something went wrong", Severity.Warning);
-        }
-    }
-
-
-    private static bool MatchesSearch(string? field, string term) =>
-        !string.IsNullOrEmpty(field) &&
-        field.Contains(term, StringComparison.OrdinalIgnoreCase);
-
-    private Task<IEnumerable<CustomerModel>> SearchCustomerEntities(string? value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return Task.FromResult<IEnumerable<CustomerModel>>(customersAfterSearch);
-
-        var term = value.Trim();
-        var results = customers.Where(n =>
-            n is not null &&
-            (MatchesSearch(n.Name, term) ||
-             MatchesSearch(n.CustomerId, term) ||
-             MatchesSearch(n.Area, term) ||
-             MatchesSearch(n.Address, term)));
-
-        return Task.FromResult(results);
-    }
-
-    public async Task GetCustomerFromPopup()
-    {
-        var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Large,
-                CloseOnEscapeKey = true,
-                CloseButton = true,
-                Position = DialogPosition.Center
-            };
-
-        var dialog = await DialogService.ShowAsync<CustomerDialog>("Customer Dialog", options);
-        var result = await dialog.Result;
-
-
-        if (!result.Canceled && result.Data is CustomerModel selected)
-        {
-            SelectedCustomer = selected;
-            name = selected.Name ?? "";
-            await SelectedCustomerChanged.InvokeAsync(SelectedCustomer);
-        }
-    }
-
-
-    private async Task<AutoCompleteDataProviderResult<CustomerModel>> CustomersDataProvider(AutoCompleteDataProviderRequest<CustomerModel> request)
-    {
-        var prods = await SearchCustomerEntities(request.Filter?.Value, request.CancellationToken);
-
-        return await Task.FromResult(new AutoCompleteDataProviderResult<CustomerModel> { Data = prods });
-    }
-
-    private async Task OnAutoCompleteChanged(CustomerModel customerModel)
-    {
-        await SelectedCustomerChanged.InvokeAsync(customerModel);
-    }
+    // The pop-up searches phone numbers too, so it loads customers with their phones.
+    private async Task<List<CustomerModel>> LoadForDialog() =>
+        (await CustomerRepository.GetAll()).Select(c => c.ToModel()).ToList();
 }

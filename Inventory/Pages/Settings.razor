@@ -1,5 +1,6 @@
 ﻿@page "/settings"
 @using Inventory.Service
+@using Inventory.MudBlazorComponents
 @inject BackupService backupService
 @inject ISnackbar snackbar
 @inject IDialogService DialogService
@@ -101,7 +102,7 @@
 
     private async Task RestoreBackup(BackupFileInfo backup)
     {
-        var confirmed = await ConfirmAsync(
+        var confirmed = await DialogService.ConfirmAsync(
             "Restore",
             $"Replace ALL current data with the backup from {backup.CreatedAt:dd MMM yyyy HH:mm}? " +
             "Everything entered after that time will disappear. The current data is saved first as a 'Saved before a restore' backup.",
@@ -134,7 +135,7 @@
     {
         try
         {
-            var confirmed = await ConfirmAsync(
+            var confirmed = await DialogService.ConfirmAsync(
                 "Delete",
                 "Do you really want to delete these records? This process cannot be undone.",
                 "Delete",
@@ -153,19 +154,5 @@
         {
             Reload();
         }
-    }
-
-    private async Task<bool> ConfirmAsync(string title, string text, string buttonText, Color color)
-    {
-        var parameters = new DialogParameters<ConfirmationDialog>
-        {
-            { x => x.ContentText, text },
-            { x => x.ButtonText, buttonText },
-            { x => x.Color, color }
-        };
-        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-        var dialog = await DialogService.ShowAsync<ConfirmationDialog>(title, parameters, options);
-        var result = await dialog.Result;
-        return result is { Canceled: false };
     }
 }

@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using BlazorBootstrap;
+﻿using BlazorBootstrap;
 using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
@@ -19,7 +18,6 @@ namespace Inventory.Pages
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private ILogger<Customer> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
-        [Inject] private IMapper Mapper { get; set; }
         [Inject] private IMobileService MobileService { get; set; }
         [Inject] private IConfiguration Config { get; set; }
         [Inject] IDialogService DialogService { get; set; }
@@ -52,7 +50,7 @@ namespace Inventory.Pages
                     if (customerEntity == null)
                         navManager.NavigateTo("/customers");
              
-                    customerModel = Mapper.Map<CustomerModel>(customerEntity);
+                    customerModel = customerEntity.ToModel();
 
                 }
                 catch (Exception ex)
@@ -102,7 +100,7 @@ namespace Inventory.Pages
                 {
                     try
                     {
-                        customerEntity = Mapper.Map<CustomerEntity>(customerModel);
+                        customerEntity = customerModel.ToEntity();
                         var numbers = MobileService.GetMobiles(customerEntity.Mobiles);
                         customerEntity.Mobiles = new();
 
@@ -164,18 +162,7 @@ namespace Inventory.Pages
             {
                 try
                 {
-                    var parameters = new DialogParameters<ConfirmationDialog>
-                    {
-                        { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                        { x => x.ButtonText, "Delete" },
-                        { x => x.Color, Color.Error }
-                    };
-
-                    var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                    var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                    var result = await dialog.Result;
-                    if (!result.Canceled)
+                    if (await DialogService.ConfirmDeleteAsync())
                     {
                         await CustomerRepository.Delete(customerEntity);
                         navManager.NavigateTo("/customers");

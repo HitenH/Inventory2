@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Blazor.Bootstrap" Version="1.10.3" />
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
@@ -24,13 +23,6 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Batch 9: AutoMapper 12 "deep recursion" advisory. Fixed only in AutoMapper 15.1.1+ (paid licence).
-         Not reachable here: the app only maps its own database records on a local PC.
-         AutoMapper is to be removed in batch 12 (replace with plain copies); then delete this line. -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
   </ItemGroup>
 
 </Project>

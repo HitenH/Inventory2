@@ -69,18 +69,7 @@ public partial class SalesOrders
         {
             try
             {
-                var parameters = new DialogParameters<ConfirmationDialog>
-            {
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                { x => x.ButtonText, "Delete" },
-                { x => x.Color, Color.Error }
-            };
-
-                var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                var result = await dialog.Result;
-                if (!result.Canceled)
+                if (await DialogService.ConfirmDeleteAsync())
                 {
                     salesOrdersDb = salesOrdersDb.Where(q => selectedSalesOrders.Any(p => p.Id == q.Id)).ToList();
                     await SalesOrderRepository.DeleteRange(salesOrdersDb);
@@ -103,18 +92,7 @@ public partial class SalesOrders
         {
             try
             {
-                var parameters = new DialogParameters<ConfirmationDialog>
-            {
-                { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
-                { x => x.ButtonText, "Delete" },
-                { x => x.Color, Color.Error }
-            };
-
-                var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-
-                var dialog = await DialogService.ShowAsync<ConfirmationDialog>("Delete", parameters, options);
-                var result = await dialog.Result;
-                if (!result.Canceled)
+                if (await DialogService.ConfirmDeleteAsync())
                 {
                     salesOrdersDb = salesOrdersDb.Where(o => salesOrdersAfterSearch.Where(or => or.OrderStatus == OrderStatus.Completed).Any(p => p.Id == o.Id)).ToList();
                     await SalesOrderRepository.DeleteRange(salesOrdersDb);

@@ -1,5 +1,4 @@
-﻿@using AutoMapper
-@using Inventory.Domain.Entities
+﻿@using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 @using Inventory.Models
 
@@ -35,7 +34,6 @@
     [Inject] ISupplierRepository SupplierRepository { get; set; }
     [Inject] IProductRepository ProductRepository { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
-    [Inject] IMapper Mapper { get; set; }
     //Get enums list to populate order status
     private List<OrderStatus> orderStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
 

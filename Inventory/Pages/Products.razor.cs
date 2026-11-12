@@ -1,4 +1,3 @@
-using AutoMapper;
 using ClosedXML.Excel;
 using CsvHelper;
 using Inventory.Domain.Entities;
@@ -17,7 +16,6 @@ public partial class Products
 {
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private ILogger<Products> Logger { get; set; }
-    [Inject] private IMapper Mapper { get; set; }
     [Inject] ISnackbar Snackbar {get; set;}
     [Inject] IDialogService DialogService {get; set;}
     [Inject] ICategoryRepository CategoryRepository { get; set; }
@@ -34,7 +32,7 @@ public partial class Products
             var list = await ProductRepository.GetAllForLookup();
             products = list
                 .Where(p => !string.IsNullOrWhiteSpace(p.ProductId))
-                .Select(c => Mapper.Map<ProductModel>(c))
+                .Select(c => c.ToModel())
                 .OrderBy(o => o.Name)
                 .ToList();
             productsAfterSearch = products;
@@ -167,7 +165,7 @@ public partial class Products
         {
             try
             {
-                ProductEntity productEntity = Mapper.Map<ProductEntity>(productModel);
+                ProductEntity productEntity = productModel.ToEntity();
 
                 productEntity.Category = await CategoryRepository.GetById(productModel.CategoryEntityId ?? Guid.Empty);
 

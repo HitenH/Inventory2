@@ -1,9 +1,13 @@
-﻿using Inventory.Domain.Entities;
+using Inventory.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Models
 {
-    public class SalesOrderVariantModel
+    /// <summary>
+    /// One line (product + variant + quantity + price) as shown in the shared line editor
+    /// used by Purchase and Sales Order (batch 12; replaces PurchaseVariantModel and SalesOrderVariantModel).
+    /// </summary>
+    public class LineEditorModel
     {
         public Guid Id { get; set; }
         public int SerialNumber { get; set; }
@@ -20,6 +24,7 @@ namespace Inventory.Models
         public decimal? Amount { get; set; } = default(decimal);
         public int? Discount { get; set; } = default(int);
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
+        /// <summary>Sales orders only.</summary>
         public string? Remarks { get; set; }
         public ProductEntity Product { get; set; }
     }
