@@ -1,7 +1,7 @@
 ﻿@using Inventory.Domain.Repository.Abstract
 
 <MudDataGrid T="SalesByAreaModel" MultiSelection="true" Items="@salesByArea" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+             Hideable="true">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
@@ -20,12 +20,11 @@
 
     [Inject] private ISaleRepository SaleRepository { get; set; }
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private ILogger<AreaSalesReport> Logger { get; set; } = default!;
     private List<SalesByAreaModel> salesByArea = new();
     private decimal totalSales;
 
     private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,19 +51,15 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Area sales report failed");
             // Handle exception (e.g., log error)
         }
     }
 
-    // DataGrid Events
 
-    // custom sort by name length
     private Func<SalesByAreaModel, object> _sortBy => x =>
     {
-        if (_sortNameByLength)
-            return x.Area.Length;
-        else
-            return x.Area;
+        return x.Area;
     };
     // quick filter - filter globally across multiple columns with the same input
     private Func<SalesByAreaModel, bool> _quickFilter => x =>
@@ -77,21 +72,6 @@
 
         return false;
     };
-
-    void RowClicked(DataGridRowClickEventArgs<SalesByAreaModel> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    void RowRightClicked(DataGridRowClickEventArgs<SalesByAreaModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    void SelectedItemsChanged(HashSet<SalesByAreaModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
 
     public class SalesByAreaModel
     {

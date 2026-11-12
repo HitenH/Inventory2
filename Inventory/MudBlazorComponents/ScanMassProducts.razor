@@ -52,7 +52,6 @@
     private ScannedItem ScannedItem = new();
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; }
-    private Snackbar snackbar;
     private ElementReference anotherInput;
     [Inject] private IJSRuntime JSRuntime { get; set; }
 
@@ -73,7 +72,7 @@
             ScannedItem = new();
 
             // Optionally, log the added item or provide feedback
-            snackbar = Snackbar.Add($"Scanned: {ScannedItem.ProductId} - {ScannedItem.VariantId}", Severity.Success);
+            Snackbar.Add($"Scanned: {ScannedItem.ProductId} - {ScannedItem.VariantId}", Severity.Success);
         }
         await anotherInput.FocusAsync();
         await FocusInput();
@@ -97,7 +96,7 @@
     {
         scannedItems.Remove(item);
         // Optionally, log the removed item or provide feedback
-        snackbar = Snackbar.Add($"Removed: {item.ProductId} - {item.VariantId}", Severity.Info);
+        Snackbar.Add($"Removed: {item.ProductId} - {item.VariantId}", Severity.Info);
     }
 
     private void SubmitData()

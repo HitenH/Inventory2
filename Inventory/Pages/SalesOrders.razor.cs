@@ -12,21 +12,14 @@ namespace Inventory.Pages;
 public partial class SalesOrders
 {
     [Inject] public ISalesOrderRepository SalesOrderRepository { get; set; }
-    [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] public ILogger<SalesOrders> Logger { get; set; }
     [Inject] IDialogService DialogService { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
 
     private List<SalesOrderModel> salesOrders = new();
-    //Get enums list to populate order status
-    private List<OrderStatus> orderStatuses = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>().ToList();
     private List<SalesOrderModel> salesOrdersAfterSearch = new();
     private List<SalesOrderEntity> salesOrdersDb = new();
     private HashSet<SalesOrderModel> selectedSalesOrders = new();
-    private SalesOrderModel salesOrderModelBackup = new();
-    private Snackbar snackbar;
-    private bool isSortAscending = false;
-    private bool isSelected = false;
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
@@ -92,7 +85,7 @@ public partial class SalesOrders
                     salesOrdersDb = salesOrdersDb.Where(q => selectedSalesOrders.Any(p => p.Id == q.Id)).ToList();
                     await SalesOrderRepository.DeleteRange(salesOrdersDb);
                     //Snackbar to inform user of process
-                    snackbar = Snackbar.Add($"Deleted records successfully.", Severity.Success);
+                    Snackbar.Add($"Deleted records successfully.", Severity.Success);
 
                     await GetOrders();
                 }
@@ -131,50 +124,6 @@ public partial class SalesOrders
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Delete completed orders error");
-            }
-        }
-    }
-
-    //Edit row methods
-    private void BackupItem(object item)
-    {
-        salesOrderModelBackup = (SalesOrderModel)item;
-    }
-    private void ResetItemToOriginalValues(object item)
-    {
-        var index = salesOrdersAfterSearch.IndexOf((SalesOrderModel)item);
-        salesOrdersAfterSearch[index] = salesOrderModelBackup;
-    }
-    public async Task EditOrder(object e)
-    {
-        SalesOrderEntity salesOrderEntity = new();
-        SalesOrderModel salesOrderModel = ((SalesOrderModel)e);
-
-        if (salesOrderModel != null)
-        {
-            try
-            {
-                var isVoucherExist = false;
-                if (salesOrderEntity.VoucherId != salesOrderModel.VoucherId)
-                    isVoucherExist = await SalesOrderRepository.IsVoucherExistByDate(salesOrderModel.VoucherId, salesOrderModel.Date);
-
-                if (!isVoucherExist)
-                    salesOrderEntity.VoucherId = salesOrderModel.VoucherId;
-                else
-                    salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
-
-                //salesOrderEntity.Customer = await CustomerRepository.GetByCustomId(salesOrderModel.CustomerId);
-                salesOrderEntity.Date = salesOrderModel.Date;
-                salesOrderEntity.DueDate = salesOrderModel.DueDate;
-                salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
-
-                await SalesOrderRepository.Update(salesOrderEntity);
-                await GetOrders();
-                snackbar = Snackbar.Add($"Updated {salesOrderModel.Id} successfully.", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                snackbar = Snackbar.Add($"Something went wrong: {ex.Message}", Severity.Warning);
             }
         }
     }

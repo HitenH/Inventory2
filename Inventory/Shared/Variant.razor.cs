@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using BlazorBootstrap;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
@@ -31,7 +30,6 @@ public partial class Variant
     private MudTextField<string?> variantInputRef = null!;
     private ValidationMessageStore? messageStore;
     private bool bclearinputfile = false;
-    private Snackbar snackbar;
 
 
     protected override void OnInitialized()
@@ -103,7 +101,7 @@ public partial class Variant
                     // The failed variant must not stay in the product's list, or the next save would try it again.
                     if (newVariant != null)
                         Product.Variants?.Remove(newVariant);
-                    snackbar = Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
+                    Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
                 }
             }
         }
@@ -156,7 +154,7 @@ public partial class Variant
                 }
                 catch (Exception ex)
                 {
-                    snackbar = Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
+                    Snackbar.Add(DbErrors.SaveMessage(ex, "variant", "Variant ID for this product"), Severity.Error);
                 }
             }
         }
@@ -191,7 +189,7 @@ public partial class Variant
         }
         catch (Exception ex)
         {
-            snackbar = Snackbar.Add("Delete variant error: " + ex.Message, Severity.Error);
+            Snackbar.Add("Delete variant error: " + ex.Message, Severity.Error);
         }
     }
 
@@ -212,7 +210,7 @@ public partial class Variant
         }
         catch (Exception ex)
         {
-            snackbar = Snackbar.Add($"Upload file error: {ex.Message}");
+            Snackbar.Add($"Upload file error: {ex.Message}");
         }
     }
 
@@ -241,7 +239,7 @@ public partial class Variant
             }
             catch (Exception ex)
             {
-                snackbar = Snackbar.Add($"Delete file error: {ex.Message}");
+                Snackbar.Add($"Delete file error: {ex.Message}");
             }
         }
     }

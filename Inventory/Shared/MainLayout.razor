@@ -59,7 +59,7 @@ else
 @code {
     [Inject] private Inventory.Service.BackupService Backups { get; set; } = default!;
 
-    // OnInitialized is already used in MainLayout.razor.cs, so subscribe here instead.
+    // Subscribe so the "restart required" bar appears as soon as a restore finishes.
     protected override Task OnInitializedAsync()
     {
         Backups.RestartRequiredChanged += OnRestartRequiredChanged;

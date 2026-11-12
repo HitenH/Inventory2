@@ -41,9 +41,9 @@
 @code {
     [CascadingParameter]
     public IMudDialogInstance MudDialog { get; set; }
-    private Snackbar snackbar;
 
     [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private ILogger<ProductsDialog> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
 
     private List<ProductModel> products = new();
@@ -63,7 +63,8 @@
         }
         catch (Exception ex)
         {
-            snackbar = Snackbar.Add("Something went wrong", Severity.Error);
+            Logger.LogError(ex, "Product picker: loading products failed");
+            Snackbar.Add("Something went wrong", Severity.Error);
         }
     }
 

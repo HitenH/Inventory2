@@ -25,13 +25,6 @@ public partial class SalesSummary
     public List<SalesSummaryModel> salesSummaryModelList = new();
     private ComponentTotalData SalesTotalData = new();
 
-    protected async override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
 

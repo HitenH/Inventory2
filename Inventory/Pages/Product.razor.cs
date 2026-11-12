@@ -28,14 +28,9 @@ namespace Inventory.Pages
         private ProductEntity productEntity = new();
         private List<CategoryModel> categories = new();
         private Guid categoryId = Guid.Empty;
-        public VariantModel variant = new();
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
 
-        private ModalWindow? modalWindowComponenRef;
-        private string titleMessage = string.Empty;
-        private string messageShort = string.Empty;
-        private string messageFull = string.Empty;
 
 
         protected async override Task OnInitializedAsync()
@@ -133,12 +128,6 @@ namespace Inventory.Pages
                         productEntity.Rate = productModel.Rate;
 
                         await ProductRepository.Update(productEntity);
-                        titleMessage = "Update Message";
-                        messageShort = "The Product was updated!";
-                        messageFull = $"ProductId: {productEntity.ProductId}; Name: {productEntity.Name}; Rate: {productEntity.Rate}";
-
-                        if (modalWindowComponenRef != null)
-                            await modalWindowComponenRef.OnShowModalClick();
                     }
                     catch (Exception ex)
                     {
@@ -176,12 +165,6 @@ namespace Inventory.Pages
                 {
                     Logger.LogError(ex, "Delete Product error");
                     Snackbar.Add("Cannot delete this product. " + ex.Message, Severity.Error);
-                    titleMessage = "Error Message";
-                    messageShort = "Cannot delete Product";
-                    messageFull = ex.Message;
-
-                    if (modalWindowComponenRef != null)
-                        await modalWindowComponenRef.OnShowModalClick();
                 }
             }
 
@@ -192,28 +175,10 @@ namespace Inventory.Pages
             return await CategoryRepository.GetById(categoryId);
         }
 
-        public void GetVariant(VariantModel model)
-        {
-            variant = model;
-        }
-
         public void Dispose()
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
-        }
-
-        public void CloseModalWindow(bool isClosed)
-        {
-            if (isClosed)
-                ClearErrorMessage();
-        }
-
-        private void ClearErrorMessage()
-        {
-            titleMessage = string.Empty;
-            messageShort = string.Empty;
-            messageFull = string.Empty;
         }
     }
 }

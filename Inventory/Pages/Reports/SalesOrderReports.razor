@@ -1,10 +1,9 @@
-﻿@page "/reports/salesorders"
-@using Inventory.Domain.Entities
+﻿@using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 @using Inventory.Models
 
 <MudDataGrid T="SalesOrderModel" MultiSelection="true" Items="@salesOrdersAfterSearch" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+             Hideable="true">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
@@ -37,12 +36,7 @@
     private List<SalesOrderEntity> salesOrdersDb = new();
     private HashSet<SalesOrderModel> selectedSalesOrders = new();
     private SalesOrderModel salesOrderModelBackup = new();
-    private Snackbar snackbar;
-    private bool isSortAscending = false;
-    private bool isSelected = false;
     private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
@@ -89,14 +83,9 @@
 
 
 
-    // DataGrid Events
-    // custom sort by name length
     private Func<SalesOrderModel, object> _sortBy => x =>
     {
-        if (_sortNameByLength)
-            return x.CustomerName.Length;
-        else
-            return x.CustomerName;
+        return x.CustomerName;
     };
     // quick filter - filter globally across multiple columns with the same input
     private Func<SalesOrderModel, bool> _quickFilter => x =>
@@ -114,19 +103,4 @@
 
         return false;
     };
-
-    void RowClicked(DataGridRowClickEventArgs<SalesOrderModel> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    void RowRightClicked(DataGridRowClickEventArgs<SalesOrderModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    void SelectedItemsChanged(HashSet<SalesOrderModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
 }

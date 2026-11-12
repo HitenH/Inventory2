@@ -175,6 +175,7 @@ public partial class Products
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, "Import: saving a product failed");
                 Snackbar.Add("Error while saving product", Severity.Error);
             }
         }

@@ -24,11 +24,11 @@
     [Parameter] public CustomerModel SelectedCustomer { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private ILogger<CustomerAutocomplete<T>> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
 
     private string name;
-    private CustomerModel customerModel;
     private List<CustomerModel> customers = new();
     private List<CustomerModel> customersAfterSearch = new();
 
@@ -52,6 +52,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Customer search: loading customers failed");
             Snackbar.Add("Something went wrong", Severity.Warning);
         }
     }

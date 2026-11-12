@@ -31,7 +31,6 @@ public partial class PurchaseOrder
     private ProductModel selectedProduct;
     private SupplierModel selectedSupplier;
     private List<PurchaseOrderEntity> ordersDb = new();
-    private Snackbar snackbar;
 
 
     protected async override Task OnInitializedAsync()
@@ -186,7 +185,7 @@ public partial class PurchaseOrder
                     ordersDb = ordersDb.Where(o => selectedOrders.Any(p => p.Id == o.Id)).ToList();
                     await PurchaseOrderRepository.DeleteRange(ordersDb);
                     //Snackbar to tell user what was deleted
-                    snackbar = Snackbar.Add($"Deleted records successfully.", Severity.Success);
+                    Snackbar.Add($"Deleted records successfully.", Severity.Success);
                     await GetOrders();
                 }
             }
@@ -219,7 +218,7 @@ public partial class PurchaseOrder
                     await PurchaseOrderRepository.DeleteRange(ordersDb);
 
                     //Inform user process was successful
-                    snackbar = Snackbar.Add($"Deleted completed orders successfully.", Severity.Success);
+                    Snackbar.Add($"Deleted completed orders successfully.", Severity.Success);
 
                     await GetOrders();
                 }
@@ -273,7 +272,7 @@ public partial class PurchaseOrder
                     CancelOrder();
                     await GetOrders();
 
-                    snackbar = Snackbar.Add($"Updated {editPurchaseOrderModel.Id} successfully.", Severity.Success);
+                    Snackbar.Add($"Updated {editPurchaseOrderModel.Id} successfully.", Severity.Success);
                 }
             }
             catch (Exception ex)

@@ -8,7 +8,7 @@
     <MudTabPanel Text="Customers">
 
         <MudDataGrid T="CustomerModel" MultiSelection="true" Items="@customersAfterSearch" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-        Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+        Hideable="true">
             <ToolBarContent>
                 <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                 AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
@@ -37,17 +37,13 @@
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
-    [Inject] private IDialogService DialogService { get; set; }
     [Inject] private IMobileService MobileService { get; set; }
 
     private List<CustomerModel> customers = new();
     private List<CustomerModel> customersAfterSearch = new();
-    private IDialogReference dialogReference;
     private Dictionary<Guid, decimal> totalAmount = new();
 
     private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,28 +85,10 @@
         }
     }
 
-    private async Task ShowLoadingDialogAsync()
-    {
 
-        var options = new DialogOptions() { CloseButton = false, MaxWidth = MaxWidth.ExtraSmall };
-
-        dialogReference = await DialogService.ShowAsync<LoadingDialog>("Adding customers...", options);
-    }
-
-    private void CloseDialog()
-    {
-        dialogReference.Close();
-    }
-
-    // DataGrid Events
-
-    // custom sort by name length
     private Func<CustomerModel, object> _sortBy => x =>
     {
-        if (_sortNameByLength)
-            return x.Name.Length;
-        else
-            return x.Name;
+        return x.Name;
     };
     // quick filter - filter globally across multiple columns with the same input
     private Func<CustomerModel, bool> _quickFilter => x =>
@@ -129,19 +107,4 @@
 
         return false;
     };
-
-    void RowClicked(DataGridRowClickEventArgs<CustomerModel> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    void RowRightClicked(DataGridRowClickEventArgs<CustomerModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    void SelectedItemsChanged(HashSet<CustomerModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
 }

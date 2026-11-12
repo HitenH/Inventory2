@@ -45,14 +45,13 @@
 @code {
     [CascadingParameter]
     public IMudDialogInstance MudDialog { get; set; }
-    public Snackbar snackbar;
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
+    [Inject] private ILogger<CustomerDialog> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
 
     private List<CustomerModel> customers = new();
     private List<CustomerModel> customersAfterSearch = new();
 
-    private string search = "";
 
     protected async override Task OnParametersSetAsync()
     {
@@ -68,7 +67,8 @@
         }
         catch (Exception ex)
         {
-            snackbar = Snackbar.Add("Something went wrong", Severity.Warning);
+            Logger.LogError(ex, "Customer picker: loading customers failed");
+            Snackbar.Add("Something went wrong", Severity.Warning);
         }
     }
 

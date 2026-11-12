@@ -13,7 +13,6 @@ namespace Inventory.Pages
 
         private List<PurchaseModel> purchases = new();
         private List<PurchaseModel> purchasesAfterSearch = new();
-        private bool isSortAscending = false;
 
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
@@ -52,66 +51,6 @@ namespace Inventory.Pages
             var search = e.Value.ToString().ToLower();
             purchasesAfterSearch = purchases.Where(n => n.VoucherId.ToString().Contains(search) || n.SupplierName.ToLower().Contains(search)
                                                         || n.Date.ToString().Contains(search)).ToList();
-        }
-
-
-        public void SortItem(string column)
-        {
-            if (purchasesAfterSearch.Count != 0)
-            {
-                if (column == "VoucherId")
-                {
-                    if (isSortAscending)
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderBy(c => c.VoucherId).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderByDescending(c => c.VoucherId).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "SupplierName")
-                {
-                    if (isSortAscending)
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderBy(c => c.SupplierName).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderByDescending(c => c.SupplierName).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Date")
-                {
-                    if (isSortAscending)
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderBy(c => c.Date).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderByDescending(c => c.Date).ToList();
-                        isSortAscending = true;
-                    }
-                }
-                else if (column == "Remarks")
-                {
-                    if (isSortAscending)
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderBy(c => c.Remarks).ToList();
-                        isSortAscending = false;
-                    }
-                    else
-                    {
-                        purchasesAfterSearch = purchasesAfterSearch.OrderByDescending(c => c.Remarks).ToList();
-                        isSortAscending = true;
-                    }
-                }
-            }
         }
     }
 }

@@ -43,15 +43,11 @@
     private List<SalesModel> sales = new();
     private List<SalesModel> salesAfterSearch = new();
 
-    private string _searchString;
     private string selectedTimeFilter = "Daily";
 
     private decimal totalSales;
     private decimal totalPurchases;
 
-    private bool isCustomRangeDialogOpen = false;
-    private DateTime customStartDate;
-    private DateTime customEndDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -111,13 +107,6 @@
     private async Task OnTimeFilterChanged(string value)
     {
         selectedTimeFilter = value;
-        if (value == "Custom")
-        {
-            isCustomRangeDialogOpen = true;
-        }
-        else
-        {
-            await LoadTotals();
-        }
+        await LoadTotals();
     }
 }

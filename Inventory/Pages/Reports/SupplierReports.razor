@@ -3,7 +3,7 @@
 @using Inventory.Domain.Repository.Abstract
 
 <MudDataGrid T="SuppliersDisplayModel" MultiSelection="true" Items="@suppliersAfterSearch" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+             Hideable="true">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
@@ -29,8 +29,6 @@
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();
     private List<SuppliersDisplayModel> suppliersAfterSearch = new();
     private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,15 +73,10 @@
     }
 
 
-    // DataGrid Events
 
-    // custom sort by name length
     private Func<SuppliersDisplayModel, object> _sortBy => x =>
     {
-        if (_sortNameByLength)
-            return x.Area.Length;
-        else
-            return x.Area;
+        return x.Area;
     };
     // quick filter - filter globally across multiple columns with the same input
     private Func<SuppliersDisplayModel, bool> _quickFilter => x =>
@@ -102,20 +95,5 @@
 
         return false;
     };
-
-    void RowClicked(DataGridRowClickEventArgs<SuppliersDisplayModel> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    void RowRightClicked(DataGridRowClickEventArgs<SuppliersDisplayModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    void SelectedItemsChanged(HashSet<SuppliersDisplayModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
 
 }

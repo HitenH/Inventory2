@@ -3,7 +3,7 @@
 @using Inventory.Service
 
 <MudDataGrid T="ProductReportItem" MultiSelection="true" Items="@productReportItems" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-             Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+             Hideable="true">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
@@ -31,8 +31,6 @@
     [Inject] ISnackbar Snackbar { get; set; }
     [Inject] IDialogService DialogService { get; set; }
     private string _searchString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     private List<ProductReportItem> productReportItems = new();
 
@@ -61,15 +59,10 @@
             Logger.LogError(ex, "Error loading product reports");
             Snackbar.Add("Error loading product reports", Severity.Error);
         }
-    }// DataGrid Events
-
-    // custom sort by name length
+    }
     private Func<ProductReportItem, object> _sortBy => x =>
     {
-        if (_sortNameByLength)
-            return x.ProductName.Length;
-        else
-            return x.ProductName;
+        return x.ProductName;
     };
     // quick filter - filter globally across multiple columns with the same input
     private Func<ProductReportItem, bool> _quickFilter => x =>
@@ -82,19 +75,4 @@
 
         return false;
     };
-
-    void RowClicked(DataGridRowClickEventArgs<ProductReportItem> args)
-    {
-        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    void RowRightClicked(DataGridRowClickEventArgs<ProductReportItem> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    void SelectedItemsChanged(HashSet<ProductReportItem> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
 }

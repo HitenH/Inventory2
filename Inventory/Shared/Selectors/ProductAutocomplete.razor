@@ -30,6 +30,7 @@
     [Parameter] public ProductModel SelectedProduct { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
     [Inject] private IProductRepository ProductRepository { get; set; }
+    [Inject] private ILogger<ProductAutocomplete<T>> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IJSRuntime JSRuntime { get; set; }
@@ -96,6 +97,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Product search: loading products failed");
             Snackbar.Add("Something went wrong while getting products.", Severity.Error);
         }
     }

@@ -53,9 +53,9 @@
 @code {
     [CascadingParameter]
     public IMudDialogInstance MudDialog { get; set; }
-    private Snackbar snackbar;
 
     [Inject] private ISupplierRepository SupplierRepository { get; set; }
+    [Inject] private ILogger<SuppliersDialog> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
 
     private List<SupplierModel> suppliers = new();
@@ -76,7 +76,8 @@
         }
         catch (Exception ex)
         {
-            snackbar = Snackbar.Add("Something went wrong", Severity.Warning);
+            Logger.LogError(ex, "Supplier picker: loading suppliers failed");
+            Snackbar.Add("Something went wrong", Severity.Warning);
         }
     }
     public void SearchItem(ChangeEventArgs e)

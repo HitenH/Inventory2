@@ -30,6 +30,7 @@
     [Parameter] public SupplierModel SelectedSupplier { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
     [Inject] private ISupplierRepository SupplierRepository { get; set; }
+    [Inject] private ILogger<SupplierAutocomplete<T>> Logger { get; set; } = default!;
     [Inject] private IMapper Mapper { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
 
@@ -95,6 +96,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Supplier search: loading suppliers failed");
             Snackbar.Add("Something went wrong while getting suppliers.", Severity.Error);
         }
     }

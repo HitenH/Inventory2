@@ -63,29 +63,6 @@
                 <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"salesorder/{context.Id}")">Info</MudButton>
             </MudTd>
         </RowTemplate>
-        @* <RowEditingTemplate>
-        <MudTd>
-            <MudTextField @bind-Value="@context.VoucherId" Disabled />
-        </MudTd>
-        <MudTd>
-            <MudTextField @bind-Value="@context.CustomerName" Disabled />
-        </MudTd>
-        <MudTd>
-            <MudDatePicker @bind-Date="context.Date" />
-        </MudTd>
-        <MudTd>
-            <MudDatePicker @bind-Date="context.DueDate" />
-        </MudTd>
-        <MudSelect @bind-Value="context.OrderStatus"
-                           Label="Order Status"
-                           T="OrderStatus">
-            @foreach (OrderStatus item in orderStatuses)
-            {
-                <MudSelectItem Value="@item">@item</MudSelectItem>
-            }
-        </MudSelect>
-        <MudTd>N/A</MudTd>
-    </RowEditingTemplate> *@
         <NoRecordsContent>
             <MudText Align="Align.Center">Not Found!</MudText>
         </NoRecordsContent>
