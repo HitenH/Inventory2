@@ -47,4 +47,19 @@ public class LookupSearchTests
         Assert.True(Lookups.Matches(Lookups.Product.DialogFields(pen), "blue"));
         Assert.False(Lookups.Matches(Lookups.Product.DialogFields(pen), "ink"));
     }
+
+    [Fact]
+    public void Search_box_lists_every_match_and_skips_missing_rows()
+    {
+        // Batch 13: the MudBlazor search box gets its list from SearchBoxMatches – no limit on the number shown.
+        var products = Enumerable.Range(1, 30)
+            .Select(i => new ProductModel { ProductId = $"P{i}", Name = $"Shirt {i}" })
+            .Append(null!)
+            .Append(new ProductModel { ProductId = "X1", Name = "Trouser" })
+            .ToList();
+
+        Assert.Equal(30, Lookups.SearchBoxMatches(products, Lookups.Product, "shirt").Count());
+        Assert.Equal("X1", Assert.Single(Lookups.SearchBoxMatches(products, Lookups.Product, "TROU")).ProductId);
+        Assert.Empty(Lookups.SearchBoxMatches(products, Lookups.Product, "zzz"));
+    }
 }

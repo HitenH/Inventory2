@@ -4,7 +4,7 @@
 
 **Owner:** Hiten (business owner, not a developer). Explain changes in plain English. Ask before anything that changes how the app behaves for the operator.
 
-**Last updated:** 12 November 2026 (end of session 3 – batches 7, 9, 10, 11 done; next chat starts batch 12)
+**Last updated:** 12 November 2026 (session 5 – batch 13 done, tested by Hiten; next: batch 14)
 
 ---
 
@@ -12,27 +12,35 @@
 
 **Read this section, then sections 1–3, then the batch you are about to do.** Hiten wants short, plain-English updates; he tests in the browser and says "push" when happy.
 
-**State on 12 Nov 2026:**
-- **Batches 1–6: done, tested by Hiten, pushed** to GitHub `main` (last pushed commit `50a1ecf` "Batch 5 + 6").
-- **Batch 7: done, tested by Hiten (including the discount follow-up), pushed** (commit "Batch 7: ..."; see `git log`).
-- **Batch 9: done.** Step 1 (.NET 10, EF Core 10, log files, error box, dead config) done, tested by Hiten, pushed ("Batch 9 step 1"); step 2 (MudBlazor 7.15 → 9.12) done, tested by Hiten, pushed. **Batch 10 (tests): done, pushed (`0f44264`). GitHub Actions workflow pushed (`2c7bd85`) after Hiten re-signed in via browser; first run green.** **Batch 11 (dead code): done, pushed (`259a644`).** **Uncommitted fix (12 Nov, end of session 3): Reports → Customers/Suppliers tabs crashed (error box) when a customer/supplier has no phone number – the Mobiles column now shows blank. Ask Hiten to check it, then include it in the next commit.** **Batch 12 (merge duplicated code, AutoMapper removed): done, tested by Hiten, pushed ("Batch 12 part 1" + "Batch 12 part 2").** **Next: batch 13 (one UI library).** **After 9:** Then 10 … 15, then 16 (users and roles), then **8 (Import) – moved to the very end by Hiten on 12 Nov 2026**, then the one-time rollout (section 6). Until batch 8 is done, Import keeps working as today (batch 5 rules stop duplicate/blank IDs).
+**State on 12 Nov 2026 (session 5):**
+- **Batches 1–7 and 9–13: done, tested by Hiten in the browser, pushed** to GitHub `main` (batch 13 = one commit "Batch 13: ...", all five steps done in one go at Hiten's request).
+- **Next: batch 14 (performance)** – see section 4.
+- **Order after that:** → 15 (data features, needs Hiten's decisions) → 16 (users and roles) → **8 (Import, deferred to the very end by Hiten)** → one-time rollout (section 6). Until batch 8, Import keeps working as today (batch 5 rules stop duplicate/blank IDs).
 - **Development-only mode:** nothing goes to the counter PC until Hiten says everything is ready (rule 8).
-- **Pinned for later (do not touch until Hiten raises them):** (1) users and roles → batch 16; (1b) Import → batch 8, deferred to last; (2) old duplicate voucher numbers → see "Pinned decisions" below section 5.
+- **Pinned for later (do not touch until Hiten raises them):** (1) users and roles → batch 16; (1b) Import → batch 8, last; (2) old duplicate voucher numbers → "Pinned decisions" below section 5.
+- **Carried forward from batch 12 (deliberately not done):** `VariantModel.Image` still holds the photo record (the photo save is tied to the product save in `Shared/Variant.razor.cs` + `ProductRepositoryEF.Update`) → do it in batch 14 with "images served from disk". `Mobile` lists on the Customer/Supplier models are kept (the batch 6 phone sync relies on them). Variant / line / transaction repositories stay separate (they contain rules and transactions).
+
+**How Hiten wants to work (important):**
+- Hiten is the business owner, **not technical**. Explain in plain English: short, business impact first, no code in explanations.
+- **Small steps.** After each step: say what changed, give a numbered "what to test in the browser" list (http://localhost:5259), then **wait** for his reply ("Step N", "works", or a problem report). If he says "do X and Y in one go", do them together.
+- **Nothing should look or work differently** unless the batch says so and Hiten agreed. Tell him explicitly about any small behaviour improvement made along the way (e.g. a bug fix). Ask before anything that changes what the operator sees or does.
+- **Only commit + push when he says "push".** One commit per batch (or "Batch N part 1/2" when he asks to push mid-batch); the message starts with `Batch N:`. Before the commit, update section 0, the batch's status-log row (section 5) and the REVIEW.md "Progress" section.
+- Every step: stop the app → build (0 errors, warnings ≤ baseline) → `dotnet test --project Inventory.Tests` (all pass) → restart the app → then hand over to Hiten. Add a test for every bug fixed and for every merged or shared piece of logic.
 
 **How the dev environment is set up (so you do not rediscover it):**
 - Test database = a copy of the real data: `Inventory\bin\Debug\net10.0\Inventory.db`, copied from `C:\Users\Hiten\Desktop\Inventory App\website (1)\Inventory.db` (the published app folder; data up to May 2026). Never write to the Desktop file; copy it. (Batch 9 moved the build folder from `net9.0` to `net10.0`; the test DB and Backups were copied across. Logs: `bin\Debug\net10.0\logs`.)
-- Run: `cd Inventory` then `dotnet run --launch-profile http` → http://localhost:5259. Development keeps data in the build folder and backups in `bin\Debug\net9.0\Backups` (`appsettings.Development.json`). Users: **Hiten** (role User) and **Admin** (role Admin); Hiten knows the passwords.
+- Run: `cd Inventory` then `dotnet run --launch-profile http` → http://localhost:5259. **When an AI session starts it:** after building, use PowerShell `Start-Process dotnet -ArgumentList 'run','--no-build','--launch-profile','http' -WorkingDirectory <repo>\Inventory -WindowStyle Minimized`, then poll the URL until it answers 200. This keeps the app running after the AI's turn ends; a background task in the AI's own shell gets closed (exit 127) when the turn ends, so Hiten finds the app down. Stop it with `Stop-Process -Name Inventory -Force`. The "background task failed, exit 255/127" notice that follows is just the old instance being stopped. Development keeps data in the build folder and backups in `bin\Debug\net10.0\Backups` (`appsettings.Development.json`). Users: **Hiten** (role User) and **Admin** (role Admin); Hiten knows the passwords.
 - **Stop the running app before building.** Otherwise the exe is locked, and `dotnet ef migrations add` silently produces an EMPTY migration from the old build. Order: stop app → `dotnet build` → `dotnet ef migrations add <Name> --no-build` → check the generated `Up()` is not empty.
 - If login "fails" in the browser, check nothing else owns port 5259 (an old 2023 .NET 7 copy at `C:\Users\Hiten\source\repos\Inventory` uses the same port): `netstat -ano | findstr 5259`.
 - **Automatic tests (batch 10):** `dotnet test --project Inventory.Tests` from the repo root (stop the app first – a running app locks the build). Each test gets its own new database built with the real migrations (`Inventory.Tests/TestDatabase.cs`). `global.json` switches `dotnet test` to the new Microsoft.Testing.Platform runner (required by .NET 10 SDK with xUnit v3). GitHub Actions (`.github/workflows/build.yml`, Windows) builds and runs them on every push to `main`. **Add a test for every bug fixed from now on.**
-- Build baseline: **0 errors, 364 warnings** (after batch 12) – do not add new ones.
+- Build baseline: **0 errors, 358 warnings** (after batch 13) – do not add new ones.
 
 ---
 
 ## 1. Context a new session needs
 
 ### The app
-- Small-business inventory and sales system. Blazor **Interactive Server** on **.NET 10** (from batch 9), **EF Core 10 + SQLite**, Serilog log files in `<DataFolder>\logs`, **MudBlazor 9.12** (plus leftover Blazor.Bootstrap and Bootstrap). Projects: `Inventory/` (app) and `Inventory.Tests/` (xUnit v3, batch 10).
+- Small-business inventory and sales system. Blazor **Interactive Server** on **.NET 10** (from batch 9), **EF Core 10 + SQLite**, Serilog log files in `<DataFolder>\logs`, **MudBlazor 9.12** (Blazor.Bootstrap removed in batch 13; Bootstrap CSS + `bootstrap.bundle.min.js` kept for page layout classes). Projects: `Inventory/` (app) and `Inventory.Tests/` (xUnit v3, batch 10).
 - **In daily production use** on one counter PC (still running the old May 2026 build). The operator records purchases (adds stock), sales via barcode scanning (removes stock), and runs reports. Stock is *calculated* as purchased minus sold per variant, never stored.
 - Deployed as a self-contained Windows exe that starts a web server on `http://localhost:5000` and opens the browser. **From batch 2 the installed app keeps its data in `%ProgramData%\InventoryApp\Inventory.db`** (backups in `...\InventoryApp\Backups`; configurable via `DataFolder` / `BackupFolder` in `appsettings.json`). On first start it copies the old `Inventory.db` from the program folder (never deletes it). Automatic daily backup (`BackupScheduler`); backups use SQLite's online backup and are integrity-checked.
 - Login: users in the `Users` table, passwords hashed (PBKDF2, `Authentication/PasswordService.cs`); Change Password page. Every page except Home and Login requires login (batch 3). Roles exist but are not enforced (batch 16).
@@ -45,26 +53,37 @@
 ```
 Inventory/
   Program.cs                 startup: DataPaths, DbContextFactory, migrations + UserBootstrap at startup, backup scheduler
+  App.razor                  page shell: Bootstrap css + js, MudBlazor (bootstrap-icons and Blazor.Bootstrap removed in batch 13)
   Domain/AppDbContext.cs     tables, relationships, unique indexes; SaveChanges undoes pending changes on failure
   Domain/Entities/*.cs       tables
-  Domain/Repository/*.cs     one repository per table (+ Abstract/ interfaces); all use IDbContextFactory
-  Domain/TransactionLineHydrator.cs   fills product/variant/customer names on transaction lines (kept as a helper)
+  Domain/Repository/*.cs     repositories (+ Abstract/ interfaces); all use IDbContextFactory.
+                             SimpleRepositoryEF<T> = shared plain CRUD for Category/Image/PurchaseOrder (batch 12)
+  Domain/TransactionLineHydrator.cs   fills product/variant/customer names on transaction lines
   Domain/TransactionTotals.cs         recalculates purchase / sales-order totals (batch 7)
-  Service/                   BackupService, BackupScheduler, DataPaths (+SqliteBackup), DbErrors, LineAmounts, MobileService, DateOnlyConverter
+  Service/                   BackupService, BackupScheduler, DataPaths, DbErrors, LineAmounts (line maths),
+                             ColumnSorter<T> (click-to-sort columns, batch 12), MobileService, DateOnlyConverter
   Authentication/            CustomAuthenticationProvider (session-storage login), PasswordService, UserBootstrap, UserSession
   Pages/                     screens (.razor + .razor.cs code-behind); Pages/Reports/; Login, ChangePassword, Settings
-  Shared/                    line editors, Variant editor, RedirectToLogin, Selectors/ autocompletes, old popups (unused)
-  MudBlazorComponents/       dialogs: Confirmation, Customer/Products/Suppliers pickers, Loading, ScanMassProducts
-  Models/                    view models
+  Shared/TransactionLineEditor + TransactionLines.cs   ONE line editor for Purchase and Sales Order (batch 12);
+                             PurchaseVariantComponent / SalesOrderVariantComponent are thin wrappers around it
+  Shared/Selectors/          LookupAutocomplete + LookupSettings (Lookups.Customer/Supplier/Product) = ONE picker;
+                             Customer/Supplier/ProductAutocomplete are thin wrappers (batch 12)
+  Shared/Variant.razor       variant + photo editor on the Product page
+  Shared/DateBox.razor       the one date box (MudDatePicker; DateOnly <-> DateTime? via Service/DateConversion; width on a wrapper div, OpenLeft for boxes at the right edge)
+  MudBlazorComponents/       LookupDialog (picker pop-up), ConfirmationDialog + DialogServiceExtensions.ConfirmAsync/ConfirmDeleteAsync/ShowErrorDetailsAsync (ErrorDetailsDialog),
+                             ImagePopup, Loading*, ScanMassProducts, PagesHeader
+  Models/                    view models (no database records inside, except VariantModel.Image and Mobile lists);
+                             ModelMapping.cs = ToModel()/ToEntity() copies (replaced AutoMapper in batch 12)
   Migrations/                latest: RemoveSeededUsers, UniqueBusinessIds, CaseInsensitiveIdsNoBlanks, StoreSalesOrderDiscount
-  appsettings.json           DataFolder, BackupFolder, BackupDailyAt, BackupKeepDaily, CustomerNumberMobile, SupplierNumberMobile, FileMaxSize, unused ConnectionString
+  appsettings.json           DataFolder, BackupFolder, BackupDailyAt, BackupKeepDaily, CustomerNumberMobile, SupplierNumberMobile, FileMaxSize
   appsettings.Development.json  DataFolder "." and BackupFolder "Backups" (build folder) for development
+Inventory.Tests/             58 xUnit v3 tests; TestDatabase.cs builds a fresh DB with the real migrations for each test
 ```
 
 ### Build and run
 ```
 cd Inventory
-dotnet build                          # must be 0 errors (547 warnings now; do not add new ones)
+dotnet build                          # must be 0 errors (358 warnings now; do not add new ones)
 dotnet run --launch-profile http      # Development, http://localhost:5259
 dotnet ef migrations add <Name> --no-build   # only after stopping the app and building
 ```
@@ -77,11 +96,11 @@ The .NET 10 SDK (10.0.403) is installed on the development PC. `dotnet-ef` tool 
 1. **One batch = one Git commit** (plus small follow-up commits if a check fails). Commit message starts with `Batch N:`.
 2. **Never change what the operator sees or does** unless the batch says so and Hiten agreed.
 3. **Build after every change.** 0 errors. Do not introduce new warnings.
-4. **Before any batch that touches the database file, schema or data layer** (batches 2, 5, 6, 7, 9): work only on a copy of the database. In development-only mode that copy is `bin\Debug\net9.0\Inventory.db` (from the Desktop file); the live counter-PC copy is taken at rollout (section 6).
+4. **Before any batch that touches the database file, schema or data layer** (batches 2, 5, 6, 7, 9): work only on a copy of the database. In development-only mode that copy is `bin\Debug\net10.0\Inventory.db` (from the Desktop file); the live counter-PC copy is taken at rollout (section 6).
 5. **Smoke test after every batch** (section 3) on a copy of the real database, not on the counter PC. Hiten does the browser test; "push" from him = commit + push.
 6. **If a batch breaks something and the fix is not obvious within an hour, revert the batch** (`git revert <commit>`), publish the previous version, and write what happened in the status log.
 7. **Update section 5 (status log)** at the end of each batch: what was done, what was skipped, anything Hiten must do by hand.
-8. **Development-only mode (Hiten's decision, 12 Nov 2026):** do not deploy anything to the counter PC batch by batch. All batches are built and smoke-tested on the development PC against a *copy* of the real database (`Desktop\Inventory App\website (1)\Inventory.db` copied to `Inventory\bin\Debug\net9.0\Inventory.db`). The next batch may start once the previous one passes the smoke test here. The counter PC is updated **once**, when Hiten says everything is ready (see section 6).
+8. **Development-only mode (Hiten's decision, 12 Nov 2026):** do not deploy anything to the counter PC batch by batch. All batches are built and smoke-tested on the development PC against a *copy* of the real database (`Desktop\Inventory App\website (1)\Inventory.db` copied to `Inventory\bin\Debug\net10.0\Inventory.db`). The next batch may start once the previous one passes the smoke test here. The counter PC is updated **once**, when Hiten says everything is ready (see section 6).
 
 ---
 
@@ -223,6 +242,13 @@ One commit per merge: `PurchaseVariantComponent` + `SalesOrderVariantComponent` 
 
 ### Batch 13 – One UI library  [A5, M7]
 Replace Blazor.Bootstrap `AutoComplete` → `MudAutocomplete`, `DateInput` → `MudDatePicker`, `NumberInput` → `MudNumericField`, `Modal` (`Shared/ModalWindow.razor`) → `MudDialog`. Remove the `Blazor.Bootstrap` package and its script/css from `App.razor`. Keep Bootstrap CSS only if layout still depends on it; otherwise remove. Cosmetic changes must be shown to Hiten before publishing.
+**What is left to replace (checked at the end of batch 12):**
+- `AutoComplete`: only in `Shared/Selectors/LookupAutocomplete.razor` (one place, thanks to batch 12) → `MudAutocomplete`. Must keep: the placeholder texts, the search fields from `LookupSettings`, the "pick from list" button that opens `LookupDialog`, a clear ("x") button, and the picked name showing in the box.
+- `NumberInput`: `Shared/TransactionLineEditor.razor` (4), `Pages/Purchase.razor` (1), `Pages/SalesOrder.razor` (1), `Pages/SalesSummary.razor` (1) → `MudNumericField`. Keep the `ValueChanged` handlers (they recalculate amounts or save the discount).
+- `DateInput`: `Pages/PurchaseOrder.razor` (4), `Pages/SalesOrder.razor` (2), and one each in `Pages/Purchase.razor`, `Pages/Sale.razor` and `Pages/SalesSummary.razor` → `MudDatePicker`. This needs a DateOnly ↔ DateTime? conversion. A date change may trigger voucher-number logic, so check each page's handler.
+- `Modal` + `Button`: `Shared/ModalWindow.razor` (used by the Customer and Supplier pages) → `MudDialog` / `MudMessageBox`.
+- Then remove `<script src="_content/Blazor.Bootstrap/blazor.bootstrap.js">` (App.razor), the package reference and the `@using BlazorBootstrap` lines. Check whether `bootstrap.bundle.min.js`, `css/bootstrap/bootstrap.min.css` and `lib/bootstrap-icons` are still needed: bootstrap-icons was added in batch 12 only for the AutoComplete "x", and the pages use Bootstrap grid classes (`row`, `col-*`, `form-control`), so Bootstrap CSS probably stays.
+**Suggested steps (one Hiten test each):** 1 NumberInput → 2 DateInput → 3 AutoComplete → 4 ModalWindow → 5 remove the package. Show Hiten each change in look before moving on.
 
 ### Batch 14 – Performance for growth  [P1–P5]
 Customer totals via aggregate query (copy the supplier pattern) and stop including `Sales` in `CustomerRepositoryEF.GetAll`; paging on all list tables (`MudTable ServerData` or page size); images served from disk via an endpoint instead of base64 in the page; report sums in SQL with correct period labels; single-row variant updates.
@@ -258,7 +284,7 @@ Customer totals via aggregate query (copy the supplier pattern) and stop includi
 | 10 | Done, pushed (`0f44264`, workflow `2c7bd85`, first Actions run green) | | 2026-11-12 | New `Inventory.Tests` (xUnit v3 4.0.3, net10.0), 32 tests in 5 groups: **Calculations** (line amount/discount rounding, password hash/verify/rules); **Stock and vouchers** (stock = purchased − sold, stock report agrees, deleting a sale restores stock, voucher numbers per day); **Transactions** (batch 7: purchase total follows line add/edit/delete + discount, supplier total moves, header Update keeps discount, 15 simultaneous discount+line saves correct, new sales order saves with discount kept, empty sale refused, summary save keeps items); **Data rules** (batch 5: duplicate Product/Customer/Supplier ID refused ignoring case, variant ID unique per product only, blank product/customer refused with readable message, line with another product's variant refused and nothing half-saved, customer with sales cannot be deleted); **Database** (migrations match the code; backup holds latest data and restore brings it back with a safety copy; damaged backup refused, DB untouched). Checked the tests can fail: removing the discount from the total made 2 tests fail. `global.json` (test runner), `.github/workflows/build.yml` (windows-latest, .NET 10, restore/build Release/test). **Not done:** import validation tests (batch 8 deferred – add them with batch 8); no 'service' classes exist (batch 7 put the logic in repositories), so the integration tests target the repositories. Build: 0 errors, 547 warnings (tests add none). |
 | 11 | Done, pushed | | 2026-11-12 | Deleted: `Shared/CustomerPopup`, `SupplierPopup`, `ProductPopup` (.razor + .cs), `ModalWindowShowImage.razor`, `Shared/MainLayout.razor.cs` (menu has its own Logout), Chart.js + datalabels (files, `App.razor` script tags, `libman.json`). Removed: Sales Orders list row-edit leftovers (`EditOrder`, `BackupItem`, `ResetItemToOriginalValues`, commented `RowEditingTemplate`, unused fields and `CustomerRepository`); Purchases `SortItem`; demo code in 7 report grids (`_events`, `RowClicked`, `RowRightClicked`, `SelectedItemsChanged`, `_sortNameByLength`); Product page dead message window (`modalWindowComponenRef` never assigned – update/delete messages never appeared; the delete error snackbar from batch 4 stays), `variant`/`GetVariant`; leftover fields in PurchaseOrder/SalesOrder/SalesPurchases/Variant/Customer reports; unreachable "Custom" period branch (no such option on screen); `CustomerReports` unused loading dialog; empty `SalesSummary.OnAfterRenderAsync`; `Snackbar snackbar` fields; duplicate `@using` lines; `DocumentFormat.OpenXml` using. "Swedish Farm House" photo text → "Photo of variant <ID>". **Improved:** 8 `catch (Exception ex)` blocks that swallowed errors (customer/product/supplier pickers and searches, product import save, area sales report) now log them. **Kept:** `UserRepositoryEF` (fully implemented in batch 1), `Sale.selectedProduct` (used: picker starts empty), `ModalWindow.razor` (used by Customer/Supplier – batch 13). **Moved to batch 12:** unused model properties (`SalesModel.SalesVariants`, `ProductModel.PurchaseVariants`, `VariantModel.PurchaseVariants/SalesVariants`) – AutoMapper maps by name, remove together with AutoMapper. Verified: build 0 errors, warnings 547 → 458; 32 tests pass. **Hiten decided:** Sales Orders report added as a Reports tab (after Purchase Orders; its separate `/reports/salesorders` address removed, like the other report tabs); no "product saved" confirmation needed (left as is). |
 | 12 | Done, pushed | "Batch 12 part 1" + "part 2" | 2026-11-12 | **Done (steps 1–7, each tested by Hiten):** (1) `SalesSummary` maths → `LineAmounts`. (2) Stock report and stock-in-hand share one purchased/sold query (`GetPurchasedAndSoldAsync`). (3) `DialogServiceExtensions.ConfirmAsync/ConfirmDeleteAsync` replace 10 copies (Settings too). (4) `Service/ColumnSorter<T>` replaces the nine-branch `SortItem` methods (same click behaviour). (5) **AutoMapper removed:** `Models/ModelMapping.cs` plain copies (same shapes as before, checked side by side with a temporary test), package + `NuGetAuditSuppress` gone, `dotnet list package --vulnerable` clean; unused `SalesModel.SalesVariants`, `ProductModel.PurchaseVariants`, `VariantModel.PurchaseVariants/SalesVariants` removed. (6) Purchase + Sales Order line editors → `Shared/TransactionLineEditor` + `TransactionLines` (one small class per voucher type); `LineEditorModel` replaces two models. (7) Customer/Supplier/Product pickers → `LookupAutocomplete` + `LookupDialog` configured by `LookupSettings` (`Lookups.Customer/Supplier/Product`); old wrappers kept so pages are unchanged. **Small improvements (told Hiten):** Sales Order line errors now shown; friendly message when no variant picked; Purchase edit-then-cancel no longer blanks the row; picker search ignores stray spaces and empty fields; Sales Order "Product Name" column now sorts by name (sorted by ID). **Found by Hiten, fixed:** the "x" clear button in every search box was blank since before batch 12 – the Bootstrap Icons font was never loaded; `bootstrap-icons` 1.11.3 now stored in `wwwroot/lib` (libman.json) and linked in `App.razor`. Verified: build 0 errors, warnings 458 → 377; 51 tests pass (19 new: ColumnSorter, ModelMapping, LineEditor, LookupSearch). **Part 2 (step 8, tested by Hiten):** 8a `CustomerModel.Sales/SalesOrders` → `TotalSales` (sum filled by `ToModel`; Customers list + Reports → Customers use it); `SupplierModel.Purchases` removed. 8b `ProductModel.Category` removed, `ProductModel.Variants` is now `List<VariantModel>`; `LineEditorModel.Product` removed (line editor keeps a `ProductModel`; editing an existing line still has no variant drop-down, as before); `SalesVariantModel.Product` is a `ProductModel`, `.Variant` removed; unused `SalesSummaryModel` deleted. **Kept on purpose:** `VariantModel.Image` (photo save is tied to the product save – revisit in batch 14 with P3 'images in DB') and `Mobile` lists on Customer/Supplier (phone sync relies on them). 8c `SimpleRepositoryEF<T>` shared by Category/Image/PurchaseOrder repositories (interfaces unchanged); unused `MobileRepository` deleted. Variant/line/transaction repositories kept (they hold rules and transactions). Verified: build 0 errors, warnings 377 → 364; 54 tests pass (new: customer total, product mapping, SimpleRepository). |
-| 13 | Not started | | | Hiten: approve the new look of inputs. |
+| 13 | Done, tested by Hiten | "Batch 13" | 2026-11-12 | All five steps in one go (Hiten's choice). Blazor.Bootstrap gone: package, `AddBlazorBootstrap()`, script/css links, `@using BlazorBootstrap`; bootstrap-icons removed too (only the old search box "x" used it; libman.json updated). Bootstrap CSS and `bootstrap.bundle.min.js` kept (grid/form classes). **Number boxes** → `MudNumericField` (outlined, dense, no spin buttons, centred; same `ValueChanged` handlers). **Date boxes** → new `Shared/DateBox.razor` (`MudDatePicker`, dd-MM-yyyy, typing allowed, clear "x" only on optional Purchase Order dates; `Service/DateConversion`). **Search box** → `MudAutocomplete` in `LookupAutocomplete` (searches from the first letter, shows every match, clear "x", picked name shown; leaving the box without picking puts back the last picked name); search list from `Lookups.SearchBoxMatches`. **Customer delete-error window** → `ErrorDetailsDialog` via `DialogService.ShowErrorDetailsAsync` (same Show Full/Hide + Close); `Shared/ModalWindow.razor` deleted; the Supplier page's copy was never shown (supplier delete errors are a snackbar, unchanged) and was removed. **Found by Hiten, fixed:** (1) calendar squeezed on Purchase/Sale/Sales Order – MudBlazor applies the picker's `Style` width to the calendar pop-up too, so the width now goes on a wrapper div; those boxes also open the calendar to the left (`OpenLeft`). (2) Picked names cut off – the list button now takes only its own width, the drop-down arrow is gone, and the Purchase supplier / Sales Order customer boxes have a 350px minimum width. Verified: build 0 errors, warnings 364 → 358; 58 tests pass (new: DateConversion ×3, SearchBoxMatches). |
 | 14 | Not started | | | |
 | 15 | Not started | | | Needs decisions on each item. |
 | 16 | Not started (pinned) | | | Users and roles – after batch 15, before final rollout. Hiten decides roles then. |

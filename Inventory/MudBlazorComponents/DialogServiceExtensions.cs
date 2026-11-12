@@ -24,6 +24,19 @@ public static class DialogServiceExtensions
         return result is { Canceled: false };
     }
 
+    /// <summary>Error box with a short message and a "Show Full" button for the details (batch 13).</summary>
+    public static async Task ShowErrorDetailsAsync(this IDialogService dialogService, string title, string messageShort, string messageLong)
+    {
+        var parameters = new DialogParameters<ErrorDetailsDialog>
+        {
+            { x => x.MessageShort, messageShort },
+            { x => x.MessageLong, messageLong }
+        };
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await dialogService.ShowAsync<ErrorDetailsDialog>(title, parameters, options);
+        await dialog.Result;
+    }
+
     /// <summary>The standard red "Delete" confirmation used before every delete.</summary>
     public static Task<bool> ConfirmDeleteAsync(this IDialogService dialogService)
         => dialogService.ConfirmAsync("Delete", DeleteWarning, "Delete", Color.Error);

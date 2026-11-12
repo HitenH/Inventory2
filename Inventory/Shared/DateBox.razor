@@ -1,0 +1,29 @@
+@* One date box for every screen (batch 13; replaces the Blazor.Bootstrap DateInput). Works with DateOnly and DateOnly?. *@
+@typeparam TValue
+
+@* The width goes on this wrapper, not on the picker: MudBlazor also applies the picker's Style to the calendar
+   pop-up, which squeezed the calendar to the box's width (found by Hiten in batch 13). *@
+<div style="@Style">
+<MudDatePicker Date="@DateConversion.ToDateTime(Value)"
+               DateChanged="OnDateChanged"
+               DateFormat="dd-MM-yyyy"
+               Editable="true"
+               Clearable="@(default(TValue) is null)"
+               Disabled="Disabled"
+               Variant="MudBlazor.Variant.Outlined"
+               Margin="Margin.Dense"
+               Class="box-center"
+               AnchorOrigin="@(OpenLeft ? Origin.BottomRight : Origin.BottomLeft)"
+               TransformOrigin="@(OpenLeft ? Origin.TopRight : Origin.TopLeft)" />
+</div>
+
+@code {
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Style { get; set; }
+    /// <summary>For boxes near the right edge of the screen: the calendar opens towards the left so it is not squeezed.</summary>
+    [Parameter] public bool OpenLeft { get; set; }
+
+    private Task OnDateChanged(DateTime? date) => ValueChanged.InvokeAsync(DateConversion.FromDateTime(date, Value));
+}

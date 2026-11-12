@@ -14,7 +14,7 @@
 
 
     <div class="d-flex justify-content-between">
-        <div>
+        <div style="min-width:350px;">
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
 
             <CustomerAutocomplete T="CustomerModel"
@@ -46,11 +46,11 @@
         </div>
         <div class="text-center">
             <label for="date" class="form-label"><h4>Date</h4></label>
-            <DateInput TValue="DateOnly" @bind-Value="salesOrderModel.Date" id="date" class="form-control text-center" style="width:150px;" />
+            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.Date" Style="width:170px;" OpenLeft="true" />
         </div>
         <div class="text-center">
             <label for="duedate" class="form-label"><h4>DueDate</h4></label>
-            <DateInput TValue="DateOnly" @bind-Value="salesOrderModel.DueDate" id="duedate" class="form-control text-center" style="width:150px;" />
+            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.DueDate" Style="width:170px;" OpenLeft="true" />
         </div>
     </div>
     <ValidationSummary />
@@ -89,7 +89,7 @@
             </div>
             <div class="text-center d-flex col-3">
                 <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
-                <NumberInput TValue="decimal" Value="SalesOrderTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>SalesOrderTotalData.Discount" />
+                <MudNumericField T="decimal" Value="SalesOrderTotalData.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
             </div>
             <div class="text-center d-flex col-3">
                 <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>

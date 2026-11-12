@@ -26,7 +26,7 @@
 
 The review below is kept as written on 10 Nov 2026. This section tracks what has been fixed since. Details per batch are in `PLAN.md` section 5. All work is on the development PC against a copy of the real data; **nothing has been installed on the counter PC yet** (owner's decision – one rollout at the end).
 
-**Rough health score now: about 7 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; three UI libraries (batch 13) remain.
+**Rough health score now: about 7.8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13. Performance for growth (batch 14) is next.
 
 ### Status of each finding
 
@@ -55,8 +55,8 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | Tests / CI | None | **Fixed** – 32 automatic tests (calculations, stock, vouchers, totals/discounts, data rules, migrations, backup/restore); GitHub runs them on every push (first run green). | 10 |
 | §6 unused code | Dead components, demo code | **Fixed** – unused popups/modals/Chart.js/demo code removed, silent errors now logged; warnings 547 → 458. Sales Orders report added as a Reports tab (owner's choice). | 11 |
 | A3, A4, §6 duplicates | Copy-pasted repositories, components, view models | **Fixed** – one line editor, one picker, one confirm helper, one column sorter, one stock query, Sales Summary uses shared maths, one simple repository for categories/photos/purchase orders; screen models no longer carry database records (except variant photos – batch 14); **AutoMapper removed** (security advisory gone); warnings 458 → 364. | 12 |
-| A5 | Three UI libraries | Open | 13 |
-| P1–P3, P5, P6 | Paging, customer list loads all sales, images in DB, report sums, pickers | Open | 14 |
+| A5 | Three UI libraries | **Fixed** – Blazor.Bootstrap removed; number boxes, date boxes, the customer/supplier/product search box and the Customer error window now use MudBlazor (look approved by the owner). Bootstrap CSS stays only for page layout classes. Warnings 364 → 358. | 13 |
+| P1–P3, P5, P6 | Paging, customer list loads all sales, images in DB, report sums, pickers | Open. The Customers list still loads every sale to work out totals (now summed into `CustomerModel.TotalSales` while loading); variant photos still travel inside `VariantModel.Image`. | 14 |
 | D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |
 | B9, B11, B12, S5, S6, D6 | "Not found" returns empty record; PO free text; delete errors show stack trace; HTTPS; raw DB errors; WAL/multi-user | Open (fold into batches 11–15) | – |
 

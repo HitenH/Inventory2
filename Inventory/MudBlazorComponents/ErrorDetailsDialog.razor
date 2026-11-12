@@ -1,0 +1,30 @@
+@* Error message box with a "Show Full" / "Hide" toggle for the technical details (batch 13; replaces Shared/ModalWindow.razor). *@
+<MudDialog>
+    <DialogContent>
+        <MudText>@MessageShort</MudText>
+        @if (!string.IsNullOrWhiteSpace(MessageLong))
+        {
+            <MudButton Class="mt-3" Variant="MudBlazor.Variant.Outlined" Size="Size.Small"
+                       OnClick="() => showFull = !showFull">
+                @(showFull ? "Hide" : "Show Full")
+            </MudButton>
+            @if (showFull)
+            {
+                <MudText Class="mt-3" Typo="Typo.body2">@MessageLong</MudText>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string MessageShort { get; set; } = "";
+    [Parameter] public string MessageLong { get; set; } = "";
+
+    private bool showFull;
+
+    private void Close() => MudDialog.Close();
+}

@@ -20,7 +20,7 @@
         </div>
         <div class="text-center">
             <label for="date" class="form-label"><h4>Date</h4></label>
-            <DateInput TValue="DateOnly" @bind-Value="salesEntity.Date" id="date" class="form-control text-center" style="width:150px;" disabled />
+            <DateBox TValue="DateOnly" @bind-Value="salesEntity.Date" Style="width:170px;" OpenLeft="true" Disabled="true" />
         </div>
     </div>
 
@@ -92,7 +92,7 @@
             </div>
             <div class="text-center d-flex col-3">
                 <label for="discount" class="form-label d-flex align-items-end me-2">Discount</label>
-                <NumberInput TValue="decimal" Value="SalesTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" ValueExpression="()=>SalesTotalData.Discount" />
+                <MudNumericField T="decimal" Value="SalesTotalData.Discount" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
             </div>
             <div class="text-center d-flex col-3">
                 <label for="totalamount" class="form-label d-flex align-items-end me-2">Total Amount</label>

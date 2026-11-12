@@ -2,20 +2,30 @@
 @using Inventory.MudBlazorComponents
 @typeparam TItem
 
-<div class="row">
-    <div class="col-3">
+@* The button takes only its own width; the name box gets all the rest (batch 13: names were cut off). *@
+<div class="d-flex align-items-center">
+    <div class="me-2">
         <MudIconButton Color="Color.Secondary" Variant="MudBlazor.Variant.Filled" OnClick="OpenDialogAsync"
                        Icon="@Icons.Material.Filled.AdsClick">
         </MudIconButton>
     </div>
-    <div class="col-9">
-        <AutoComplete @bind-Value="name"
-                      TItem="TItem"
-                      DataProvider="DataProvider"
-                      PropertyName="Name"
-                      Placeholder="@Settings.Placeholder"
-                      StringComparison="StringComparison.Ordinal"
-                      OnChanged="(TItem item) => OnAutoCompleteChanged(item)" />
+    <div class="flex-grow-1" style="min-width:0;">
+        @* Batch 13: MudAutocomplete replaces the Blazor.Bootstrap AutoComplete. Starts searching from the first letter,
+           shows every match (no limit, as before), has its own clear ("x") button and shows the picked name. *@
+        <MudAutocomplete T="TItem"
+                         Value="selected"
+                         ValueChanged="OnAutoCompleteChanged"
+                         SearchFunc="Search"
+                         ToStringFunc="DisplayName"
+                         Placeholder="@Settings.Placeholder"
+                         MinCharacters="1"
+                         MaxItems="null"
+                         Clearable="true"
+                         ResetValueOnEmptyText="true"
+                         Dense="true"
+                         Adornment="Adornment.None"
+                         Variant="MudBlazor.Variant.Outlined"
+                         Margin="Margin.Dense" />
     </div>
 </div>
 
@@ -30,7 +40,7 @@
     [Inject] private ILogger<LookupAutocomplete<TItem>> Logger { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
-    private string name;
+    private TItem? selected;
     private List<TItem> items = new();
 
     protected override async Task OnInitializedAsync()
@@ -51,12 +61,10 @@
         }
     }
 
-    private Task<AutoCompleteDataProviderResult<TItem>> DataProvider(AutoCompleteDataProviderRequest<TItem> request)
-    {
-        var search = request.Filter?.Value;
-        var matches = items.Where(i => i is not null && Lookups.Matches(Settings.SearchBoxFields(i), search));
-        return Task.FromResult(new AutoCompleteDataProviderResult<TItem> { Data = matches });
-    }
+    private Task<IEnumerable<TItem>> Search(string? search, CancellationToken cancellationToken)
+        => Task.FromResult(Lookups.SearchBoxMatches(items, Settings, search));
+
+    private string DisplayName(TItem? item) => item is null ? "" : Settings.NameOf(item) ?? "";
 
     private async Task OpenDialogAsync()
     {
@@ -77,13 +85,14 @@
 
         if (result is { Canceled: false, Data: TItem selected })
         {
-            name = Settings.NameOf(selected) ?? "";
+            this.selected = selected;
             await SelectedItemChanged.InvokeAsync(selected);
         }
     }
 
-    private async Task OnAutoCompleteChanged(TItem item)
+    private async Task OnAutoCompleteChanged(TItem? item)
     {
-        await SelectedItemChanged.InvokeAsync(item);
+        selected = item;
+        await SelectedItemChanged.InvokeAsync(item!);
     }
 }

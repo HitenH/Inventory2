@@ -121,3 +121,7 @@ a, .btn-link {
     z-index: 100;
     background-color: #fff;
 }
+/* Batch 13: MudBlazor number/date boxes keep the old centred text. */
+.box-center input.mud-input-slot {
+    text-align: center;
+}

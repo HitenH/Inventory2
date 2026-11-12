@@ -66,19 +66,19 @@
         </div>
         <div class="col-1 text-center">
             <label for="quantity" class="form-label">Quantity</label>
-            <NumberInput TValue="int?" Value="line.Quantity" id="quantity" class="form-control text-center" ValueChanged="(value)=>QuantityChanged(value)" ValueExpression="()=>line.Quantity" />
+            <MudNumericField T="int?" Value="line.Quantity" ValueChanged="(value)=>QuantityChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="col-1 text-center">
             <label for="rate" class="form-label">Rate</label>
-            <NumberInput TValue="decimal?" Value="line.ProductRate" id="rate" class="form-control text-center" ValueChanged="(value)=>RateChanged(value)" ValueExpression="()=>line.ProductRate" />
+            <MudNumericField T="decimal?" Value="line.ProductRate" ValueChanged="(value)=>RateChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="col-1 text-center">
             <label for="amount" class="form-label">Amount</label>
-            <NumberInput @bind-Value="line.Amount" id="amount" class="form-control text-center" disabled />
+            <MudNumericField T="decimal?" @bind-Value="line.Amount" Disabled="true" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="col-1 text-center">
             <label for="discount" class="form-label">Discount (%)</label>
-            <NumberInput TValue="int?" Value="line.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>line.Discount" />
+            <MudNumericField T="int?" Value="line.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="col-1 text-center">
             <label for="amountafterdiscount" class="form-label">Amount</label>

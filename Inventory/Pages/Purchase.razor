@@ -16,7 +16,7 @@
     <DataAnnotationsValidator />
 
     <div class="d-flex justify-content-between">
-        <div class="text-center">
+        <div class="text-center" style="min-width:350px;">
             <label for="voucher" class="form-label"><h4>Supplier</h4></label>
             <SupplierAutocomplete T="SupplierModel" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
@@ -37,7 +37,7 @@
         </div>
         <div class="text-center">
             <label for="date" class="form-label"><h4>Date</h4></label>
-            <DateInput TValue="DateOnly" @bind-Value="purchaseModel.Date" id="date" class="form-control text-center" style="width:150px;" />
+            <DateBox TValue="DateOnly" @bind-Value="purchaseModel.Date" Style="width:170px;" OpenLeft="true" />
         </div>
     </div>
     <div class="text-center d-block mt-3">
@@ -79,7 +79,7 @@
             </div>
             <div class="text-center d-flex col-3">
                 <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;" >Discount</label>
-                <NumberInput TValue="decimal" Value="PurchaseTotalData.Discount" id="discount" class="form-control text-center" ValueChanged="(value)=>DiscountChanged(value)" ValueExpression="()=>PurchaseTotalData.Discount" />
+                <MudNumericField T="decimal" Value="PurchaseTotalData.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
             </div>
             <div class="text-center d-flex col-3">
                 <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>

@@ -23,7 +23,7 @@
         </div>
         <div class="mb-2 col-3 text-center">
             <label for="date" class="form-label">Date</label>
-            <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.Date" id="date" class="form-control text-center" />
+            <DateBox TValue="DateOnly?" @bind-Value="purchaseOrderModel.Date" />
         </div>
         <div class="mb-2 col-3 text-center">
             <label for="supplierid" class="form-label">Supplier ID</label>
@@ -64,7 +64,7 @@
         </div>
         <div class="m-1 col-2 text-center">
             <label for="duedate" class="form-label">Due Date</label>
-            <DateInput TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" id="variantid" class="form-control text-center" />
+            <DateBox TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" />
         </div>
         <div class="m-1 col-2 text-center">
             <label for="productrate" class="form-label">Rate</label>
@@ -186,7 +186,7 @@
         <RowEditingTemplate>
             <MudTd>
 
-                <DateInput TValue="DateOnly?" @bind-Value="context.Date" id="date" class="form-control text-center" />
+                <DateBox TValue="DateOnly?" @bind-Value="context.Date" />
             </MudTd>
             <MudTd>
                 <MudTextField @bind-Value="context.SupplierId" />
@@ -205,7 +205,7 @@
             </MudTd>
             <MudTd>
 
-                <DateInput TValue="DateOnly?" @bind-Value="context.DueDate" id="date" class="form-control text-center" />
+                <DateBox TValue="DateOnly?" @bind-Value="context.DueDate" />
             </MudTd>
             <MudTd>
                 <MudNumericField @bind-Value="context.ProductRate" />

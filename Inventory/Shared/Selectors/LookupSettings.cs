@@ -111,6 +111,10 @@ namespace Inventory.Shared.Selectors
             TableClass = "my-mudtable",
         };
 
+        /// <summary>What the search box lists for the typed text: every item whose search-box fields match (no limit).</summary>
+        public static IEnumerable<TItem> SearchBoxMatches<TItem>(IEnumerable<TItem> items, LookupSettings<TItem> settings, string? search)
+            => items.Where(i => i is not null && Matches(settings.SearchBoxFields(i), search)).ToList();
+
         /// <summary>Case-insensitive "contains" on any of the fields; empty fields never match; an empty search matches all.</summary>
         public static bool Matches(IEnumerable<string?> fields, string? search)
         {

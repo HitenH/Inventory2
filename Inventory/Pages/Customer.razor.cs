@@ -1,5 +1,4 @@
-﻿using BlazorBootstrap;
-using Inventory.Domain;
+﻿using Inventory.Domain;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -29,10 +28,6 @@ namespace Inventory.Pages
         private EditContext? editContext;
         private ValidationMessageStore? messageStore;
 
-        private ModalWindow? modalWindowComponenRef;
-        private string titleMessage = string.Empty;
-        private string errorMessageShort = string.Empty;
-        private string errorMessageFull = string.Empty;
 
         protected override async Task OnInitializedAsync()
         {
@@ -171,12 +166,7 @@ namespace Inventory.Pages
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Delete Customer error");
-                    titleMessage = "Error Message";
-                    errorMessageShort = "Cannot delete Customer";
-                    errorMessageFull = ex.Message;
-
-                    if (modalWindowComponenRef != null)
-                        await modalWindowComponenRef.OnShowModalClick();
+                    await DialogService.ShowErrorDetailsAsync("Error Message", "Cannot delete Customer", ex.Message);
                 }
             }
         }
@@ -184,19 +174,6 @@ namespace Inventory.Pages
         {
             if (editContext != null)
                 editContext.OnValidationStateChanged -= HandleValidationRequested;
-        }
-        
-        public void CloseModalWindow(bool isClosed)
-        {
-            if (isClosed)
-                ClearErrorMessage();
-        }
-
-        private void ClearErrorMessage()
-        {
-            titleMessage= string.Empty;
-            errorMessageShort = string.Empty;
-            errorMessageFull = string.Empty;
         }
     }
 }
