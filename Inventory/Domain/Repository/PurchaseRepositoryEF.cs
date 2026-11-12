@@ -100,6 +100,8 @@ namespace Inventory.Domain.Repository
         public async Task<Guid> Update(PurchaseEntity purchase)
         {
             await using var context = await factory.CreateDbContextAsync();
+            // Write-locks the database before reading, so a line saved at the same moment cannot give a wrong total.
+            await using var transaction = await context.Database.BeginTransactionAsync();
             var existing = await context.Purchases.FirstOrDefaultAsync(p => p.Id == purchase.Id);
             if (existing is null)
             {
@@ -113,10 +115,29 @@ namespace Inventory.Domain.Repository
             existing.VoucherId = purchase.VoucherId;
             existing.Remarks = purchase.Remarks;
             existing.Discount = purchase.Discount;
-            existing.TotalAmountProduct = purchase.TotalAmountProduct;
+            // Batch 7: the total is always recalculated from the saved lines and this discount.
+            await TransactionTotals.RecalculatePurchaseAsync(context, existing.Id);
 
             await context.SaveChangesAsync();
+            await transaction.CommitAsync();
             return existing.Id;
+        }
+
+        /// <summary>Saves only the voucher discount (as soon as it is typed) and the recalculated total.</summary>
+        public async Task UpdateDiscount(Guid purchaseId, decimal discount)
+        {
+            await using var context = await factory.CreateDbContextAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            var existing = await context.Purchases.FirstOrDefaultAsync(p => p.Id == purchaseId);
+            if (existing is null)
+            {
+                return;
+            }
+
+            existing.Discount = discount;
+            await TransactionTotals.RecalculatePurchaseAsync(context, existing.Id);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
 
     }

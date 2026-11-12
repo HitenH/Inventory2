@@ -8,6 +8,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<SalesOrderEntity> GetById(Guid id);
         Task<List<SalesOrderEntity>> GetAll();
         Task<Guid> Update(SalesOrderEntity order);
+        Task UpdateDiscount(Guid salesOrderId, decimal discount);
         Task Delete(SalesOrderEntity order);
         Task DeleteRange(List<SalesOrderEntity> orders);
         Task<int> GetLastVoucherIdByDate(DateOnly date);

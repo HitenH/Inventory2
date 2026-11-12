@@ -7,6 +7,8 @@ namespace Inventory.Domain.Repository
     // Batch 6: each method uses its own short-lived context from the factory.
     public class SaleRepositoryEF : ISaleRepository
     {
+        public const string EmptySaleMessage = "A sale must have at least one item. To cancel the whole sale, use Delete.";
+
         private readonly IDbContextFactory<AppDbContext> factory;
 
         public SaleRepositoryEF(IDbContextFactory<AppDbContext> factory)
@@ -121,6 +123,13 @@ namespace Inventory.Domain.Repository
             existing.Discount = sale.Discount;
             existing.TotalQuantity = sale.TotalQuantity;
             existing.TotalAmountProduct = sale.TotalAmountProduct;
+
+            // Batch 7: removing every item is refused (it used to keep the old items silently).
+            // A null list means "items not being changed" (e.g. saving the summary) and leaves them as they are.
+            if (sale.SalesVariants is { Count: 0 } && existing.SalesVariants is { Count: > 0 })
+            {
+                throw new InvalidOperationException(EmptySaleMessage);
+            }
 
             if (sale.SalesVariants is { Count: > 0 })
             {

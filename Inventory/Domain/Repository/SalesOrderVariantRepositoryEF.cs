@@ -32,7 +32,7 @@ namespace Inventory.Domain.Repository
             };
 
             await context.SalesOrderVariants.AddAsync(entity);
-            await context.SaveChangesAsync();
+            await SaveWithTotalAsync(context, entity.SalesOrderEntityId);
         }
 
         public async Task Delete(SalesOrderVariantEntity variant)
@@ -45,7 +45,7 @@ namespace Inventory.Domain.Repository
             }
 
             context.SalesOrderVariants.Remove(existing);
-            await context.SaveChangesAsync();
+            await SaveWithTotalAsync(context, existing.SalesOrderEntityId);
         }
 
         public async Task<List<SalesOrderVariantEntity>> GetAll()
@@ -81,7 +81,17 @@ namespace Inventory.Domain.Repository
             existing.AmountAfterDiscount = variant.AmountAfterDiscount;
             existing.Remarks = variant.Remarks;
 
+            await SaveWithTotalAsync(context, existing.SalesOrderEntityId);
+        }
+
+        /// <summary>Batch 7: saves the line change and the recalculated sales order total in one transaction (all or nothing).</summary>
+        private static async Task SaveWithTotalAsync(AppDbContext context, Guid headerId)
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync();
             await context.SaveChangesAsync();
+            await TransactionTotals.RecalculateSalesOrderAsync(context, headerId);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
     }
 }

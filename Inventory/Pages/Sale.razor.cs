@@ -1,5 +1,6 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Inventory.Domain.Entities;
+using Inventory.Domain.Repository;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.MudBlazorComponents;
@@ -147,6 +148,13 @@ public partial class Sale
             return;
         }
 
+        // Batch 7: removing every item used to leave the old items in the sale silently.
+        if (salesModelVariants.Count == 0)
+        {
+            Snackbar.Add(SaleRepositoryEF.EmptySaleMessage, Severity.Warning);
+            return;
+        }
+
         if (salesModel != null && salesEntity != null)
         {
             try
@@ -174,8 +182,9 @@ public partial class Sale
             }
             catch (Exception ex)
             {
-                Logger.LogError("Update sale: " + ex.Message);
-                navManager.NavigateTo("/sales");
+                // Stay on the page so the changes are not lost.
+                Logger.LogError(ex, "Update sale failed");
+                Snackbar.Add("Could not save the sale. " + (ex is InvalidOperationException ? ex.Message : ex.GetBaseException().Message), Severity.Error);
             }
         }
         else

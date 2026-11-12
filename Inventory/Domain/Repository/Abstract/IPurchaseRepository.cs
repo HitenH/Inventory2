@@ -8,6 +8,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<PurchaseEntity> GetById(Guid id);
         Task<List<PurchaseEntity>> GetAll();
         Task<Guid> Update(PurchaseEntity purchase);
+        Task UpdateDiscount(Guid purchaseId, decimal discount);
         Task Delete(PurchaseEntity purchase);
         Task<int> GetLastVoucherIdByDate(DateOnly date);
         Task<bool> IsVoucherExistByDate(int voucherId, DateOnly date);

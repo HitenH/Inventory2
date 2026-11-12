@@ -1,4 +1,4 @@
-# Inventory App – Technical Review
+﻿# Inventory App – Technical Review
 
 **Reviewed:** 10 November 2026
 **Scope:** The working copy in this folder, including the 49 modified files and 2 new files that have not been committed to Git yet. Every source file was read. The project was compiled to confirm it builds (0 errors, 563 warnings). The app was not run against live data.
@@ -19,6 +19,59 @@
 3. Make the backup feature safe (use the database engine's own backup, store backups off the machine, run it automatically).
 4. Fix how the app talks to the database in Blazor (one short-lived connection per operation), which is the root cause of several crashes and workarounds.
 5. Commit the uncommitted work to Git today. Five months of changes exist only in this folder.
+
+---
+
+## Progress since this review (updated 12 November 2026)
+
+The review below is kept as written on 10 Nov 2026. This section tracks what has been fixed since. Details per batch are in `PLAN.md` section 5. All work is on the development PC against a copy of the real data; **nothing has been installed on the counter PC yet** (owner's decision – one rollout at the end).
+
+**Rough health score now: about 6.5 / 10** (was 4.5). Security, data integrity and operations improved most; maintainability (duplication, dead code, three UI libraries, no tests) is unchanged so far.
+
+### Status of each finding
+
+| Code | Finding (short) | Status | Batch |
+|---|---|---|---|
+| S1 | Plain-text passwords in DB and source | **Fixed** – hashed (PBKDF2), seed removed, Change Password page. Old passwords remain in Git history; change both at rollout. | 1 |
+| Backups | File-copy backups, manual only, next to the DB | **Fixed** – SQLite online backup + integrity check, daily automatic backup (keep 30), safe restore with "before-restore" copy and restart prompt. | 2 |
+| M1 | Database in the program folder | **Fixed** – `%ProgramData%\InventoryApp` (configurable), one-time copy on first start. | 2 |
+| S2 | Half the pages open without login | **Fixed** – every page needs login; logged-out users are sent to Login and back. | 3 |
+| S3 | Roles never checked | **Pinned** – owner is the only user for now; batch 16 (after batch 15). | 16 |
+| B3 | Sales Summary crash on bad input | **Fixed** | 4 |
+| B4 | `async void` handlers | **Fixed** (none left) | 4 |
+| B7 | Sale without customer | **Fixed** – "Please select a customer." | 4 |
+| B8 | Enter-key scan fire-and-forget | **Fixed** – awaited; errors shown; "not found" warning added. | 4 |
+| D2 | No database uniqueness | **Fixed for IDs** – Product/Customer/Supplier ID and Variant ID per product are unique, ignoring upper/lower case. Voucher numbers: **pinned** (old data has 14 days with duplicate vouchers; owner chose to leave them for now). | 5 |
+| B1 | Duplicate voucher numbers | **Pinned** (see D2). | – |
+| A2 | Shared database context per browser tab | **Fixed** – `DbContextFactory`, short-lived contexts; tracking workarounds no longer needed. | 6 |
+| P4 | Saving one variant rewrites the whole product | **Largely fixed** – only changed rows are written. | 6 |
+| B10 | Global phone-number sweep, orphan rows | **Fixed** – phones synced per customer/supplier; sweep removed. | 6 |
+| D1 | Multi-step saves not transactional | **Fixed per user action** – each line change and the header total are saved together (all or nothing); sale create/edit and customer/supplier save are single saves. | 6–7 |
+| B6 | Stored totals go stale | **Fixed** – purchase and sales-order totals recalculated on every line/header save; supplier totals and reports correct immediately. Old data checked: no stale totals. | 7 |
+| B2 | Emptying a sale keeps old lines | **Fixed** – refused with a message (owner's choice). | 7 |
+| A1 | Business logic in screens | **Partly** – totals and line rules moved to the data layer; no full service layer yet. | 7, 12 |
+| B5 | Import broken/unsafe | **Open – next (batch 8).** Batch 5 rules now stop duplicates/blank rows, so a bad import fails per row instead of corrupting data. | 8 |
+| S4, Runtime, Logging | Misleading auth config, .NET 9 out of support, console-only logs | Open | 9 |
+| Tests / CI | None | Open | 10 |
+| §6 unused code | Dead components, demo code | Open | 11 |
+| A3, A4, §6 duplicates | Copy-pasted repositories, components, view models | Open | 12 |
+| A5 | Three UI libraries | Open | 13 |
+| P1–P3, P5, P6 | Paging, customer list loads all sales, images in DB, report sums, pickers | Open | 14 |
+| D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |
+| B9, B11, B12, S5, S6, D6 | "Not found" returns empty record; PO free text; delete errors show stack trace; HTTPS; raw DB errors; WAL/multi-user | Open (fold into batches 11–15) | – |
+
+### Problems found during the work (not in the original review)
+
+| Found | Impact | Status |
+|---|---|---|
+| The database runs in WAL mode, so the old "Backup" button (plain file copy) could **miss recent sales and purchases**. | Old backups may be incomplete. | Fixed (batch 2). Old backups kept but not trusted. |
+| Refreshing the page or typing an address threw "No DefaultChallengeScheme found". | Error screen on F5. | Fixed (batch 3). |
+| Customer/Supplier save failures were logged silently and the screen returned to the list as if saved; Product/Category failures similar. | Operator thinks a save worked. | Fixed (batches 4–5): message shown, stays on page. |
+| One failed save left the change queued in the shared context, so **every later save in that tab failed**. | Tab unusable until reload. | Fixed (batch 5), and the root cause removed in batch 6. |
+| IDs differing only in upper/lower case or spaces ("cs" vs "CS") were accepted. | Look-alike duplicates. | Fixed (batch 5). |
+| Blank product/variant rows existed (1 product, 6 variants), one used by a sale on 19-05-2026 (CASH SALES, voucher 1). | Unknown item sold. | New blanks blocked (batch 5); old rows left as they are (owner's decision). |
+| Sales-order discount was not stored but worked out from the total, so **adding a line to a saved order made the discount jump**. | Wrong order totals/discount. | Fixed (batch 7): discount stored. |
+| A new sales order tried to insert an **empty customer** with it (entity default `= new()`). | In the dev build creating sales orders failed after batch 5; before that it would have created blank customers. | Fixed (batch 7). The May data has no blank customers. |
 
 ---
 

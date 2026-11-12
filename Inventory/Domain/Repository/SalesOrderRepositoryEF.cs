@@ -26,7 +26,8 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
             DueDate = order.DueDate,
             VoucherId = order.VoucherId,
             OrderStatus = order.OrderStatus,
-            TotalAmountProduct = order.TotalAmountProduct
+            TotalAmountProduct = order.TotalAmountProduct,
+            Discount = order.Discount
         };
 
         await context.SalesOrders.AddAsync(entity);
@@ -113,6 +114,8 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
     public async Task<Guid> Update(SalesOrderEntity order)
     {
         await using var context = await factory.CreateDbContextAsync();
+        // Write-locks the database before reading, so a line saved at the same moment cannot give a wrong total.
+        await using var transaction = await context.Database.BeginTransactionAsync();
         var existing = await context.SalesOrders.FirstOrDefaultAsync(o => o.Id == order.Id);
         if (existing is null)
         {
@@ -126,9 +129,29 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
         existing.DueDate = order.DueDate;
         existing.VoucherId = order.VoucherId;
         existing.OrderStatus = order.OrderStatus;
-        existing.TotalAmountProduct = order.TotalAmountProduct;
+        existing.Discount = order.Discount;
+        // Batch 7: the total is always recalculated from the saved lines and this discount.
+        await TransactionTotals.RecalculateSalesOrderAsync(context, existing.Id);
 
         await context.SaveChangesAsync();
+        await transaction.CommitAsync();
         return existing.Id;
+    }
+
+    /// <summary>Saves only the voucher discount (as soon as it is typed) and the recalculated total.</summary>
+    public async Task UpdateDiscount(Guid salesOrderId, decimal discount)
+    {
+        await using var context = await factory.CreateDbContextAsync();
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        var existing = await context.SalesOrders.FirstOrDefaultAsync(o => o.Id == salesOrderId);
+        if (existing is null)
+        {
+            return;
+        }
+
+        existing.Discount = discount;
+        await TransactionTotals.RecalculateSalesOrderAsync(context, existing.Id);
+        await context.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 }

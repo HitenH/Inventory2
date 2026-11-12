@@ -102,22 +102,41 @@ public partial class SalesSummary
 
     public async Task AddSales()
     {
-        if (salesEntity != null)
+        if (salesEntity != null && await SaveSummaryAsync())
         {
-            try
-            {
-                salesEntity.SalesSummaries = salesSummaryEntityList;
-                salesEntity.TotalQuantity = SalesTotalData.TotalQuantity;
-                salesEntity.Discount = SalesTotalData.Discount;
-                salesEntity.TotalAmountProduct = SalesTotalData.TotalAmount;
-                await SaleRepository.Update(salesEntity);
-                Snackbar.Add("Sale made successfully", Severity.Success);
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Sale failed: {ex.Message}", Severity.Error);
-            }
+            Snackbar.Add("Sale made successfully", Severity.Success);
             navManager.NavigateTo("/sales");
+        }
+    }
+
+    // "Back To Scanning Area" saves the rates, discounts and remarks first; it used to leave without saving, so they were lost.
+    public async Task BackToScanning()
+    {
+        if (salesEntity != null && salesEntity.Id != Guid.Empty && await SaveSummaryAsync())
+        {
+            navManager.NavigateTo($"/sale/{salesEntity.Id}");
+        }
+    }
+
+    /// <summary>Saves the summary; on failure shows the reason and stays on the page so nothing typed is lost.</summary>
+    private async Task<bool> SaveSummaryAsync()
+    {
+        try
+        {
+            salesEntity.SalesSummaries = salesSummaryEntityList;
+            salesEntity.TotalQuantity = SalesTotalData.TotalQuantity;
+            salesEntity.Discount = SalesTotalData.Discount;
+            salesEntity.TotalAmountProduct = SalesTotalData.TotalAmount;
+            // null = leave the scanned items as they are (only the summary is saved here)
+            salesEntity.SalesVariants = null;
+            await SaleRepository.Update(salesEntity);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Save sale summary failed");
+            Snackbar.Add($"Sale failed: {ex.Message}", Severity.Error);
+            return false;
         }
     }
 

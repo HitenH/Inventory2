@@ -56,6 +56,10 @@ public partial class Purchase
 
     private bool IsDisabled { get; set; }
 
+    // The voucher discount is saved as soon as it is typed; reloading waits for that save so it cannot show the old value.
+
+    private readonly SemaphoreSlim discountSaveLock = new(1, 1);
+
 
 
     protected async override Task OnInitializedAsync()
@@ -88,7 +92,23 @@ public partial class Purchase
 
     {
 
-        purchaseEntity = await PurchaseRepository.GetById(Guid.Parse(PurchaseId!));
+        await discountSaveLock.WaitAsync();
+
+        try
+
+        {
+
+            purchaseEntity = await PurchaseRepository.GetById(Guid.Parse(PurchaseId!));
+
+        }
+
+        finally
+
+        {
+
+            discountSaveLock.Release();
+
+        }
 
         if (purchaseEntity.Id == Guid.Empty)
 
@@ -248,6 +268,8 @@ public partial class Purchase
 
             purchaseEntity.Date = purchaseModel.Date;
 
+            purchaseEntity.Discount = PurchaseTotalData.Discount;
+
 
 
             await PurchaseRepository.Update(purchaseEntity);
@@ -372,13 +394,57 @@ public partial class Purchase
 
 
 
-    private void DiscountChanged(decimal value)
+    private async Task DiscountChanged(decimal value)
 
     {
 
         PurchaseTotalData.Discount = value;
 
         GetTotalAmount();
+
+        if (purchaseEntity.Id == Guid.Empty)
+
+        {
+
+            return;
+
+        }
+
+
+
+        // Save straight away, so adding/editing a line or pressing Update no longer resets it.
+
+        await discountSaveLock.WaitAsync();
+
+        try
+
+        {
+
+            // Always save what the box shows now (the latest value, even if several changes came in quickly).
+
+            await PurchaseRepository.UpdateDiscount(purchaseEntity.Id, PurchaseTotalData.Discount);
+
+            purchaseEntity.Discount = PurchaseTotalData.Discount;
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            Logger.LogError(ex, "Save purchase discount failed");
+
+            Snackbar.Add($"Could not save the discount: {ex.Message}", Severity.Error);
+
+        }
+
+        finally
+
+        {
+
+            discountSaveLock.Release();
+
+        }
 
     }
 

@@ -31,7 +31,7 @@ namespace Inventory.Domain.Repository
             };
 
             await context.PurchaseVariant.AddAsync(entity);
-            await context.SaveChangesAsync();
+            await SaveWithTotalAsync(context, entity.PurchaseEntityId);
         }
 
         public async Task Delete(PurchaseVariant variant)
@@ -44,7 +44,7 @@ namespace Inventory.Domain.Repository
             }
 
             context.PurchaseVariant.Remove(existing);
-            await context.SaveChangesAsync();
+            await SaveWithTotalAsync(context, existing.PurchaseEntityId);
         }
 
         public async Task<List<PurchaseVariant>> GetAll()
@@ -79,7 +79,17 @@ namespace Inventory.Domain.Repository
             existing.Discount = variant.Discount;
             existing.AmountAfterDiscount = variant.AmountAfterDiscount;
 
+            await SaveWithTotalAsync(context, existing.PurchaseEntityId);
+        }
+
+        /// <summary>Batch 7: saves the line change and the recalculated purchase total in one transaction (all or nothing).</summary>
+        private static async Task SaveWithTotalAsync(AppDbContext context, Guid headerId)
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync();
             await context.SaveChangesAsync();
+            await TransactionTotals.RecalculatePurchaseAsync(context, headerId);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
     }
 }

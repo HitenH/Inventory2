@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
@@ -27,6 +27,8 @@ public partial class SalesOrder
     private SalesOrderEntity salesOrderEntity = new();
     private ComponentTotalData SalesOrderTotalData = new();
     private bool IsDisabled { get; set; }
+    // The order discount is saved as soon as it is typed; reloading waits for that save so it cannot show the old value.
+    private readonly SemaphoreSlim discountSaveLock = new(1, 1);
 
     protected async override Task OnInitializedAsync()
     {
@@ -43,7 +45,15 @@ public partial class SalesOrder
 
     private async Task ReloadSalesOrderAsync()
     {
-        salesOrderEntity = await SalesOrderRepository.GetById(Guid.Parse(SalesOrderId!));
+        await discountSaveLock.WaitAsync();
+        try
+        {
+            salesOrderEntity = await SalesOrderRepository.GetById(Guid.Parse(SalesOrderId!));
+        }
+        finally
+        {
+            discountSaveLock.Release();
+        }
         if (salesOrderEntity.Id == Guid.Empty)
         {
             return;
@@ -61,13 +71,10 @@ public partial class SalesOrder
         customer = salesOrderEntity.Customer ?? new CustomerEntity();
         customerModel = Mapper.Map<CustomerModel>(customer);
 
+        // Batch 7: the discount is stored. Orders saved before batch 7 had it worked out backwards
+        // from the total; the migration stored that same value, so the screen shows what it showed before.
+        SalesOrderTotalData.Discount = salesOrderEntity.Discount ?? 0;
         GetTotalAmount();
-        if (salesOrderEntity.TotalAmountProduct > 0)
-        {
-            var lineTotal = (salesOrderEntity.SalesOrderVariants ?? new List<SalesOrderVariantEntity>())
-                .Select(v => v.AmountAfterDiscount).Sum() ?? 0;
-            SalesOrderTotalData.Discount = lineTotal - salesOrderEntity.TotalAmountProduct.Value;
-        }
     }
 
     public async Task AddOrder()
@@ -133,6 +140,7 @@ public partial class SalesOrder
             salesOrderEntity.Date = salesOrderModel.Date;
             salesOrderEntity.DueDate = salesOrderModel.DueDate;
             salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
+            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
 
             await SalesOrderRepository.Update(salesOrderEntity);
             await ReloadSalesOrderAsync();
@@ -182,7 +190,8 @@ public partial class SalesOrder
     {
         try
         {
-            salesOrderEntity.TotalAmountProduct = SalesOrderTotalData.TotalAmount;
+            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
+            salesOrderEntity.TotalAmountProduct = SalesOrderTotalData.TotalAmount;   // recalculated on save as well
             await SalesOrderRepository.Update(salesOrderEntity);
             navManager.NavigateTo("/salesorders");
         }
@@ -193,10 +202,32 @@ public partial class SalesOrder
         }
     }
 
-    private void DiscountChanged(decimal value)
+    private async Task DiscountChanged(decimal value)
     {
         SalesOrderTotalData.Discount = value;
         GetTotalAmount();
+        if (salesOrderEntity.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        // Save straight away, so adding/editing a line or pressing Update no longer resets it.
+        await discountSaveLock.WaitAsync();
+        try
+        {
+            // Always save what the box shows now (the latest value, even if several changes came in quickly).
+            await SalesOrderRepository.UpdateDiscount(salesOrderEntity.Id, SalesOrderTotalData.Discount);
+            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Save sales order discount failed");
+            Snackbar.Add($"Could not save the discount: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            discountSaveLock.Release();
+        }
     }
 
     public void GetTotalAmount()
