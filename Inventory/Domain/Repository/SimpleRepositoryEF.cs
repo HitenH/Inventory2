@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace Inventory.Domain.Repository
 {
@@ -22,6 +22,16 @@ namespace Inventory.Domain.Repository
         {
             await using var context = await factory.CreateDbContextAsync();
             await context.Set<T>().AddAsync(item);
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>Adds several rows in one save: all are saved or none (bulk entry, Nov 2026).</summary>
+        public async Task CreateRange(List<T> items)
+        {
+            if (items.Count == 0)
+                return;
+            await using var context = await factory.CreateDbContextAsync();
+            await context.Set<T>().AddRangeAsync(items);
             await context.SaveChangesAsync();
         }
 

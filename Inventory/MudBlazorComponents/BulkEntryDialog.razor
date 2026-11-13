@@ -1,0 +1,347 @@
+﻿@* "Bulk Entry" pop-up (owner's request, 13 Nov 2026): pick the supplier (Purchase Orders) and a product once,
+   then keep adding variants with their quantity. The product can be changed at any time. Nothing is saved until
+   "Save all", which saves every row in one go (all or nothing). Used by Purchase Orders, Purchases and Sales Orders. *@
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Shared.Selectors
+
+<MudDialog>
+    <DialogContent>
+        <div class="bulk-entry" @onkeydown="OnKeyDownAsync">
+            @if (Kind == BulkEntryKind.PurchaseOrder)
+            {
+                <div class="d-flex flex-row flex-wrap gap-3 mb-3 align-items-end">
+                    <div style="min-width:320px;" class="flex-grow-1">
+                        <label class="form-label">Supplier</label>
+                        <SupplierAutocomplete T="SupplierModel" Class="focus-bulk-supplier" EnterPressed="OnSupplierEnter"
+                                              SelectedSupplier="supplier" SelectedSupplierChanged="OnSupplierSelected" />
+                    </div>
+                    <div>
+                        <label class="form-label">Date</label>
+                        <DateBox TValue="DateOnly?" @bind-Value="header.Date" Style="width:200px;" />
+                    </div>
+                    <div>
+                        <label class="form-label">Due Date</label>
+                        <DateBox TValue="DateOnly?" @bind-Value="header.DueDate" Style="width:200px;" />
+                    </div>
+                    <div>
+                        <label class="form-label">Order Status</label>
+                        <select class="form-control text-center" @bind="header.OrderStatus" style="width:140px; height:40px;">
+                            @foreach (var status in Enum.GetValues<OrderStatus>())
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <hr />
+            }
+
+            @* "enter-moves-on": Enter on Variant moves to Quantity; Enter in a typing box adds the row (shortcuts.js). *@
+            <div class="d-flex flex-row flex-wrap gap-3 align-items-end enter-moves-on">
+                <div style="min-width:280px;" class="flex-grow-1">
+                    <label class="form-label">Product</label>
+                    <ProductAutocomplete T="ProductModel" Class="focus-bulk-product" EnterPressed="OnProductEnter"
+                                         SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected" />
+                </div>
+                <div>
+                    <label class="form-label" for="bulk-variant">Variant</label>
+                    <select id="bulk-variant" class="form-control text-center" style="min-width:150px;" @bind="variantKey">
+                        <option value="">-</option>
+                        @foreach (var v in product.Variants)
+                        {
+                            <option value="@v.Id">@VariantText(v)</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="bulk-quantity">Quantity</label>
+                    <input id="bulk-quantity" type="number" min="1" class="form-control text-center" style="width:100px;" @bind="quantity" autocomplete="off" />
+                </div>
+                <div>
+                    <label class="form-label" for="bulk-rate">Rate</label>
+                    <input id="bulk-rate" type="number" step="any" class="form-control text-center" style="width:110px;" @bind="rate" autocomplete="off" />
+                </div>
+                @if (HasDiscount)
+                {
+                    <div>
+                        <label class="form-label" for="bulk-discount">Discount (%)</label>
+                        <input id="bulk-discount" type="number" class="form-control text-center" style="width:100px;" @bind="discount" autocomplete="off" />
+                    </div>
+                }
+                @if (HasRemarks)
+                {
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="bulk-remarks">Remarks</label>
+                        <input id="bulk-remarks" type="text" class="form-control" @bind="remarks" autocomplete="off" />
+                    </div>
+                }
+                <div>
+                    <MudButton id="bulk-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddRowAsync"
+                               StartIcon="@Icons.Material.Filled.Add" data-enter-submit>Add</MudButton>
+                </div>
+            </div>
+            <div class="mt-1"><small class="text-muted">Enter in Quantity adds the row. Change the product at any time.</small></div>
+
+            <table class="table table-striped table-bordered table-sm mt-3 mb-0">
+                <thead>
+                    <tr>
+                        <th class="text-center">#</th>
+                        <th class="text-center">Product ID</th>
+                        <th class="text-center">Product Name</th>
+                        <th class="text-center">Variant</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-center">Rate</th>
+                        @if (HasDiscount)
+                        {
+                            <th class="text-center">Discount (%)</th>
+                            <th class="text-center">Amount</th>
+                        }
+                        @if (HasRemarks)
+                        {
+                            <th class="text-center">Remarks</th>
+                        }
+                        <th class="text-center"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (rows.Count == 0)
+                    {
+                        <tr><td colspan="10" class="text-center">No rows yet.</td></tr>
+                    }
+                    @for (var i = 0; i < rows.Count; i++)
+                    {
+                        var row = rows[i];
+                        <tr class="bulk-row">
+                            <td class="text-center">@(i + 1)</td>
+                            <td class="text-center">@row.ProductId</td>
+                            <td class="text-center">@row.ProductName</td>
+                            <td class="text-center">@row.VariantId</td>
+                            <td class="text-center">@row.Quantity</td>
+                            <td class="text-center">@row.Rate</td>
+                            @if (HasDiscount)
+                            {
+                                <td class="text-center">@row.Discount</td>
+                                <td class="text-center">@row.AmountAfterDiscount</td>
+                            }
+                            @if (HasRemarks)
+                            {
+                                <td class="text-center">@row.Remarks</td>
+                            }
+                            <td class="text-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small"
+                                               title="Remove this row" OnClick="() => rows.Remove(row)" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div class="me-auto ms-3 bulk-count">
+            @rows.Count @(rows.Count == 1 ? "row" : "rows"), total quantity @rows.Sum(r => r.Quantity)
+        </div>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="CancelAsync">Cancel</MudButton>
+        <MudButton id="bulk-save" Variant="MudBlazor.Variant.Filled" Color="Color.Success" OnClick="SaveAll"
+                   StartIcon="@Icons.Material.Filled.Save" data-shortcut="save">Save all</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public BulkEntryKind Kind { get; set; }
+    /// <summary>Purchase Orders: the supplier already chosen on the screen (if any) is filled in.</summary>
+    [Parameter] public SupplierModel? InitialSupplier { get; set; }
+    [Parameter] public BulkOrderHeader? InitialHeader { get; set; }
+
+    [Inject] private IProductRepository ProductRepository { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ILogger<BulkEntryDialog> Logger { get; set; } = default!;
+
+    private bool HasDiscount => Kind != BulkEntryKind.PurchaseOrder;
+    private bool HasRemarks => Kind != BulkEntryKind.Purchase;
+
+    private BulkOrderHeader header = new();
+    private SupplierModel supplier = new();
+    private ProductModel selectedProduct = new();
+    private ProductModel product = new();
+    private string variantKey = "";
+    private int? quantity;
+    private decimal? rate;
+    private int? discount;
+    private string? remarks;
+    private readonly List<BulkEntryRow> rows = new();
+    private bool closing;
+
+    protected override void OnInitialized()
+    {
+        if (InitialHeader != null)
+        {
+            header = new BulkOrderHeader
+            {
+                SupplierId = InitialHeader.SupplierId,
+                Date = InitialHeader.Date,
+                DueDate = InitialHeader.DueDate,
+                OrderStatus = InitialHeader.OrderStatus,
+            };
+        }
+        if (InitialSupplier != null && !string.IsNullOrWhiteSpace(InitialSupplier.Name))
+        {
+            supplier = InitialSupplier;
+            header.SupplierId = InitialSupplier.SupplierId;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Purchase Orders without a supplier yet start in Supplier; otherwise straight in Product.
+            var start = Kind == BulkEntryKind.PurchaseOrder && string.IsNullOrWhiteSpace(header.SupplierId)
+                ? ".focus-bulk-supplier" : ".focus-bulk-product";
+            await JS.FocusBoxAsync(start);
+        }
+    }
+
+    private static string VariantText(VariantModel v) =>
+        string.IsNullOrWhiteSpace(v.Name) || string.Equals(v.Name, v.VariantId, StringComparison.OrdinalIgnoreCase)
+            ? v.VariantId ?? "" : $"{v.VariantId} – {v.Name}";
+
+    private Task OnSupplierEnter(SupplierModel _) => JS.FocusBoxAsync(".focus-bulk-product");
+    private Task OnProductEnter(ProductModel _) => JS.FocusBoxAsync("#bulk-variant");
+
+    private void OnSupplierSelected(SupplierModel? picked)
+    {
+        supplier = picked ?? new();
+        header.SupplierId = picked?.SupplierId;
+    }
+
+    private async Task OnProductSelected(ProductModel? picked)
+    {
+        variantKey = "";
+        if (picked == null || picked.Id == Guid.Empty)
+        {
+            selectedProduct = new();
+            product = new();
+            return;
+        }
+        try
+        {
+            selectedProduct = picked;
+            product = (await ProductRepository.GetProductWithVariantsById(picked.Id)).ToModel();
+            // A new product brings its own rate: Purchase Orders fill in the product's rate (as the main screen does),
+            // the voucher line forms start empty (as their main form does).
+            rate = Kind == BulkEntryKind.PurchaseOrder ? product.Rate : null;
+            if (product.Variants.Count == 0)
+            {
+                Snackbar.Add("This product has no variants. Add a variant on the Products page first.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Bulk entry: loading the product failed");
+            Snackbar.Add("Could not load this product's variants.", Severity.Error);
+        }
+    }
+
+    private async Task AddRowAsync()
+    {
+        Guid? variantId = Guid.TryParse(variantKey, out var v) ? v : null;
+        var missing = BulkEntry.WhatIsMissing(product.Id, variantId, quantity);
+        if (missing != null)
+        {
+            Snackbar.Add(missing, Severity.Warning);
+            await JS.FocusBoxAsync(product.Id == Guid.Empty ? ".focus-bulk-product" : variantId is null ? "#bulk-variant" : "#bulk-quantity");
+            return;
+        }
+        var variant = product.Variants.First(x => x.Id == variantId);
+        rows.Add(new BulkEntryRow
+        {
+            ProductEntityId = product.Id,
+            ProductId = product.ProductId ?? "",
+            ProductName = product.Name ?? "",
+            VariantEntityId = variant.Id,
+            VariantId = variant.VariantId ?? "",
+            VariantName = variant.Name,
+            Quantity = quantity!.Value,
+            Rate = rate,
+            Discount = HasDiscount ? discount : null,
+            Remarks = HasRemarks ? remarks : null,
+        });
+        // Next row: same product, rate and discount; a new variant and quantity. The cursor goes back to Product
+        // (owner's request): Tab or Enter moves on to Variant, or type another product.
+        variantKey = "";
+        quantity = null;
+        remarks = null;
+        await JS.FocusBoxAsync(".focus-bulk-product");
+    }
+
+    private void SaveAll()
+    {
+        var missing = BulkEntry.WhatIsMissingToSave(Kind, header, rows);
+        if (missing != null)
+        {
+            Snackbar.Add(missing, Severity.Warning);
+            return;
+        }
+        closing = true;
+        MudDialog.Close(DialogResult.Ok(new BulkEntryResult { Rows = rows.ToList(), Header = header }));
+    }
+
+    private async Task CancelAsync()
+    {
+        if (closing)
+        {
+            return;
+        }
+        if (rows.Count > 0)
+        {
+            var text = rows.Count == 1
+                ? "The 1 row you typed has not been saved and will be lost."
+                : $"The {rows.Count} rows you typed have not been saved and will be lost.";
+            if (!await DialogService.ConfirmAsync("Close without saving?", text, "Close without saving", Color.Error, enterConfirms: true))
+            {
+                return;
+            }
+        }
+        closing = true;
+        MudDialog.Cancel();
+    }
+
+    // Esc closes the pop-up (asking first when rows would be lost). MudBlazor's own Esc close is switched off by
+    // the screens, because it would throw the typed rows away without asking.
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !e.CtrlKey && !e.AltKey && !e.ShiftKey)
+        {
+            await CancelAsync();
+        }
+    }
+
+    /// <summary>Opens the pop-up with the options every screen uses. Returns null when nothing is to be saved.</summary>
+    public static async Task<BulkEntryResult?> ShowAsync(IDialogService dialogService, BulkEntryKind kind,
+        SupplierModel? supplier = null, BulkOrderHeader? header = null)
+    {
+        var parameters = new DialogParameters<BulkEntryDialog>
+        {
+            { x => x.Kind, kind },
+            { x => x.InitialSupplier, supplier },
+            { x => x.InitialHeader, header },
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseOnEscapeKey = false,
+            BackdropClick = false,
+            CloseButton = false,
+            Position = DialogPosition.Center,
+            DefaultFocus = DefaultFocus.None,
+        };
+        var dialog = await dialogService.ShowAsync<BulkEntryDialog>("Bulk Entry", parameters, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: BulkEntryResult r } ? r : null;
+    }
+}

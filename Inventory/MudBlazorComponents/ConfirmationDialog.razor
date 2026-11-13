@@ -4,7 +4,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@Color" Variant="MudBlazor.Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+        <MudButton id="@buttonId" Color="@Color" Variant="MudBlazor.Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
     </DialogActions>
 </MudDialog>
 @code {
@@ -19,6 +19,24 @@
 
     [Parameter]
     public Color Color { get; set; }
+
+    /// <summary>
+    /// True: the cursor starts on the main button, so Enter presses it (owner's request for "Close without saving").
+    /// Off for deletes and restores, so Enter can never delete anything by accident.
+    /// </summary>
+    [Parameter]
+    public bool EnterConfirms { get; set; }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    private readonly string buttonId = "confirm-" + Guid.NewGuid().ToString("N");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && EnterConfirms)
+        {
+            await JS.FocusBoxAsync("#" + buttonId);
+        }
+    }
 
     private void Submit() => MudDialog.Close(DialogResult.Ok(true));
 

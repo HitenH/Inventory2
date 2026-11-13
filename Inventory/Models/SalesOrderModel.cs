@@ -16,7 +16,7 @@ namespace Inventory.Models
         [Required]
         public DateOnly DueDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public decimal? TotalAmountProduct { get; set; }
-        public OrderStatus OrderStatus { get; set; }
+        public OrderStatus OrderStatus { get; set; } = OrderStatus.Open; // new orders start as Open (owner's request)
         public bool IsChecked { get; set; } = default;
     }
 }

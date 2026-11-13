@@ -1,4 +1,4 @@
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +32,36 @@ namespace Inventory.Domain.Repository
 
             await context.PurchaseVariant.AddAsync(entity);
             await SaveWithTotalAsync(context, entity.PurchaseEntityId);
+        }
+
+        public async Task CreateRange(List<PurchaseVariant> variants)
+        {
+            if (variants.Count == 0)
+            {
+                return;
+            }
+            if (variants.Select(v => v.PurchaseEntityId).Distinct().Count() != 1)
+            {
+                throw new ArgumentException("All lines must belong to the same purchase.", nameof(variants));
+            }
+
+            await using var context = await factory.CreateDbContextAsync();
+            foreach (var variant in variants)
+            {
+                await context.PurchaseVariant.AddAsync(new PurchaseVariant
+                {
+                    PurchaseEntityId = variant.PurchaseEntityId,
+                    ProductEntityId = variant.ProductEntityId,
+                    VariantEntityId = variant.VariantEntityId,
+                    SerialNumber = variant.SerialNumber,
+                    Quantity = variant.Quantity,
+                    ProductRate = variant.ProductRate,
+                    Amount = variant.Amount,
+                    Discount = variant.Discount,
+                    AmountAfterDiscount = variant.AmountAfterDiscount
+                });
+            }
+            await SaveWithTotalAsync(context, variants[0].PurchaseEntityId);
         }
 
         public async Task Delete(PurchaseVariant variant)

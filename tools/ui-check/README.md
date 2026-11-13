@@ -33,3 +33,6 @@ The checks use names from the May 2026 data (supplier BALAJI / CAPITAL, customer
 - `check-entry-flows.mjs` – purchase with two lines, sales order, purchase order, Esc back.
 - `check-popups-and-sale.mjs` – Purchase Order cursor after a row, Sale cursor rules, pop-up search bar / arrows / click / Esc.
 - `check-save-and-focus.mjs` – new product cursor in Name, Ctrl+S on a new customer.
+- `check-bulk-entry.mjs` – Bulk Entry pop-up on Purchase Orders (supplier once, product change, same variant twice,
+  missing quantity, remove a row, Esc asks when rows would be lost, Ctrl+S saves all), Purchases and Sales Orders;
+  Purchase Orders "Open" default and Supplier name column.

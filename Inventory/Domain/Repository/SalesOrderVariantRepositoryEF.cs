@@ -1,4 +1,4 @@
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +33,37 @@ namespace Inventory.Domain.Repository
 
             await context.SalesOrderVariants.AddAsync(entity);
             await SaveWithTotalAsync(context, entity.SalesOrderEntityId);
+        }
+
+        public async Task CreateRange(List<SalesOrderVariantEntity> variants)
+        {
+            if (variants.Count == 0)
+            {
+                return;
+            }
+            if (variants.Select(v => v.SalesOrderEntityId).Distinct().Count() != 1)
+            {
+                throw new ArgumentException("All lines must belong to the same sales order.", nameof(variants));
+            }
+
+            await using var context = await factory.CreateDbContextAsync();
+            foreach (var variant in variants)
+            {
+                await context.SalesOrderVariants.AddAsync(new SalesOrderVariantEntity
+                {
+                    SalesOrderEntityId = variant.SalesOrderEntityId,
+                    ProductEntityId = variant.ProductEntityId,
+                    VariantEntityId = variant.VariantEntityId,
+                    SerialNumber = variant.SerialNumber,
+                    Quantity = variant.Quantity,
+                    ProductRate = variant.ProductRate,
+                    Amount = variant.Amount,
+                    Discount = variant.Discount,
+                    AmountAfterDiscount = variant.AmountAfterDiscount,
+                    Remarks = variant.Remarks
+                });
+            }
+            await SaveWithTotalAsync(context, variants[0].SalesOrderEntityId);
         }
 
         public async Task Delete(SalesOrderVariantEntity variant)

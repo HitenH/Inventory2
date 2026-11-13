@@ -1,4 +1,4 @@
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 
@@ -16,6 +16,9 @@ namespace Inventory.Shared
         /// <summary>True when the lines have a Remarks column (sales orders).</summary>
         public abstract bool HasRemarks { get; }
 
+        /// <summary>Which kind of Bulk Entry pop-up this voucher uses.</summary>
+        public abstract Inventory.Service.BulkEntryKind BulkKind { get; }
+
         public abstract Guid HeaderId { get; }
 
         /// <summary>The voucher's lines in serial-number order.</summary>
@@ -24,6 +27,9 @@ namespace Inventory.Shared
         public abstract Task Create(LineEditorModel line, Guid productEntityId, int serialNumber);
 
         public abstract Task Update(LineEditorModel line, Guid productEntityId);
+
+        /// <summary>Bulk entry: adds all the lines (each with its own product and serial number) in one go, all or nothing.</summary>
+        public abstract Task CreateRange(List<LineEditorModel> newLines);
 
         public abstract Task Delete(Guid lineId);
     }
@@ -41,6 +47,7 @@ namespace Inventory.Shared
 
         public override string Kind => "purchase";
         public override bool HasRemarks => false;
+        public override Inventory.Service.BulkEntryKind BulkKind => Inventory.Service.BulkEntryKind.Purchase;
         public override Guid HeaderId => purchase.Id;
 
         public override List<LineEditorModel> Load()
@@ -94,6 +101,20 @@ namespace Inventory.Shared
             });
 
         public override Task Delete(Guid lineId) => repository.Delete(new PurchaseVariant { Id = lineId });
+
+        public override Task CreateRange(List<LineEditorModel> newLines) =>
+            repository.CreateRange(newLines.Select(line => new PurchaseVariant
+            {
+                PurchaseEntityId = purchase.Id,
+                ProductEntityId = line.ProductEntityId,
+                VariantEntityId = line.VariantEntityId!.Value,
+                SerialNumber = line.SerialNumber,
+                Quantity = line.Quantity,
+                Amount = line.Amount,
+                Discount = line.Discount,
+                AmountAfterDiscount = line.AmountAfterDiscount,
+                ProductRate = line.ProductRate
+            }).ToList());
     }
 
     public sealed class SalesOrderLines : TransactionLines
@@ -109,6 +130,7 @@ namespace Inventory.Shared
 
         public override string Kind => "sales order";
         public override bool HasRemarks => true;
+        public override Inventory.Service.BulkEntryKind BulkKind => Inventory.Service.BulkEntryKind.SalesOrder;
         public override Guid HeaderId => salesOrder.Id;
 
         public override List<LineEditorModel> Load()
@@ -163,6 +185,21 @@ namespace Inventory.Shared
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 Remarks = line.Remarks
             });
+
+        public override Task CreateRange(List<LineEditorModel> newLines) =>
+            repository.CreateRange(newLines.Select(line => new SalesOrderVariantEntity
+            {
+                SalesOrderEntityId = salesOrder.Id,
+                ProductEntityId = line.ProductEntityId,
+                VariantEntityId = line.VariantEntityId!.Value,
+                SerialNumber = line.SerialNumber,
+                Quantity = line.Quantity,
+                ProductRate = line.ProductRate,
+                Amount = line.Amount,
+                Discount = line.Discount,
+                AmountAfterDiscount = line.AmountAfterDiscount,
+                Remarks = line.Remarks
+            }).ToList());
 
         public override async Task Delete(Guid lineId)
         {

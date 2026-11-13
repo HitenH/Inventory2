@@ -65,4 +65,12 @@ public class ModelMappingTests
         Assert.Equal((variant.Id, "V1", (int?)3), (ve.Id, ve.VariantId, ve.ReorderLevel));
         Assert.Same(image, ve.Image);
     }
+
+    [Fact]
+    public void New_purchase_and_sales_orders_start_as_Open()
+    {
+        // Owner's request (13 Nov 2026): the status box starts on "Open", not "None".
+        Assert.Equal(OrderStatus.Open, new PurchaseOrderModel().OrderStatus);
+        Assert.Equal(OrderStatus.Open, new SalesOrderModel().OrderStatus);
+    }
 }

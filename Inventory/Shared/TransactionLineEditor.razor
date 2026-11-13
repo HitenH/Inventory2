@@ -1,4 +1,4 @@
-@* Shared line editor for Purchase and Sales Order (batch 12). *@
+﻿@* Shared line editor for Purchase and Sales Order (batch 12). *@
 @using Inventory.Shared.Selectors
 
 
@@ -20,6 +20,8 @@
             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelLine">
                 <img src="img/cancel.png" alt="cancel" class="purchase-cancel-img" />
             </button>
+            <MudButton id="bulk-entry-open" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="ms-1"
+                       StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="OpenBulkEntryAsync">Bulk Entry</MudButton>
         </div>
         <div class="col-1 text-center">
             <label for="serialnumber" class="form-label">Sl.</label>

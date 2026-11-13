@@ -1,4 +1,4 @@
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
@@ -20,6 +20,7 @@ namespace Inventory.Shared
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
         [Inject] private ILogger<TransactionLineEditor> Logger { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
+        [Inject] private IDialogService DialogService { get; set; } = default!;
 
         /// <summary>After a line is saved the cursor goes back to the product box, ready for the next item (owner's request).</summary>
         private Task FocusProductAsync() => JS.FocusBoxAsync(".focus-line-product");
@@ -66,6 +67,41 @@ namespace Inventory.Shared
             {
                 Logger.LogError(ex, "Add {Kind} line failed", Lines.Kind);
                 Snackbar.Add($"Could not add line: {ex.Message}", Severity.Error);
+            }
+        }
+
+        /// <summary>
+        /// Bulk Entry pop-up (owner's request, Nov 2026): one product, many variants, product can be changed;
+        /// all rows are added to this voucher together (all or nothing), numbered after the existing lines.
+        /// </summary>
+        private async Task OpenBulkEntryAsync()
+        {
+            if (Lines.HeaderId == Guid.Empty)
+            {
+                Snackbar.Add(Lines.BulkKind == BulkEntryKind.Purchase
+                    ? "Please select a supplier first." : "Please select a customer first.", Severity.Warning);
+                return;
+            }
+            var result = await Inventory.MudBlazorComponents.BulkEntryDialog.ShowAsync(DialogService, Lines.BulkKind);
+            if (result == null)
+            {
+                await FocusProductAsync();
+                return;
+            }
+            try
+            {
+                var first = lines.Count == 0 ? 1 : lines.Max(l => l.SerialNumber) + 1;
+                await Lines.CreateRange(BulkEntry.ToLines(result.Rows, first, Lines.HasRemarks));
+                Snackbar.Add(result.Rows.Count == 1 ? "Added 1 line." : $"Added {result.Rows.Count} lines.", Severity.Success);
+                CancelLine();
+                serialnumber = first + result.Rows.Count;
+                await ChangeState.InvokeAsync(true);
+                await FocusProductAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Bulk entry: adding {Kind} lines failed", Lines.Kind);
+                Snackbar.Add("Could not add the lines. Nothing was saved. " + (DbErrors.RuleMessage(ex) ?? ex.Message), Severity.Error);
             }
         }
 

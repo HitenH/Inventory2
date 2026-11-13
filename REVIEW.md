@@ -22,11 +22,11 @@
 
 ---
 
-## Progress since this review (updated 13 November 2026)
+## Progress since this review (updated 13 November 2026, session 7)
 
 The review below is kept as written on 10 Nov 2026. This section tracks what has been fixed since. Details per batch are in `PLAN.md` section 5. All work is on the development PC against a copy of the real data; **nothing has been installed on the counter PC yet** (owner's decision – one rollout at the end).
 
-**Rough health score now: about 8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13; performance for growth in batch 14. Session 6 (13 Nov, "batch 15 part 1", owner's requests): saved names show on reopened vouchers, dark mode readable, keyboard shortcuts, cursor placement and Enter on the entry screens, keyboard-friendly search pop-ups. The batch 15 data features are next.
+**Rough health score now: about 8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13; performance for growth in batch 14. Session 6 (13 Nov, "batch 15 part 1", owner's requests): saved names show on reopened vouchers, dark mode readable, keyboard shortcuts, cursor placement and Enter on the entry screens, keyboard-friendly search pop-ups. Session 7 ("batch 15 part 2", owner's requests): new orders start "Open", a Bulk Entry pop-up for entering many items on Purchase Orders, Purchases and Sales Orders, supplier names on the Purchase Orders list, and changing the status of ticked purchase orders in one go. The batch 15 data features are next.
 
 **Still open (13 Nov 2026):** owner's open keyboard offers (Enter on master forms, "unsaved changes" warning, Sale scan-box cursor, existing-record cursor, Sale Summary – see PLAN.md section 0); data features that need owner decisions (D3–D5, M13 – batch 15), users and roles (S3 – batch 16), Import (B5 – batch 8, deliberately last), old duplicate vouchers (B1/D2 – pinned), and smaller items B9, B11, B12, S5, S6, D6. Owner's new request, pinned: several photos and videos per variant.
 
@@ -61,6 +61,7 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | P1–P5 | Paging, customer list loads all sales, images in page, report sums, variant save | **Fixed** – lists show 100 rows per page (10–200 selectable; client-side paging, search covers all rows); customer and area totals summed in the database; photos sent as normal images from `/photos/{id}` (still stored in the database, so backups include them); Sales & Purchases report sums in the database with correct period labels (financial year April–March); one-variant saves proven to write one row. Not done: server-side paging (only needed at tens of thousands of rows). | 14 |
 | P6 | Pickers reload their list | Largely fixed in batch 12 (one picker); not re-checked. | 12 |
 | Usability (new, owner) | Keyboard-only entry, dark mode, shortcut keys | **Done** – Alt-key screen shortcuts, Ctrl+S, Esc back, cursor placement, Enter picks and moves on in search boxes and saves the line from Quantity/Rate (as before), keyboard pop-ups, dark mode for the Bootstrap parts. Checked in a real browser with `tools/ui-check`. | 15 part 1 |
+| Usability (new, owner) | Entering many items is slow (supplier/product picked again for every row) | **Done** – Bulk Entry pop-up (supplier and product once, many variants, all saved together or none), "Open" default status, supplier names on Purchase Orders, status change for ticked purchase orders. | 15 part 2 |
 | D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |
 | B9, B11, B12, S5, S6, D6 | "Not found" returns empty record; PO free text; delete errors show stack trace; HTTPS; raw DB errors; WAL/multi-user | Open (fold into batches 11–15) | – |
 

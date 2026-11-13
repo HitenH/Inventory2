@@ -1,4 +1,4 @@
-using Inventory.Domain.Entities;
+﻿using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
@@ -48,6 +48,8 @@ public partial class PurchaseOrder
         try
         {
             ordersDb = await PurchaseOrderRepository.GetAll();
+            // Orders store only the supplier's ID; the list also shows the name (owner's request, Nov 2026).
+            var supplierNames = await LoadSupplierNamesAsync();
             orders = ordersDb.Select(o => new PurchaseOrderModel()
             {
                 Date = o.Date,
@@ -60,6 +62,7 @@ public partial class PurchaseOrder
                 Quantity = o.Quantity,
                 Remarks = o.Remarks,
                 SupplierId = o.SupplierId,
+                SupplierName = SupplierNameFor(supplierNames, o.SupplierId),
                 VariantId = o.VariantId
             }).ToList();
             //Order by Date latest
@@ -173,7 +176,8 @@ public partial class PurchaseOrder
     {
         listTable?.NavigateTo(0);   // a new search starts on page 1 (batch 14)
         var search = e.Value.ToString().ToLower();
-        ordersAfterSearch = orders.Where(n => n.SupplierId.ToString().ToLower().Contains(search)
+        ordersAfterSearch = orders.Where(n => (n.SupplierId ?? "").ToLower().Contains(search)
+                                           || (n.SupplierName ?? "").ToLower().Contains(search)
                                            || n.ProductId.ToString().ToLower().Contains(search)
                                            || n.ProductName.ToLower().Contains(search)
                                            || n.Quantity.ToString().Contains(search)
@@ -203,6 +207,38 @@ public partial class PurchaseOrder
             }
         }
     }
+    private OrderStatus statusForSelected = OrderStatus.Completed;
+
+    /// <summary>Owner's request (Nov 2026): set the status of every ticked order at once, after one confirmation.</summary>
+    private async Task SetStatusOfSelectedAsync()
+    {
+        if (selectedOrders.Count == 0)
+        {
+            Snackbar.Add("Tick the orders to change first.", Severity.Info);
+            return;
+        }
+        var count = selectedOrders.Count;
+        var text = count == 1
+            ? $"Change the status of this 1 order to {statusForSelected}?"
+            : $"Change the status of these {count} orders to {statusForSelected}?";
+        if (!await DialogService.ConfirmAsync("Change status", text, "Change", Color.Primary, enterConfirms: true))
+        {
+            return;
+        }
+        try
+        {
+            var changed = await PurchaseOrderRepository.UpdateStatus(selectedOrders.Select(o => o.Id).ToList(), statusForSelected);
+            Snackbar.Add(changed == 1 ? $"1 order set to {statusForSelected}." : $"{changed} orders set to {statusForSelected}.", Severity.Success);
+            selectedOrders = new();
+            await GetOrders();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Changing the status of purchase orders failed");
+            Snackbar.Add("Could not change the status. Nothing was changed.", Severity.Error);
+        }
+    }
+
     public async Task DeleteCompletedOrders()
     {
         if (ordersAfterSearch.Count > 0)
@@ -278,6 +314,64 @@ public partial class PurchaseOrder
                 Snackbar.Add("Could not save the purchase order row. " + ex.Message, Severity.Error);
             }
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<Dictionary<string, string>> LoadSupplierNamesAsync()
+    {
+        try
+        {
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in await SupplierRepository.GetAllForLookup())
+            {
+                if (!string.IsNullOrWhiteSpace(s.SupplierId))
+                {
+                    names.TryAdd(s.SupplierId.Trim(), s.Name ?? "");
+                }
+            }
+            return names;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Purchase orders: loading supplier names failed");
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private static string SupplierNameFor(Dictionary<string, string> names, string? supplierId)
+        => supplierId != null && names.TryGetValue(supplierId.Trim(), out var name) ? name : "";
+
+    /// <summary>
+    /// Bulk Entry pop-up (owner's request): supplier, dates and status once, then product + variant + quantity rows.
+    /// Every row becomes its own purchase order; all are saved together or none.
+    /// </summary>
+    private async Task OpenBulkEntryAsync()
+    {
+        var header = new BulkOrderHeader
+        {
+            SupplierId = purchaseOrderModel.SupplierId,
+            Date = purchaseOrderModel.Date,
+            DueDate = purchaseOrderModel.DueDate,
+            OrderStatus = purchaseOrderModel.OrderStatus,
+        };
+        var result = await BulkEntryDialog.ShowAsync(DialogService, BulkEntryKind.PurchaseOrder, selectedSupplier, header);
+        if (result == null)
+        {
+            await JS.FocusBoxAsync(".focus-supplier");
+            return;
+        }
+        try
+        {
+            await PurchaseOrderRepository.CreateRange(BulkEntry.ToPurchaseOrders(result.Rows, result.Header));
+            Snackbar.Add(result.Rows.Count == 1 ? "Saved 1 purchase order." : $"Saved {result.Rows.Count} purchase orders.", Severity.Success);
+            CancelOrder();
+            await GetOrders();
+            await JS.FocusBoxAsync(".focus-supplier");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Bulk entry: saving purchase orders failed");
+            Snackbar.Add("Could not save the purchase orders. Nothing was saved. " + DbErrors.RuleMessage(ex), Severity.Error);
         }
     }
 

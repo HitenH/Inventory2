@@ -1,4 +1,4 @@
-using MudBlazor;
+﻿using MudBlazor;
 
 namespace Inventory.MudBlazorComponents;
 
@@ -10,15 +10,20 @@ public static class DialogServiceExtensions
     public const string DeleteWarning = "Do you really want to delete these records? This process cannot be undone.";
 
     /// <summary>Shows the confirmation box. True only when the user clicks the button (not Cancel or X).</summary>
-    public static async Task<bool> ConfirmAsync(this IDialogService dialogService, string title, string text, string buttonText, Color color)
+    /// <param name="enterConfirms">True: the cursor starts on the button, so Enter confirms (never used for deletes).</param>
+    public static async Task<bool> ConfirmAsync(this IDialogService dialogService, string title, string text, string buttonText, Color color, bool enterConfirms = false)
     {
         var parameters = new DialogParameters<ConfirmationDialog>
         {
             { x => x.ContentText, text },
             { x => x.ButtonText, buttonText },
-            { x => x.Color, color }
+            { x => x.Color, color },
+            { x => x.EnterConfirms, enterConfirms }
         };
-        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var options = enterConfirms
+            // The dialog itself puts the cursor on its button; MudBlazor must not move it away.
+            ? new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, DefaultFocus = DefaultFocus.None }
+            : new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
         var dialog = await dialogService.ShowAsync<ConfirmationDialog>(title, parameters, options);
         var result = await dialog.Result;
         return result is { Canceled: false };

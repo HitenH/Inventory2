@@ -1,4 +1,4 @@
-@page "/purchaseorder"
+﻿@page "/purchaseorder"
 @using Inventory.Shared.Selectors
 @using Variant = MudBlazor.Variant
 
@@ -23,13 +23,15 @@
             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelOrder">
                 <img src="img/cancel.png" alt="cancel" class="variant-cancel-img" />
             </button>
+            <MudButton id="bulk-entry-open" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="OpenBulkEntryAsync">Bulk Entry</MudButton>
         </div>
         <div class="mb-2 col-3 text-center">
             <label for="date" class="form-label">Date</label>
             <DateBox TValue="DateOnly?" @bind-Value="purchaseOrderModel.Date" />
         </div>
         <div class="mb-2 col-3 text-center">
-            <label for="supplierid" class="form-label">Supplier ID</label>
+            <label for="supplierid" class="form-label">Supplier</label>
             <div class="d-flex justify-content-between">
 
                 <SupplierAutocomplete T="SupplierModel" Class="focus-supplier" EnterPressed="OnSupplierEnter" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
@@ -98,6 +100,18 @@
         <MudPaper>
             <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteSelectedOrders" StartIcon="@Icons.Material.Filled.Delete">Selected</MudButton>
             <MudButton Class="m-1" Variant="Variant.Filled" Color="Color.Error" OnClick="DeleteCompletedOrders" StartIcon="@Icons.Material.Filled.Delete">Completed</MudButton>
+            @* Owner's request: change the status of the ticked orders in one go (e.g. Open -> Completed). *@
+            <span class="ms-3 d-inline-flex align-items-center gap-2">
+                <span>Set ticked to</span>
+                <select id="set-status" class="form-select" style="width:140px;" @bind="statusForSelected">
+                    @foreach (OrderStatus item in orderStatuses)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+                <MudButton id="set-status-apply" Variant="Variant.Filled" Color="Color.Primary" OnClick="SetStatusOfSelectedAsync"
+                           StartIcon="@Icons.Material.Filled.Done">Apply</MudButton>
+            </span>
 
 
             <Search SearchItemCallBack="SearchItem" />
@@ -129,8 +143,8 @@
                 </MudTableSortLabel>
             </MudTh>
             <MudTh>
-                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.SupplierId)">
-                    Supplier ID
+                <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.SupplierName ?? string.Empty)">
+                    Supplier
                 </MudTableSortLabel>
             </MudTh>
             <MudTh>
@@ -176,7 +190,8 @@
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.Date</MudTd>
-            <MudTd>@context.SupplierId</MudTd>
+            @* Owner's request: suppliers are known by name, so the list shows the name (the ID still finds it in Search). *@
+            <MudTd>@context.SupplierName</MudTd>
             <MudTd>@context.ProductId</MudTd>
             <MudTd>@context.ProductName</MudTd>
             <MudTd>@context.VariantId</MudTd>
@@ -192,7 +207,7 @@
                 <DateBox TValue="DateOnly?" @bind-Value="context.Date" />
             </MudTd>
             <MudTd>
-                <MudTextField @bind-Value="context.SupplierId" />
+                <MudTextField @bind-Value="context.SupplierId" Label="Supplier ID" HelperText="@context.SupplierName" />
             </MudTd>
             <MudTd>
                 <MudTextField @bind-Value="context.ProductId" />

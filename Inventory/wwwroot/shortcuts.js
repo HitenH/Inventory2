@@ -89,8 +89,12 @@ window.inventoryShortcuts = {
 
     // Clicks the first visible, enabled Save button. The box being typed in is left first, so its value is
     // taken (the app only takes a typed value when the box is left) - exactly like clicking Save with the mouse.
+    // When a pop-up window is open, only its own Save button counts (e.g. "Save all" in Bulk Entry); the screen
+    // behind it is never saved by Ctrl+S while a pop-up is showing.
     save: function () {
-        const buttons = Array.from(document.querySelectorAll('[data-shortcut="save"]'));
+        const dialogs = document.querySelectorAll('.mud-dialog');
+        const scope = dialogs.length ? dialogs[dialogs.length - 1] : document;
+        const buttons = Array.from(scope.querySelectorAll('[data-shortcut="save"]'));
         const button = buttons.find(b => !b.disabled && b.offsetParent !== null);
         if (!button) return;
         if (document.activeElement && document.activeElement !== document.body) {
@@ -143,7 +147,7 @@ window.inventoryShortcuts = {
         const current = function () { return ticket === window.inventoryShortcuts._focusTicket; };
         const find = function () {
             let el = document.querySelector(selector);
-            if (el && !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) {
+            if (el && !/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName)) {
                 el = el.querySelector('input, textarea, select');
             }
             return el && !el.disabled ? el : null;
