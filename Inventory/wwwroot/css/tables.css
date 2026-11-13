@@ -302,3 +302,7 @@ div:has(> label.form-label):has(.lookup-box):not(:focus-within):has(.lookup-box 
     background: transparent;
 }
 div:has(> label.form-label) .lookup-box input:not(:focus)::placeholder { color: transparent; }
+/* Variant drop-downs now read "G – GANESH": a little wider, and long names end in "..." inside the closed box. */
+.field-var { flex: 0 0 140px; }
+.sale-line .field-var { flex: 0 0 180px; }
+.field-var select.form-control { text-overflow: ellipsis; padding-left: 6px; padding-right: 22px; }

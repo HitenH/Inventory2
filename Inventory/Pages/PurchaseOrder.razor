@@ -58,7 +58,7 @@
                 {
                     @foreach (var item in selectedProduct.Variants)
                     {
-                        <option class="text-center" value="@item.VariantId">@item.Name</option>
+                        <option class="text-center" value="@item.VariantId">@item.DisplayText</option>
                     }
                 }
             </InputSelect>

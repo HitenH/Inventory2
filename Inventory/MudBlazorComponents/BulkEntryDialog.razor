@@ -49,7 +49,7 @@
                         <option value="">-</option>
                         @foreach (var v in product.Variants)
                         {
-                            <option value="@v.Id">@VariantText(v)</option>
+                            <option value="@v.Id">@v.DisplayText</option>
                         }
                     </select>
                 </div>
@@ -205,9 +205,6 @@
         }
     }
 
-    private static string VariantText(VariantModel v) =>
-        string.IsNullOrWhiteSpace(v.Name) || string.Equals(v.Name, v.VariantId, StringComparison.OrdinalIgnoreCase)
-            ? v.VariantId ?? "" : $"{v.VariantId} – {v.Name}";
 
     private Task OnSupplierEnter(SupplierModel _) => JS.FocusBoxAsync(".focus-bulk-product");
     private Task OnProductEnter(ProductModel _) => JS.FocusBoxAsync("#bulk-variant");

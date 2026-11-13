@@ -50,11 +50,11 @@
                         {
                             if (item.Id == line.VariantEntityId)
                             {
-                                <option selected value="@item.Id" class="text-center">@item.VariantId</option>
+                                <option selected value="@item.Id" class="text-center">@item.DisplayText</option>
                             }
                             else
                             {
-                                <option value="@item.Id" class="text-center">@item.VariantId</option>
+                                <option value="@item.Id" class="text-center">@item.DisplayText</option>
                             }
                         }
                     }
