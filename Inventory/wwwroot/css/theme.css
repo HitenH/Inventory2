@@ -1,0 +1,129 @@
+/* Batch 17 (UI refresh) – theme: colours, buttons, cards, labels, focus ring.
+   Colours come from MudBlazor's CSS variables, which Service/AppTheme.cs sets from the chosen colour,
+   so a change in Settings applies at once. Tables and entry rows live in tables.css. */
+
+html, body {
+    font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;
+    background: var(--mud-palette-background);
+    color: var(--mud-palette-text-primary);
+}
+
+/* Bootstrap buttons: three filled colours only. */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.btn-success, .btn-warning, .btn-primary {
+    background-color: var(--mud-palette-primary);
+    border-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.btn-info, .btn-secondary {
+    background-color: var(--mud-palette-tertiary);
+    border-color: var(--mud-palette-tertiary);
+    color: var(--mud-palette-tertiary-text);
+}
+
+.btn-danger {
+    background-color: var(--mud-palette-error);
+    border-color: var(--mud-palette-error);
+    color: var(--mud-palette-error-text);
+}
+
+.btn-success:hover, .btn-warning:hover, .btn-primary:hover,
+.btn-info:hover, .btn-secondary:hover, .btn-danger:hover {
+    filter: brightness(.92);
+}
+
+/* Small image icon buttons (add, cancel, edit, delete): no box, the picture is the button. */
+.btn-light {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* Red X marks: turn the black drawing red. */
+img[src="img/cancel.png"], img[src="img/delete.png"] {
+    filter: invert(22%) sepia(95%) saturate(5000%) hue-rotate(350deg) brightness(90%);
+}
+
+.app-dark img[src="img/cancel.png"], .app-dark img[src="img/delete.png"] {
+    filter: invert(22%) sepia(95%) saturate(5000%) hue-rotate(350deg) brightness(140%) !important;
+}
+
+.lookup-box .mud-input-clear-button, .mud-input-clear-button {
+    color: var(--mud-palette-error);
+}
+
+/* Focus ring: a plain outline (black in light mode, white in dark), replaces the blue glow. */
+.btn:focus-visible, .form-control:focus, .form-select:focus, .mud-button-root:focus-visible,
+.mud-input:focus-within, .mud-input-control:focus-within .mud-input,
+input:focus-visible, select:focus-visible, td:focus-visible {
+    outline: 2px solid var(--mud-palette-text-primary) !important;
+    outline-offset: 1px;
+    box-shadow: none !important;
+}
+
+/* Panels used as cards by the forms. */
+.card-header {
+    background: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+/* Field labels: small caps-style labels above the boxes. */
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: 5px;
+}
+
+.form-label h4 {
+    font: inherit;
+    margin: 0;
+}
+
+/* Bootstrap text boxes and drop-downs. */
+.form-control, .form-select {
+    border-radius: 6px;
+    border-color: var(--mud-palette-lines-inputs);
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    height: 38px;
+}
+
+/* Multi-line boxes (Remarks on Customer/Supplier, Category description) keep their rows. */
+textarea.form-control {
+    height: auto;
+}
+
+.form-control:disabled, .form-select:disabled {
+    background: var(--mud-palette-background);
+}
+
+/* Review fixes after the first screenshots. */
+/* Toolbar buttons ("Add New Product") keep their text on one line. */
+.mud-toolbar .mud-button { white-space: nowrap; }
+/* Owner's rule: every button has a background. Outlined MudBlazor buttons (Info, Show details) become grey filled. */
+.mud-button-outlined {
+    background-color: var(--mud-palette-tertiary);
+    color: var(--mud-palette-tertiary-text);
+    border-color: transparent;
+}
+/* The plain search box on the list screens looks like the other boxes. */
+input.border.rounded {
+    height: 36px;
+    border: 1px solid var(--mud-palette-lines-inputs) !important;
+    border-radius: 6px !important;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    padding: 0 10px;
+}
+/* ...and they keep their full width instead of being squeezed by the toolbar. */
+.mud-toolbar .mud-button { flex-shrink: 0; }

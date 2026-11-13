@@ -10,7 +10,8 @@
 }
 else
 {
-    <MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
+<CascadingValue Value="_themeState" IsFixed="true">
+    <MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
     @* "app-dark" switches the Bootstrap tables, text boxes, panels and icons to dark colours (site.css);
        the pop-ups are inside it so their contents follow too. *@
     <div class="@(_isDarkMode ? "app-dark" : null)">
@@ -31,7 +32,7 @@ else
                     </div>
                 </MudMenu>
             </MudTooltip>
-            <MudSwitch @bind-Value="_isDarkMode" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode" />
+            <MudSwitch Value="_isDarkMode" ValueChanged="OnDarkSwitchChanged" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode" />
         </MudAppBar>
         <MudDrawer @bind-Open="_drawerOpen"
                    Elevation="2"
@@ -67,6 +68,7 @@ else
         </MudMainContent>
     </MudLayout>
     </div>
+</CascadingValue>
 }
 
 @code {
@@ -84,6 +86,7 @@ else
     public void Dispose()
     {
         Backups.RestartRequiredChanged -= OnRestartRequiredChanged;
+        _themeState.Changed -= OnThemeChanged;
         _shortcutsRef?.Dispose();
     }
 
@@ -136,6 +139,17 @@ else
     private MudThemeProvider? _mudThemeProvider;
     private bool _drawerOpen = true;
 
+    // Batch 17: colour and mode chosen in Settings or the app bar, shared with pages through a CascadingValue.
+    private readonly AppThemeState _themeState = new();
+    private MudTheme _theme = AppTheme.Build("Teal");
+
+    /// <summary>What inventoryTheme.load() returns (stored in localStorage by main.js).</summary>
+    public sealed class SavedTheme
+    {
+        public string? Colour { get; set; }
+        public string? Mode { get; set; }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -143,6 +157,8 @@ else
             _layoutReady = true;
             _shortcutsRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("inventoryShortcuts.init", _shortcutsRef, Inventory.Service.Shortcuts.Letters);
+            _themeState.Changed += OnThemeChanged;
+            await LoadSavedThemeAsync();
             StateHasChanged();
             return;
         }
@@ -155,11 +171,76 @@ else
         }
     }
 
+    private async Task LoadSavedThemeAsync()
+    {
+        try
+        {
+            var saved = await JS.InvokeAsync<SavedTheme?>("inventoryTheme.load");
+            if (saved is not null)
+            {
+                _themeState.Colour = AppTheme.Normalise(saved.Colour);
+                _themeState.Mode = saved.Mode is "Light" or "Dark" ? saved.Mode : "System";
+            }
+        }
+        catch (JSException)
+        {
+            // Theme storage unavailable: keep the defaults.
+        }
+        _theme = AppTheme.Build(_themeState.Colour);
+        await ApplyModeAsync();
+    }
+
+    /// <summary>Light or Dark is fixed by the user; System follows Windows (see OnSystemPreferenceChanged).</summary>
+    private async Task ApplyModeAsync()
+    {
+        switch (_themeState.Mode)
+        {
+            case "Light":
+                _isDarkMode = false;
+                break;
+            case "Dark":
+                _isDarkMode = true;
+                break;
+            default:
+                if (_mudThemeProvider is not null)
+                {
+                    _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+                }
+                break;
+        }
+    }
+
     private Task OnSystemPreferenceChanged(bool newValue)
     {
+        if (_themeState.Mode is "Light" or "Dark")
+        {
+            return Task.CompletedTask;
+        }
         _isDarkMode = newValue;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private void OnThemeChanged() => _ = InvokeAsync(async () =>
+    {
+        _theme = AppTheme.Build(_themeState.Colour);
+        await ApplyModeAsync();
+        StateHasChanged();
+    });
+
+    /// <summary>The app bar switch sets Light or Dark explicitly and remembers the choice.</summary>
+    private async Task OnDarkSwitchChanged(bool value)
+    {
+        _isDarkMode = value;
+        _themeState.Mode = value ? "Dark" : "Light";
+        try
+        {
+            await JS.InvokeVoidAsync("inventoryTheme.save", _themeState.Colour, _themeState.Mode);
+        }
+        catch (JSException)
+        {
+            // Not remembered this time; the choice still applies.
+        }
     }
 
     private void DrawerToggle()

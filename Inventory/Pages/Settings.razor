@@ -4,6 +4,7 @@
 @inject BackupService backupService
 @inject ISnackbar snackbar
 @inject IDialogService DialogService
+@inject Microsoft.JSInterop.IJSRuntime JS
 
 <PagesHeader Title="Settings" SubTitle="Reports, backups, overview" />
 
@@ -14,6 +15,28 @@
             A backup has been restored. Close the Inventory app completely and start it again before doing any more work.
         </MudAlert>
     }
+
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Appearance</MudText>
+        <MudText Typo="Typo.subtitle2">Colour</MudText>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var colour in AppTheme.Colours)
+            {
+                var chosen = colour == (Theme?.Colour ?? "Teal");
+                <MudButton Variant="MudBlazor.Variant.Filled" OnClick="() => PickColour(colour)"
+                           Style="@($"background:{AppTheme.LightHex(colour)};color:#fff;min-width:92px;" + (chosen ? "outline:2px solid var(--mud-palette-text-primary);outline-offset:2px;" : ""))">
+                    @colour
+                </MudButton>
+            }
+        </div>
+        <MudText Typo="Typo.subtitle2">Mode</MudText>
+        <MudRadioGroup T="string" Value="@(Theme?.Mode ?? "System")" ValueChanged="PickMode">
+            <MudRadio T="string" Value="@("Light")">Light</MudRadio>
+            <MudRadio T="string" Value="@("Dark")">Dark</MudRadio>
+            <MudRadio T="string" Value="@("System")">Same as Windows</MudRadio>
+        </MudRadioGroup>
+        <MudText Typo="Typo.caption">Applies at once. Remembered on this computer.</MudText>
+    </MudPaper>
 
     <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
         <MudText Typo="Typo.body2"><b>Database:</b> @backupService.DatabasePath</MudText>
@@ -53,7 +76,7 @@
                            Disabled="@(busy || backupService.RestartRequired)">
                     Restore
                 </MudButton>
-                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => DeleteBackup(context)"
+                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" OnClick="() => DeleteBackup(context)"
                            Disabled="@busy">
                     Delete
                 </MudButton>
@@ -69,6 +92,23 @@
     private List<BackupFileInfo> backupFiles = new();
     private DateTime? lastBackup;
     private bool busy;
+
+    // Batch 17: appearance (colour and mode), set by MainLayout's CascadingValue.
+    [CascadingParameter] public AppThemeState? Theme { get; set; }
+
+    private async Task PickColour(string colour)
+    {
+        if (Theme is null) return;
+        Theme.Set(colour, Theme.Mode);
+        await JS.InvokeVoidAsync("inventoryTheme.save", Theme.Colour, Theme.Mode);
+    }
+
+    private async Task PickMode(string mode)
+    {
+        if (Theme is null) return;
+        Theme.Set(Theme.Colour, mode);
+        await JS.InvokeVoidAsync("inventoryTheme.save", Theme.Colour, Theme.Mode);
+    }
 
     protected override void OnInitialized()
     {
