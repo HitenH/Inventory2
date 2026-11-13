@@ -2,7 +2,7 @@
 
 **Purpose:** working plan for small, safe batches. A new session starts here, then reads `REVIEW.md` "Open items" only if it needs a finding's detail.
 **Owner:** Hiten (business owner, not a developer). Plain English, business impact first, no code in explanations. He tests in the browser at http://localhost:5259 and says "push" when happy.
-**Last updated:** 13 Nov 2026, session 8 (compressed). Latest commit on `main`: `e075af7`. Build 0 errors / 333 warnings; 150 tests pass.
+**Last updated:** 13 Nov 2026, session 9 (batch 17 UI refresh built, awaiting Hiten's test). Build 0 errors / 333 warnings; 150 tests pass. Revert point for the UI refresh: tag `before-ui-refresh`.
 
 ---
 
@@ -35,7 +35,7 @@
 5. **Open review findings N5–N13** (REVIEW.md, "Session 8 findings"). Each changes what the operator sees, so each needs Hiten's yes before it is built. Smaller items to fold in where they fit: B9, B11, B12, S5, S6, D6.
 6. **Final rollout** (section 6) only when Hiten says "ready".
 
-**Inserted 13 Nov (session 9): Batch 17 – UI refresh.** Hiten asked for a modern look; mock-up approved in principle (second draft at https://claude.ai/artifact/Fdw5mrPdduQt2W9Dz9NWdx). Plan in section 7. Runs before step 2 if Hiten confirms the second draft.
+**Inserted 13 Nov (session 9): Batch 17 – UI refresh.** Mock-up approved (third draft, https://claude.ai/artifact/Fdw5mrPdduQt2W9Dz9NWdx); built and verified the same day, see section 7. **Committed locally in three commits on top of `06ac981` (theme / tables + entry rows / check + plan), not pushed, NOT yet tested by Hiten.** Revert: `git checkout before-ui-refresh -- .` (or revert the three commits).
 
 ### Pinned decisions (do not touch until Hiten raises them)
 - **Users and roles** → step 3 above.
@@ -177,13 +177,17 @@ tools/ui-check/               browser checks (hidden Chrome) against a TEST copy
 
 **Do-not-touch list for every agent** (keyboard and cursor depend on them): `wwwroot/shortcuts.js`; ids `button-submit`, `button-close`, `productid`, `variantid`, `bulk-entry-open`; attributes `data-shortcut`, `data-enter-submit`; classes `enter-moves-on`, `lookup-box`, `focus-*`, `sale-line-variant`, `box-center`; `@ref`, `@onclick`, `@bind`, `OnValidSubmit` and any C# in `.razor.cs`. Change only `class` attributes for layout, CSS, and the theme.
 
-| Step | What | Who | Check |
+| Step | What | Who | Result (13 Nov, session 9) |
 |---|---|---|---|
-| 0 | Commit PLAN/REVIEW, tag `before-ui-refresh` | Fable (me) | `git tag` shows it |
-| 1 | Theme: `Service/AppTheme.cs` (MudTheme palettes ×5 colours, light+dark, Inter font, 6 px radius); Settings "Appearance" card; choice saved in browser localStorage via `main.js`; MainLayout applies it. `site.css`: Bootstrap `.btn-*` mapped to the 3 button colours via CSS variables from the theme; red X rule. | Haiku agent | build 0 errors, 150 tests pass, screenshots light+dark |
-| 2 | Tables: shared `.lines-table` CSS (narrow number columns, name `auto` + ellipsis + `title`), applied to Sale, Purchase/Sales Order line editor, Bulk Entry, Purchase Orders rows. Products/Customers/Suppliers lists: toolbar + search in one bar. Class attributes and CSS only. | Haiku agent | screenshots at 1366 and 1920 px: no horizontal scroll, no wrapped names, no overlap |
-| 3 | Entry rows: replace `col-1`/`col-2` with two flex groups (A: actions, Sl., product, variant; B: numbers, remarks) that wrap. Sale: move the scan `EditForm` into the line card (markup move only). | Sonnet agent | `tools/ui-check` keyboard scripts incl. `check-alt-b.mjs`; cursor lands in product box; Enter saves line; scanner flow |
-| 4 | Review every diff against the do-not-touch list; smoke test (section 3) on a test copy; hand to Hiten | Fable (me) | Hiten's browser test |
+| 0 | Commit PLAN/REVIEW, tag `before-ui-refresh` | Fable (me) | done: `06ac981`, tag set |
+| 1 | Theme: `Service/AppTheme.cs` + `AppThemeState.cs` (5 colours × light/dark, Inter, 6 px radius); Settings "Appearance" card; choice saved in the browser (`inventoryTheme` in `main.js`, key `inventory-theme`); MainLayout applies it via a CascadingValue. `wwwroot/css/theme.css`: Bootstrap `.btn-*` → 3 colours (primary / tertiary grey / error red), red X marks (CSS filter on cancel/delete pictures), focus ring, cards, small labels. | Haiku agent | done; reviewed. My fixes: colour codes in one place (`AppTheme.LightHex`), textareas keep their rows, outlined Mud buttons grey-filled, toolbar buttons `flex-shrink:0`, plain search box styled |
+| 2 | Tables: `.lines-table` + column classes (`c-act c-sl c-pid c-name c-vid c-qty c-rate c-amt c-disc c-amt2 c-rem`, `num`) on Sale, line editor, Bulk Entry; `title` on name cells; MudTh widths on the lists (`wwwroot/css/tables.css`). | Haiku agent | done; reviewed. My fixes: Purchase Orders MudTh widths; MudBlazor dense-cell padding overridden (`!important`, it was 40 px per cell × 12 columns); list headers small uppercase; narrower fixed columns |
+| 3 | Entry rows → `.lineform` with `.lineform-a` (actions, Sl., product, variant) and `.lineform-b` (numbers, remarks) that wrap; Sale: scan form + line form in one centred `.sale-entry` card; Sale/Purchase headers get `.field` classes. | Sonnet agent | done; reviewed (class-only diff, 3 EditForms, nesting unchanged). All keyboard scripts passed. My fixes: scan boxes stacked above the line row and centred, Qty column fits its box, Mud/Bootstrap boxes aligned |
+| 4 | Review, `tools/ui-check/check-look.mjs` (new: 12 screens × 1366/1920 × light/dark; fails on sideways scroll, wrapped name, control outside its box), keyboard scripts, tests | Fable (me) | all clean: 0 errors / 333 warnings, 150 tests, 48 screen checks OK. `check-save-and-focus` prints "saved row visible = false" because the list is paged (ZZ sorts last); the row is in the DB – stale expectation, not a bug |
+
+**Not done / for Hiten to decide:** Purchase Orders list at 1366 px shows cut names ("1 NO LED FRA…") – twelve columns cannot all be wide; full name needs a hover `title` (not added, MudTd). Sales Order summary headings (TOTAL QUANTITY / DISCOUNT / TOTAL AMOUNT) are still large. The top-bar Light/Dark switch stays (it saves the choice too). Hiten's own screen width is unknown; at 1366 the Purchase entry row wraps its number boxes to a second line by design.
+
+**Hiten's browser test for batch 17:** every screen in light and dark (Settings → Appearance; try a colour); Purchase: entry row, Bulk Entry, lines table; Sale: scan boxes above the line row, Enter flow, Summarize bar; Products / Customers / Suppliers lists and search; Purchase Orders list on his monitor (no sideways scroll); the red X marks; any text overlapping anywhere.
 
 ## 6. Final rollout to the counter PC (only when Hiten says "ready")
 1. Take a fresh copy of the live `Inventory.db` from the counter PC and keep it off that PC. Run the duplicate-ID, voucher and blank-row checks on it. The new version refuses to start and logs duplicate IDs if any exist.

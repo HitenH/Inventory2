@@ -38,3 +38,7 @@ The checks use names from the May 2026 data (supplier BALAJI / CAPITAL, customer
   Purchase Orders "Open" default and Supplier name column.
 - `check-alt-b.mjs` – Alt+B opens Bulk Entry (Purchase Orders; Purchases / Sales Orders once the supplier/customer is
   chosen) and Scan Mass Products (Sale); not a second pop-up when one is open; the shortcut list mentions it.
+- `check-look.mjs` – Batch 17 look check: every screen at 1366 and 1920 px, light and dark; screenshots to `<scratch>\shots`;
+  fails on a sideways scroll bar, a product name wrapping to two lines, or a control sticking out of its card/row.
+  Note: `check-save-and-focus.mjs` prints "saved row visible in list = false" since batch 14's 100-row paging (the ZZ test
+  name sorts onto a later page). The row is saved (check the Customers table in the test copy); the line is not a failure.

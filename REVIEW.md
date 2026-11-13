@@ -14,6 +14,7 @@
 - **Performance:** database sums for totals; 100-row paging; photos served from `/photos/{id}`; report sums in SQL; one-row variant saves.
 - **Usability (owner's requests, tested):** keyboard entry and Alt-keys, dark mode readable, saved names on reopened vouchers, Bulk Entry, Open default status, status change for ticked orders. Alt+B approved (session 8).
 - **Session 8:** cancel changes nothing on sale and line forms and PO rows; Sale summary 2 decimals; Purchase Orders ticks cleared on reload; deleted variant photo no longer returns; By Area search null fix; duplicate-ID log check ignores case.
+- **Session 9 (batch 17, UI refresh, awaiting owner's test):** one theme (5 colours, light/dark, chosen on Settings, remembered per PC); three button colours; red X marks; cards with small labels; Product Name gets the spare width in every table; entry rows wrap instead of scrolling sideways; Sale scan boxes grouped with the line row. Behaviour, keyboard and data untouched (verified by the ui-check scripts and the new `check-look.mjs`).
 
 ---
 
