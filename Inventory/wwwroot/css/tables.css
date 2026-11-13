@@ -240,3 +240,46 @@
    Reorder Level table past its box. Same icons, less padding; the hidden sort number takes no space. */
 .mud-table-root th .column-options .mud-icon-button { padding: 1px; }
 .mud-table-root th .column-options .mud-sort-index.invisible { display: none; }
+
+/* ==== Batch 17, round 4: floating labels everywhere (owner: "like the variant boxes on the product page") ====
+   Any box with a small label (label.form-label) on every screen: the label sits INSIDE the box while it is empty and
+   not in use, and moves up onto the border when the box is clicked or has a value (MudBlazor's outlined behaviour).
+   main.js gives these boxes an invisible placeholder (" ") so ":placeholder-shown" can tell an empty box.
+   Boxes with a real placeholder ("Search a product..."), drop-downs and file pickers keep the label on the border. */
+div:has(> label.form-label):has(input:not([type=checkbox]):not([type=radio]):not([hidden]), select, textarea) { position: relative; }
+div:has(> label.form-label):not(.field):has(input:not([type=checkbox]):not([type=radio]):not([hidden]), select, textarea) { margin-top: 10px; }
+div:has(> label.form-label):has(input:not([type=checkbox]):not([type=radio]):not([hidden]), select, textarea) > label.form-label {
+    position: absolute;
+    top: -7px;
+    left: 8px;
+    z-index: 2;
+    margin: 0;
+    padding: 0 4px;
+    font-size: 10.5px;
+    line-height: 14px;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    font-weight: 600;
+    max-width: calc(100% - 16px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    text-align: left;
+    background: linear-gradient(to bottom, var(--mud-palette-surface) 60%, transparent 60%);
+    transition: top .15s ease, font-size .15s ease, letter-spacing .15s ease;
+}
+/* Resting: empty and not in use -> label inside the box, normal size. */
+div:has(> label.form-label):not(:focus-within):has(input[placeholder=" "]:not([hidden]):placeholder-shown, textarea[placeholder=" "]:placeholder-shown) > label.form-label {
+    top: 12px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--mud-palette-text-secondary);
+    background: transparent;
+}
+/* In use: the label takes the theme colour, like MudBlazor's boxes. */
+div:has(> label.form-label):focus-within > label.form-label { color: var(--mud-palette-primary); }
+/* The pickers start with the "pick from list" button; their label stays beside it. */
+div:has(> label.form-label):has(.lookup-box) > label.form-label { left: 56px; max-width: calc(100% - 64px); }
