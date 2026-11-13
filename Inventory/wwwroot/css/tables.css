@@ -289,3 +289,16 @@ div:has(> label.form-label):has(.lookup-box):has(input:not([type=checkbox]):not(
     left: 62px;
     max-width: calc(100% - 70px);
 }
+/* Owner: the customer / supplier / product boxes behave like every other box. Empty and not in use -> the label sits
+   inside the box and the grey hint ("Search a product...") is hidden; click in -> label moves up, the hint shows. */
+div:has(> label.form-label):has(.lookup-box):not(:focus-within):has(.lookup-box input:placeholder-shown):has(input:not([type=checkbox]):not([type=radio]):not([hidden]), select, textarea) > label.form-label {
+    top: 12px;
+    left: 72px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--mud-palette-text-secondary);
+    background: transparent;
+}
+div:has(> label.form-label) .lookup-box input:not(:focus)::placeholder { color: transparent; }
