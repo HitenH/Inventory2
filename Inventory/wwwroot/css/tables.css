@@ -1,0 +1,86 @@
+/* Batch 17 (UI refresh) – tables and entry rows: column widths, alignment, wrapping.
+   Filled in by steps 2 and 3. Colours and buttons live in theme.css (step 1). */
+
+/* ---- Step 2: Bootstrap line tables (sales/purchase lines, bulk entry, sale entry) ---- */
+.lines-table { table-layout: fixed; width: 100%; max-width: 100%; }
+.lines-table th, .lines-table td { box-sizing: border-box; padding: 7px 10px; vertical-align: middle; text-align: left; }
+.lines-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; color: var(--mud-palette-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.lines-table td.c-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table .c-act { width: 84px; white-space: nowrap; }  /* two 40px icon buttons */
+.lines-table .c-sl { width: 48px; }
+.lines-table .c-pid { width: 110px; }
+.lines-table .c-vid { width: 96px; }
+.lines-table .c-qty { width: 72px; }
+.lines-table .c-rate { width: 90px; }
+.lines-table .c-disc { width: 72px; }
+.lines-table .c-amt, .lines-table .c-amt2 { width: 110px; }
+.lines-table .c-rem { width: 130px; }
+.lines-table .c-qty input { width: 64px; text-align: right; }
+.lines-table .btn-light { padding: 4px; }
+
+/* ---- Step 2: MudTable lists and reports ---- */
+.mud-table-root { max-width: 100%; }
+.mud-table-root .num, .mud-table-cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mud-table-root th .mud-table-sort-label { justify-content: inherit; }
+.mud-table-cell { padding: 7px 12px; }
+.mud-table-root th { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; color: var(--mud-palette-text-secondary); white-space: nowrap; }
+/* MudTable uses table-layout: auto (confirmed in MudBlazor 9.12 css), so max-width:0 lets long names ellipsize */
+.mud-table-root td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+
+/* ---- Step 3: entry rows and headers ---- */
+.lineform { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; }
+.lineform-a { display: flex; gap: 8px; align-items: flex-end; flex: 1 1 560px; min-width: 0; }
+.lineform-b { display: flex; gap: 8px; align-items: flex-end; flex: 0 0 auto; }
+.field { min-width: 0; }
+.field-sl { flex: 0 0 56px; }
+.field-prod { flex: 1 1 260px; }
+.field-var { flex: 0 0 120px; }
+.field-num { flex: 0 0 96px; }
+.field-rem { flex: 0 0 130px; }
+.field-wide { flex: 1 1 320px; max-width: 560px; }
+.field-scan { flex: 0 0 170px; }
+.sale-entry { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 16px 28px; }
+.sale-scan { display: flex; gap: 12px; align-items: flex-end; padding-right: 28px; border-right: 1px solid var(--mud-palette-lines-default); }
+.sale-line { flex: 0 1 720px; min-width: 0; }
+.sale-line .lineform-a { flex: 1 1 auto; }
+.sale-line .field-var { flex: 0 0 150px; }
+.sale-line .field-num { flex: 0 0 110px; }
+.sale-scan .d-flex.flex-row { gap: 12px; }
+/* Numbers in the entry boxes line up on the right, like the table. */
+.lineform-b .box-center input.mud-input-slot, .lineform-b .form-control, .sale-line .field-num .form-control { text-align: right; }
+
+/* ---- Step 4 (review fixes after the first screenshots) ---- */
+/* Sale: the Quantity box in the lines table was cut off; the column is wide enough for the box now. */
+.lines-table .c-qty { width: 84px; }
+.lines-table .c-qty input { width: 100%; max-width: 64px; }
+/* Line rows: the edit/delete picture buttons were 40px high and made every row 55px. */
+.lines-table .btn-light { height: 30px; padding: 2px 5px; line-height: 1; }
+.lines-table .btn-light img { vertical-align: middle; }
+/* Sale: scan boxes centred above the line row (owner: "keep it centred"); no divider. */
+.sale-entry { flex-direction: column; align-items: center; }
+.sale-scan { border-right: 0; padding-right: 0; }
+.sale-line { flex: 0 1 auto; width: 100%; max-width: 760px; }
+/* Entry rows: the one Bootstrap Amount box sat 6px lower than the MudBlazor boxes beside it. */
+.lineform .mud-input-control { margin-bottom: 0; }
+.lineform .form-control { height: 40px; }
+/* Lists: a header may wrap to two lines on a narrow screen instead of pushing the table past the screen edge. */
+.mud-table-root th { white-space: normal; line-height: 1.2; }
+/* Lists with many columns (Purchase Orders has twelve): denser headers and cells so they fit at 1366px wide. */
+.mud-table-cell { padding: 7px 8px; }
+.mud-table-root th { font-size: 11px; letter-spacing: .3px; }
+.mud-table-root th .mud-table-sort-label .mud-icon-root { font-size: 16px; margin: 0 0 0 2px; }
+.mud-table-root th.mud-table-cell { padding: 6px 4px; }
+.mud-table-root td.mud-table-cell { padding: 7px 6px; }
+/* List headers look like the line-table headers (small uppercase). */
+.mud-table-root th.mud-table-cell, .mud-table-root th .mud-table-sort-label { font-size: 11px; text-transform: uppercase; letter-spacing: .3px; font-weight: 600; color: var(--mud-palette-text-secondary); }
+/* MudBlazor's dense tables pad every cell 16px left + 24px right with a stronger rule than ours; twelve columns of that
+   is what pushed Purchase Orders past a 1366px screen. Padding here wins on purpose. */
+.mud-table-root th.mud-table-cell, .mud-table-dense th.mud-table-cell { padding: 6px 6px !important; }
+.mud-table-root td.mud-table-cell, .mud-table-dense td.mud-table-cell { padding: 7px 8px !important; }
+/* With the smaller icon buttons the fixed columns can be tighter; Product Name gets the difference (about +100px at 1366). */
+.lines-table .c-act { width: 72px; }
+.lines-table .c-pid { width: 100px; }
+.lines-table .c-vid { width: 80px; }
+.lines-table .c-amt, .lines-table .c-amt2 { width: 96px; }
+.lines-table .c-rem { width: 100px; }

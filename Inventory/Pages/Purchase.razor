@@ -19,14 +19,14 @@
     <DataAnnotationsValidator />
 
     <div class="d-flex justify-content-between">
-        <div class="text-center" style="min-width:350px;">
+        <div class="text-center field field-wide" style="min-width:350px;">
             <label for="voucher" class="form-label"><h4>Supplier</h4></label>
             <SupplierAutocomplete T="SupplierModel" Class="focus-supplier" EnterPressed="OnSupplierEnter" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
             <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled hidden />
         </div>
-        <div class="text-center">
+        <div class="text-center field">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
             @if (IsDisabled)
             {
@@ -38,7 +38,7 @@
             }
             
         </div>
-        <div class="text-center">
+        <div class="text-center field">
             <label for="date" class="form-label"><h4>Date</h4></label>
             <DateBox TValue="DateOnly" @bind-Value="purchaseModel.Date" Style="width:170px;" OpenLeft="true" />
         </div>

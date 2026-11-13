@@ -28,9 +28,9 @@ else
                   Dense="true"
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SalesModel>>(this, RowClickEvent))">
             <HeaderContent>
-                <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel></MudTh>
+                <MudTh Style="width:110px"><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.CustomerName)">Customer Name</MudTableSortLabel></MudTh>
-                <MudTh><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
+                <MudTh Style="width:130px"><MudTableSortLabel SortBy="new Func<SalesModel, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>

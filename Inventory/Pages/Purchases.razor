@@ -22,12 +22,12 @@ else
 
         <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="purchasesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true">
             <HeaderContent>
-                <MudTh>
+                <MudTh Style="width:110px">
                     <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.VoucherId)">
                         Voucher ID
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:130px">
                     <MudTableSortLabel SortBy="new Func<PurchaseModel, object>(x => x.Date)">
                         Date
                     </MudTableSortLabel>

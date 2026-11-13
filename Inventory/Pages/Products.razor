@@ -24,23 +24,23 @@ else
         </div>
         <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="@productsAfterSearch" FixedHeader="true" Dense="true" Bordered="true" Striped="true" AllowUnsorted="false" SortLabel="Name">
             <HeaderContent>
-                <MudTh>
+                <MudTh Style="width:140px">
                     <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.ProductId)">Product ID</MudTableSortLabel>
                 </MudTh>
                 <MudTh>
                     <MudTableSortLabel InitialDirection="MudBlazor.SortDirection.Ascending" SortBy="new Func<ProductModel, object>(x => x.Name)">Name</MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Class="num" Style="width:120px">
                     <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Rate)">Rate</MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:110px">
                     Actions
                 </MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.ProductId</MudTd>
                 <MudTd>@context.Name</MudTd>
-                <MudTd>@context.Rate</MudTd>
+                <MudTd Class="num">@context.Rate</MudTd>
                 <MudTd>
                     <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"product/{context.Id}")">Info</MudButton>
                 </MudTd>

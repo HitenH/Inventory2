@@ -15,12 +15,12 @@
                 Name
             </MudTableSortLabel>
         </MudTh>
-        <MudTh>
+        <MudTh Class="num">
             <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.StockInHand)">
                 Stock In Hand
             </MudTableSortLabel>
         </MudTh>
-        <MudTh>
+        <MudTh Class="num">
             <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.ReorderLevel)">
                 Reorder Level
             </MudTableSortLabel>
@@ -34,8 +34,8 @@
     <RowTemplate>
         <MudTd>@context.VariantId</MudTd>
         <MudTd>@context.Name</MudTd>
-        <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
-        <MudTd>@context.ReorderLevel</MudTd>
+        <MudTd Class="num">@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
+        <MudTd Class="num">@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
             {

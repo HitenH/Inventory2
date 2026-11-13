@@ -41,23 +41,23 @@ else
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<CustomerModel>>(this, RowClickEvent))"
                   Dense="true">
             <HeaderContent>
-                <MudTh>
+                <MudTh Style="width:140px">
                     <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.CustomerId)">Customer ID</MudTableSortLabel>
                 </MudTh>
                 <MudTh>
                     <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Name)">Name</MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:150px">
                     <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Mobiles.FirstOrDefault()?.Phone)">
                         Mobiles
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:160px">
                     <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => x.Area)">
                         Area
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Class="num" Style="width:130px">
                     <MudTableSortLabel SortBy="new Func<CustomerModel, object>(x => totalAmount[x.Id])">
                         Amount
                     </MudTableSortLabel>
@@ -70,7 +70,7 @@ else
                     @(context.Mobiles.FirstOrDefault()?.Phone ?? "-")
                 </MudTd>
                 <MudTd DataLabel="Area">@context.Area</MudTd>
-                <MudTd DataLabel="Amount">@totalAmount[context.Id]</MudTd>
+                <MudTd DataLabel="Amount" Class="num">@totalAmount[context.Id]</MudTd>
             </RowTemplate>
             <NoRecordsContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>

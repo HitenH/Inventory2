@@ -24,7 +24,7 @@ else
                   Dense="true" Bordered="true" Striped="true"
                   OnRowClick="@(EventCallback.Factory.Create<TableRowClickEventArgs<SuppliersDisplayModel>>(this, RowClickEvent))">
             <HeaderContent>
-                <MudTh>
+                <MudTh Style="width:140px">
                     <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(x => x.SupplierId)">
                         Supplier ID
                     </MudTableSortLabel>
@@ -34,17 +34,17 @@ else
                         Name
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:150px">
                     <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(x => x.Mobiles.FirstOrDefault()?.Phone ?? string.Empty)">
                         Mobile
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Style="width:160px">
                     <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(x => x.Area)">
                         Area
                     </MudTableSortLabel>
                 </MudTh>
-                <MudTh>
+                <MudTh Class="num" Style="width:130px">
                     <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(f => f.TotalAmount)">
                         Amount
                     </MudTableSortLabel>
@@ -55,7 +55,7 @@ else
                 <MudTd>@context.Name</MudTd>
                 <MudTd>@(context.Mobiles?.Count > 0 ? context.Mobiles.First().Phone : "-")</MudTd>
                 <MudTd>@context.Area</MudTd>
-                <MudTd>@context.TotalAmount</MudTd>
+                <MudTd Class="num">@context.TotalAmount</MudTd>
             </RowTemplate>
             <NoRecordsContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>
