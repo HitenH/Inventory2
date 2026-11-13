@@ -283,3 +283,9 @@ div:has(> label.form-label):not(:focus-within):has(input[placeholder=" "]:not([h
 div:has(> label.form-label):focus-within > label.form-label { color: var(--mud-palette-primary); }
 /* The pickers start with the "pick from list" button; their label stays beside it. */
 div:has(> label.form-label):has(.lookup-box) > label.form-label { left: 56px; max-width: calc(100% - 64px); }
+/* Round 4 fix: the customer / supplier / product labels sit over the search box itself, not over the "pick from list"
+   button (the button + gap is 62px wide). Written with the same :has() as the general rule above so this one wins. */
+div:has(> label.form-label):has(.lookup-box):has(input:not([type=checkbox]):not([type=radio]):not([hidden]), select, textarea) > label.form-label {
+    left: 62px;
+    max-width: calc(100% - 70px);
+}
