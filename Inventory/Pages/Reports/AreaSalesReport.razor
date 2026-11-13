@@ -63,7 +63,7 @@
         if (string.IsNullOrWhiteSpace(_searchString))
             return true;
 
-        if (x.Area.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+        if ((x.Area ?? "").Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;

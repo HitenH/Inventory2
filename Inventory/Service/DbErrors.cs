@@ -29,11 +29,11 @@ public static class DbErrors
     {
         var checks = new (string What, string Sql)[]
         {
-            ("Product ID", "SELECT ProductId, COUNT(*) FROM Products WHERE ProductId IS NOT NULL GROUP BY ProductId HAVING COUNT(*) > 1"),
-            ("Customer ID", "SELECT CustomerId, COUNT(*) FROM Customers WHERE CustomerId IS NOT NULL GROUP BY CustomerId HAVING COUNT(*) > 1"),
-            ("Supplier ID", "SELECT SupplierId, COUNT(*) FROM Suppliers WHERE SupplierId IS NOT NULL GROUP BY SupplierId HAVING COUNT(*) > 1"),
+            ("Product ID", "SELECT ProductId, COUNT(*) FROM Products WHERE ProductId IS NOT NULL GROUP BY ProductId COLLATE NOCASE HAVING COUNT(*) > 1"),
+            ("Customer ID", "SELECT CustomerId, COUNT(*) FROM Customers WHERE CustomerId IS NOT NULL GROUP BY CustomerId COLLATE NOCASE HAVING COUNT(*) > 1"),
+            ("Supplier ID", "SELECT SupplierId, COUNT(*) FROM Suppliers WHERE SupplierId IS NOT NULL GROUP BY SupplierId COLLATE NOCASE HAVING COUNT(*) > 1"),
             ("Variant ID", "SELECT p.ProductId || ' / ' || v.VariantId, COUNT(*) FROM Variants v LEFT JOIN Products p ON p.Id = v.ProductEntityId " +
-                           "WHERE v.ProductEntityId IS NOT NULL AND v.VariantId IS NOT NULL GROUP BY v.ProductEntityId, v.VariantId HAVING COUNT(*) > 1"),
+                           "WHERE v.ProductEntityId IS NOT NULL AND v.VariantId IS NOT NULL GROUP BY v.ProductEntityId, v.VariantId COLLATE NOCASE HAVING COUNT(*) > 1"),
         };
 
         var found = new List<string>();

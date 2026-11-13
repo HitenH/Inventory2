@@ -18,6 +18,12 @@ namespace Inventory.Service
         /// <summary>Alt+N: a new record of the screen you are on.</summary>
         public const char NewForThisScreen = 'N';
 
+        /// <summary>
+        /// Alt+B: opens the screen's many-items pop-up (Bulk Entry on Purchase Orders / Purchases / Sales Orders,
+        /// Scan Mass Products on Sale) by pressing its button (marked data-shortcut="bulk"). Handled in shortcuts.js.
+        /// </summary>
+        public const char BulkEntry = 'B';
+
         public static readonly IReadOnlyList<ScreenShortcut> Screens =
         [
             new("Dashboard", 'H', "/", null, [""]),

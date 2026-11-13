@@ -136,7 +136,7 @@
             {
                 <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Summarize</button>
             }
-            <NavLink type="button" @onclick="OpenScanMassDialogAsync" id="button-close" class="btn btn-primary ms-2">Scan Mass Products</NavLink>
+            <NavLink type="button" @onclick="OpenScanMassDialogAsync" data-shortcut="bulk" title="Alt+B" id="button-close" class="btn btn-primary ms-2">Scan Mass Products</NavLink>
             <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>
             @if (salesModel != null)
             {

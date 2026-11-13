@@ -71,8 +71,7 @@ namespace Inventory.Pages
                 var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
                 await customAuthStateProvider.UpdateAuthenticationState(new UserSession()
                 {
-                    UserName = user!.Name,
-                    Role = user.Role
+                    UserName = user!.Name
                 });
                 navManager.NavigateTo(SafeReturnUrl(), true);
             }

@@ -176,7 +176,7 @@ namespace Inventory.Shared
         public async Task EditLineClicked(LineEditorModel model)
         {
             CancelLine();
-            line = model;
+            line = model.Clone();   // edit a copy; the table row changes only after a successful save (list is reloaded)
             serialnumber = model.SerialNumber;
             // Batch 15: show the line's product name in the search box and its variants in the drop-down
             // (by Variant ID, current one chosen). Used to show an empty box and the variant's internal code.

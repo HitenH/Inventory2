@@ -27,8 +27,7 @@ namespace Inventory.Authentication
 
                 var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
                 {
-                    new Claim(ClaimTypes.Name, userSession.UserName),
-                    new Claim(ClaimTypes.Role, userSession.Role)
+                    new Claim(ClaimTypes.Name, userSession.UserName)
                 }, "CustomAuth"));
                 return new AuthenticationState(claimsPrincipal);
             }
@@ -53,8 +52,7 @@ namespace Inventory.Authentication
                 await sessionStorage.SetAsync("UserSession", userSession);
                 claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>()
             {
-                new Claim(ClaimTypes.Name, userSession.UserName),
-                new Claim(ClaimTypes.Role, userSession.Role)
+                new Claim(ClaimTypes.Name, userSession.UserName)
             }));
             }
             else

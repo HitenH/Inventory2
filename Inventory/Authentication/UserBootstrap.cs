@@ -40,7 +40,7 @@ public static class UserBootstrap
         if (users.Count == 0)
         {
             var initialPassword = GeneratePassword(14);
-            var admin = new UserEntity { Name = "Admin", Role = "Admin", Password = string.Empty };
+            var admin = new UserEntity { Name = "Admin", Password = string.Empty };
             admin.Password = passwords.Hash(admin, initialPassword);
             db.Users.Add(admin);
             await db.SaveChangesAsync();

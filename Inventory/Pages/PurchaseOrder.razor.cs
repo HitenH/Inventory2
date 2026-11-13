@@ -67,6 +67,9 @@ public partial class PurchaseOrder
             }).ToList();
             //Order by Date latest
             ordersAfterSearch = [.. orders.OrderByDescending(o => o.Date)];
+            // The list was rebuilt, so the ticks on screen are gone; forget them here too
+            // (an order that no longer looks ticked must not be deleted or changed).
+            selectedOrders = new();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -267,12 +270,11 @@ public partial class PurchaseOrder
     //For Row Editing
     private void BackupItem(object item)
     {
-        purchaseOrderModelBackup = (PurchaseOrderModel)item;
+        purchaseOrderModelBackup = ((PurchaseOrderModel)item).Clone();
     }
     private void ResetItemToOriginalValues(object item)
     {
-        var index = ordersAfterSearch.IndexOf((PurchaseOrderModel)item);
-        ordersAfterSearch[index] = purchaseOrderModelBackup;
+        ((PurchaseOrderModel)item).CopyFrom(purchaseOrderModelBackup);
     }
 
     // MudTable's RowEditCommit only accepts a plain (non-async) method, so this starts the save

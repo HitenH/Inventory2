@@ -49,7 +49,6 @@ namespace Inventory.Domain.Repository
 
             existing.Name = user.Name;
             existing.Password = user.Password;
-            existing.Role = user.Role;
             await context.SaveChangesAsync();
         }
 

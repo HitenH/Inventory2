@@ -25,5 +25,8 @@ namespace Inventory.Models
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
         /// <summary>Sales orders only.</summary>
         public string? Remarks { get; set; }
+
+        /// <summary>A separate copy of this line, so the form can be cancelled without touching the table row.</summary>
+        public LineEditorModel Clone() => (LineEditorModel)MemberwiseClone();
     }
 }

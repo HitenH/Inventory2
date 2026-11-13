@@ -17,5 +17,8 @@ namespace Inventory.Models
         public string ProductName { get; set; }
         public bool IsCreated { get; set; } = false;
         public int InnerId { get; set; }
+
+        /// <summary>A separate copy of this row, so the edit form can be cancelled without touching the table row.</summary>
+        public SalesVariantModel Clone() => (SalesVariantModel)MemberwiseClone();
     }
 }

@@ -28,7 +28,9 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 
 **Rough health score now: about 8 / 10** (was 4.5). Security, data integrity, operations, runtime and tests improved most; duplication fixed in batch 12; one UI library since batch 13; performance for growth in batch 14. Session 6 (13 Nov, "batch 15 part 1", owner's requests): saved names show on reopened vouchers, dark mode readable, keyboard shortcuts, cursor placement and Enter on the entry screens, keyboard-friendly search pop-ups. Session 7 ("batch 15 part 2", owner's requests): new orders start "Open", a Bulk Entry pop-up for entering many items on Purchase Orders, Purchases and Sales Orders, supplier names on the Purchase Orders list, and changing the status of ticked purchase orders in one go. The batch 15 data features are next.
 
-**Still open (13 Nov 2026):** owner's open keyboard offers (Enter on master forms, "unsaved changes" warning, Sale scan-box cursor, existing-record cursor, Sale Summary – see PLAN.md section 0); data features that need owner decisions (D3–D5, M13 – batch 15), users and roles (S3 – batch 16), Import (B5 – batch 8, deliberately last), old duplicate vouchers (B1/D2 – pinned), and smaller items B9, B11, B12, S5, S6, D6. Owner's new request, pinned: several photos and videos per variant.
+Also session 7, after that push: **Alt+B** opens Bulk Entry (or Scan Mass Products on a Sale), listed in the shortcut list (owner's request; not yet pushed).
+
+**Still open (13 Nov 2026, end of session 7):** data features that need owner decisions (batch 15): created/changed time stamps (M13 – question put to the owner, waiting for his answer), "someone else changed this record" (D3), stock adjustments with a reason (D5), discount naming; the oversell warning (D4) was **pinned by the owner** ("not now"); the remaining keyboard ideas (Enter on master forms, "unsaved changes" warning, Sale scan-box cursor, existing-record cursor, Sale Summary) were **declined by the owner** and are closed; users and roles (S3 – batch 16), Import (B5 – batch 8, deliberately last), old duplicate vouchers (B1/D2 – pinned), and smaller items B9, B11, B12, S5, S6, D6. Owner's new request, pinned: several photos and videos per variant.
 
 ### Status of each finding
 
@@ -38,7 +40,7 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | Backups | File-copy backups, manual only, next to the DB | **Fixed** – SQLite online backup + integrity check, daily automatic backup (keep 30), safe restore with "before-restore" copy and restart prompt. | 2 |
 | M1 | Database in the program folder | **Fixed** – `%ProgramData%\InventoryApp` (configurable), one-time copy on first start. | 2 |
 | S2 | Half the pages open without login | **Fixed** – every page needs login; logged-out users are sent to Login and back. | 3 |
-| S3 | Roles never checked | **Pinned** – owner is the only user for now; batch 16 (after batch 15). | 16 |
+| S3 | Roles never checked | **Old role field removed in session 8 (13 Nov 2026) for a fresh design.** Earlier: pinned – owner is the only user for now; batch 16 (after batch 15). | 16 |
 | B3 | Sales Summary crash on bad input | **Fixed** | 4 |
 | B4 | `async void` handlers | **Fixed** (none left) | 4 |
 | B7 | Sale without customer | **Fixed** – "Please select a customer." | 4 |
@@ -52,7 +54,7 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | B6 | Stored totals go stale | **Fixed** – purchase and sales-order totals recalculated on every line/header save; supplier totals and reports correct immediately. Old data checked: no stale totals. | 7 |
 | B2 | Emptying a sale keeps old lines | **Fixed** – refused with a message (owner's choice). | 7 |
 | A1 | Business logic in screens | **Partly** – totals and line rules moved to the data layer; no full service layer yet. | 7, 12 |
-| B5 | Import broken/unsafe | **Open – deferred to the very end (owner's choice, 12 Nov).** Batch 5 rules now stop duplicates/blank rows, so a bad import fails per row instead of corrupting data. | 8 |
+| B5 | Import broken/unsafe | **Old import removed in session 8 (13 Nov 2026); a new one will be built from scratch.** Earlier: deferred to the very end (owner's choice, 12 Nov). Batch 5 rules now stop duplicates/blank rows, so a bad import fails per row instead of corrupting data. | 8 |
 | S4, Runtime, Logging | Misleading auth config, .NET 9 out of support, console-only logs | **Fixed** – .NET 10 + EF Core 10, MudBlazor 9.12, daily log files (keep 30), friendly error box, dead auth config removed. | 9 |
 | Tests / CI | None | **Fixed** – 32 automatic tests (calculations, stock, vouchers, totals/discounts, data rules, migrations, backup/restore); GitHub runs them on every push (first run green). | 10 |
 | §6 unused code | Dead components, demo code | **Fixed** – unused popups/modals/Chart.js/demo code removed, silent errors now logged; warnings 547 → 458. Sales Orders report added as a Reports tab (owner's choice). | 11 |
@@ -62,8 +64,31 @@ The review below is kept as written on 10 Nov 2026. This section tracks what has
 | P6 | Pickers reload their list | Largely fixed in batch 12 (one picker); not re-checked. | 12 |
 | Usability (new, owner) | Keyboard-only entry, dark mode, shortcut keys | **Done** – Alt-key screen shortcuts, Ctrl+S, Esc back, cursor placement, Enter picks and moves on in search boxes and saves the line from Quantity/Rate (as before), keyboard pop-ups, dark mode for the Bootstrap parts. Checked in a real browser with `tools/ui-check`. | 15 part 1 |
 | Usability (new, owner) | Entering many items is slow (supplier/product picked again for every row) | **Done** – Bulk Entry pop-up (supplier and product once, many variants, all saved together or none), "Open" default status, supplier names on Purchase Orders, status change for ticked purchase orders. | 15 part 2 |
-| D3–D5, M13 | Concurrency, overselling, stock ledger, audit, discount naming | Open (needs owner decisions) | 15 |
+| D3, D5, M13 | Concurrency, stock ledger, audit (created/changed), discount naming | Open (needs owner decisions; M13 question asked 13 Nov 2026, waiting) | 15 |
+| D4 | Overselling (no stock check on Sale) | **Pinned by owner** 13 Nov 2026 ("not now"); recommended later: warn + show stock, never block | – |
 | B9, B11, B12, S5, S6, D6 | "Not found" returns empty record; PO free text; delete errors show stack trace; HTTPS; raw DB errors; WAL/multi-user | Open (fold into batches 11–15) | – |
+
+### Session 8 findings (13 Nov 2026 – fresh review of the whole code base by three reviewers)
+
+Old Import (B5) and old roles (S3) were **removed** so both can be built fresh. Fixed in session 8: Purchase Orders stale ticks, variant photo returning after delete, By Area search crash, duplicate-ID log check. **Open – each needs the owner's yes because the operator would see a difference:**
+
+| # | Where | Problem | Suggested fix |
+|---|---|---|---|
+| N1 | Sale, editing a line of a saved sale – `Pages/Sale.razor.cs` `UpdateSalesVariant` / `EditVariant` | Editing changes the real row straight away; after picking another product or variant and cancelling, the table and what gets saved can disagree (wrong stock). | **Fixed (session 8).** |
+| N2 | Purchase / Sales Order line form – `Shared/TransactionLineEditor.razor.cs` `EditLineClicked`; Purchase Orders row edit `BackupItem` | Cancel after changing quantity/rate leaves the unsaved numbers showing in the table (the database is right). | **Fixed (session 8).** |
+| N3 | Bulk Entry – `BulkEntryDialog.razor` `SaveAll` | A row that is typed but not yet added (no Enter) is silently left out by Save all / Ctrl+S. | **Closed – owner wants it as it is** (not added = not saved). |
+| N4 | Sale summary – `Pages/SalesSummary.razor.cs:68-83` | Amount after discount is not rounded when the summary opens (e.g. 283.3305) but is rounded after any edit; totals can differ by fractions. | **Fixed (session 8)** – lines, header discount and total rounded to 2 decimals. |
+| N5 | Purchase Orders and Sales Orders lists | A failed save/delete is only written to the log; nothing is shown. | Show the message. |
+| N6 | Sale | Summarize with no items silently returns to the list; Scan Mass Products silently drops codes that are not found, and its "Scanned:" message is always blank. | Messages. |
+| N7 | Line form | Accepts quantity 0 / negative and discount over 100 (Bulk Entry refuses them); clearing the product box keeps the old product behind it; a very fast double Enter could add a line twice. | Same checks as Bulk Entry; a "saving" guard. |
+| N8 | Voucher with a discount but no lines – `Domain/TransactionTotals.cs` | Total is saved as minus the discount, which lowers supplier and report totals. | Total 0 when there are no lines. |
+| N9 | A sale that is never summarised | Its items reduce stock, but the stored total stays 0, so customer and period totals miss it. | Fill the total on save, or flag it in the list. |
+| N10 | Report searches (Customers, Sales Orders, Purchase Orders, reorder level, variants) | Case-sensitive; the Customers report search matches almost everything. Sorting by the Image / Stock In Hand column on the product page does not work (Image may error). | Small fixes. |
+| N11 | Reports → Sales & Purchases, "Last 1/3/6/12 months" | Include one day more than "Last 7 days" would suggest. | Owner to choose. |
+| N12 | Housekeeping | Browser may open a moment before the app is ready (refresh fixes it); the first-run Admin password is written to the log and to a text file that is never removed; "before-restore" safety copies and stray `.tmp` files are never cleaned up; a non-JPEG variant photo is ignored without a message. | Small fixes. |
+| N13 | Editing an old sale that contains a blank product line | Refused as a whole by the batch 5 rule (only the one known sale of 19-05-2026). | Known – leave. |
+
+Not verified in a browser: N1–N3 and N6–N7 were found by reading the code.
 
 ### Problems found during the work (not in the original review)
 

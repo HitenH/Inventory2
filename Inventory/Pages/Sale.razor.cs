@@ -282,6 +282,8 @@ public partial class Sale
 
             if (indexElement != -1)
             {
+                // The form edits a copy, so quantity must be written back onto the real row.
+                salesModelVariants[indexElement].Quantity = salesVariantModel.Quantity;
                 if (pickedProduct != null && pickedProduct.Variants.Count != 0)
                 {
                     var productVariant = new VariantModel();
@@ -328,7 +330,7 @@ public partial class Sale
     public async Task UpdateSalesVariant(SalesVariantModel model)
     {
         CancelSalesVariant();
-        salesVariantModel = model;
+        salesVariantModel = model.Clone();   // edit a copy; the table row changes only when the edit is saved
         pickedProduct = model.Product ?? new();
         // Batch 15: show the line's product name in the search box and its variants (by Variant ID) in the drop-down.
         selectedProduct = new ProductModel { Id = model.ProductEntityId, ProductId = model.ProductId, Name = model.ProductName };

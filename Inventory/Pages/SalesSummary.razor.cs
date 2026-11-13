@@ -68,29 +68,28 @@ public partial class SalesSummary
                 for (int i = 0; i < salesSummaryEntityList.Count; i++)
                 {
                     salesSummaryEntityList[i].SerialNumber = i + 1;
-                    if (salesSummaryEntityList[i].ProductRate == 0 || salesSummaryEntityList[i].Quantity == 0)
-                    {
-                        salesSummaryEntityList[i].Amount = 0;
-                    }
-                    else
-                    {
-                        salesSummaryEntityList[i].Amount = Math.Round(
-                            salesSummaryEntityList[i].ProductRate * salesSummaryEntityList[i].Quantity, 2);
-                    }
-
-                    salesSummaryEntityList[i].AmountAfterDiscount = salesSummaryEntityList[i].Amount
-                        * (1 - (salesSummaryEntityList[i].Discount / 100m));
+                    var (amount, afterDiscount) = ComputeLineAmounts(
+                        salesSummaryEntityList[i].ProductRate, salesSummaryEntityList[i].Quantity, salesSummaryEntityList[i].Discount);
+                    salesSummaryEntityList[i].Amount = amount;
+                    salesSummaryEntityList[i].AmountAfterDiscount = afterDiscount;
                 }
 
                 SalesTotalData = new()
                 {
-                    Discount = salesEntity.Discount,
+                    Discount = Math.Round(salesEntity.Discount, 2),
                 };
 
                 GetTotalAmount();
             }
         }
         StateHasChanged();
+    }
+
+    /// <summary>The amount and the amount after discount of one summary line, both rounded to 2 decimals (same helpers as the edit handlers).</summary>
+    public static (decimal Amount, decimal AmountAfterDiscount) ComputeLineAmounts(decimal rate, int quantity, int discountPercent)
+    {
+        var amount = LineAmounts.ComputeAmount(rate, quantity);
+        return (amount, LineAmounts.ComputeAmountAfterDiscount(amount, discountPercent) ?? 0);
     }
 
     public async Task AddSales()
@@ -217,7 +216,7 @@ public partial class SalesSummary
 
     private void DiscountForTotalAmountChanged(decimal value)
     {
-        SalesTotalData.Discount = value;
+        SalesTotalData.Discount = Math.Round(value, 2);
         GetTotalAmount();
     }
 
@@ -227,6 +226,6 @@ public partial class SalesSummary
         var amount = salesSummaryEntityList.Select(v => v.AmountAfterDiscount).Sum();
 
         //Calculate total after discount
-        SalesTotalData.TotalAmount = amount - SalesTotalData.Discount;
+        SalesTotalData.TotalAmount = Math.Round(amount - SalesTotalData.Discount, 2);
     }
 }

@@ -98,7 +98,7 @@ public class ShortcutsTests
     [Fact]
     public void Keys_are_unique_and_avoid_the_ones_chrome_needs()
     {
-        var keys = Shortcuts.Screens.Select(s => s.Key).Append(Shortcuts.NewForThisScreen).ToList();
+        var keys = Shortcuts.Screens.Select(s => s.Key).Append(Shortcuts.NewForThisScreen).Append(Shortcuts.BulkEntry).ToList();
         Assert.Equal(keys.Count, keys.Distinct().Count());
         Assert.DoesNotContain('F', keys);   // Chrome menu
         Assert.DoesNotContain('E', keys);   // Chrome menu

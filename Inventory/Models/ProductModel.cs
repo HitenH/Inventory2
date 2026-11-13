@@ -10,7 +10,6 @@ namespace Inventory.Models
         public string? Name { get; set; }
         public decimal? Rate { get; set; } = default(decimal);
         public string? Description { get; set; }
-        public Guid? CategoryEntityId { get; set; }
         /// <summary>The product's variants (filled when they were loaded, e.g. after picking a product).</summary>
         public List<VariantModel> Variants { get; set; } = new();
     }

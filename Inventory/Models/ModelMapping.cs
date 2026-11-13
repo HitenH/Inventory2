@@ -72,7 +72,6 @@ public static class ModelMapping
     };
 
     // ---- Product ----
-    // CategoryEntityId is only used by the import and was never filled from a record.
     // The category itself is chosen on the Product page and set by that page when saving.
     public static ProductModel ToModel(this ProductEntity e) => new()
     {
@@ -81,7 +80,6 @@ public static class ModelMapping
         Name = e.Name,
         Rate = e.Rate,
         Description = e.Description,
-        CategoryEntityId = null,
         Variants = e.Variants?.Select(v => v.ToModel()).ToList() ?? new List<VariantModel>(),
     };
 

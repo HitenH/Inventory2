@@ -36,3 +36,5 @@ The checks use names from the May 2026 data (supplier BALAJI / CAPITAL, customer
 - `check-bulk-entry.mjs` – Bulk Entry pop-up on Purchase Orders (supplier once, product change, same variant twice,
   missing quantity, remove a row, Esc asks when rows would be lost, Ctrl+S saves all), Purchases and Sales Orders;
   Purchase Orders "Open" default and Supplier name column.
+- `check-alt-b.mjs` – Alt+B opens Bulk Entry (Purchase Orders; Purchases / Sales Orders once the supplier/customer is
+  chosen) and Scan Mass Products (Sale); not a second pop-up when one is open; the shortcut list mentions it.

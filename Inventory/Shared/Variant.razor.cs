@@ -232,6 +232,9 @@ public partial class Variant
                     if (v.Image?.Id == image.Id)
                         v.Image = null;
                 }
+                // The variant open in the edit form holds its own copy of the photo; forget that one too.
+                if (variantModel?.Image?.Id == image.Id)
+                    variantModel.Image = null;
                 GetVariants();
             }
             catch (Exception ex)

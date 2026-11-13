@@ -21,6 +21,27 @@ namespace Inventory.Models
         public string? Remarks { get; set; } = default;
         public bool IsChecked { get; set; } = default;
 
+        /// <summary>A separate copy of this row (used as the backup while a table row is being edited).</summary>
+        public PurchaseOrderModel Clone() => (PurchaseOrderModel)MemberwiseClone();
+
+        /// <summary>Puts every value of <paramref name="other"/> back onto this row (keeps this object's identity).</summary>
+        public void CopyFrom(PurchaseOrderModel other)
+        {
+            Id = other.Id;
+            SupplierId = other.SupplierId;
+            SupplierName = other.SupplierName;
+            ProductId = other.ProductId;
+            ProductName = other.ProductName;
+            ProductRate = other.ProductRate;
+            VariantId = other.VariantId;
+            Quantity = other.Quantity;
+            Date = other.Date;
+            DueDate = other.DueDate;
+            OrderStatus = other.OrderStatus;
+            Remarks = other.Remarks;
+            IsChecked = other.IsChecked;
+        }
+
     }
 
 

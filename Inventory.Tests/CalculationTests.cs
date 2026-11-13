@@ -41,7 +41,7 @@ public class CalculationTests
     public void Password_hash_verifies_only_the_right_password()
     {
         var service = new PasswordService();
-        var user = new UserEntity { Name = "Test", Role = "User" };
+        var user = new UserEntity { Name = "Test" };
         user.Password = service.Hash(user, "correct horse");
 
         Assert.True(PasswordService.LooksHashed(user.Password));

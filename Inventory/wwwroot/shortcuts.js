@@ -37,6 +37,15 @@ window.inventoryShortcuts = {
                 return;
             }
 
+            // Alt+B: open the screen's many-items pop-up (Bulk Entry / Scan Mass Products) - its button is marked
+            // data-shortcut="bulk". Not while a pop-up is already open.
+            if (e.altKey && !e.ctrlKey && e.code === 'KeyB') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.inventoryShortcuts.bulk();
+                return;
+            }
+
             if (!e.altKey || e.ctrlKey) return;
             if (!e.code || !e.code.startsWith('Key')) return;
             const letter = e.code.substring(3);
@@ -96,6 +105,19 @@ window.inventoryShortcuts = {
         const scope = dialogs.length ? dialogs[dialogs.length - 1] : document;
         const buttons = Array.from(scope.querySelectorAll('[data-shortcut="save"]'));
         const button = buttons.find(b => !b.disabled && b.offsetParent !== null);
+        if (!button) return;
+        if (document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+        }
+        button.click();
+    },
+
+    // Alt+B: clicks the visible Bulk Entry / Scan Mass Products button. Nothing when a pop-up is open or the
+    // button is not shown yet (Purchases / Sales Orders show it once the supplier / customer is chosen).
+    bulk: function () {
+        if (document.querySelector('.mud-dialog')) return;
+        const button = Array.from(document.querySelectorAll('[data-shortcut="bulk"]'))
+            .find(b => !b.disabled && b.offsetParent !== null);
         if (!button) return;
         if (document.activeElement && document.activeElement !== document.body) {
             document.activeElement.blur();
