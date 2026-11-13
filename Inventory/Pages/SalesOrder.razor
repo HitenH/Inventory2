@@ -78,25 +78,28 @@
 
 @if (SalesOrderId != null)
 {
-    <SalesOrderVariantComponent SalesOrder="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />
+    <SalesOrderVariantComponent @ref="salesOrderLines" SalesOrder="salesOrderEntity" ChangeState="ChangeStateSalesOrderVariant" />
 
-    <EditForm Model="@SalesOrderTotalData" Context="SalesOrderTotalDataForm" class="card-header mt-5"
+    @* Batch 17: one compact totals bar, styled like the customer card; Bulk Entry moved here from the line row. *@
+    <EditForm Model="@SalesOrderTotalData" Context="SalesOrderTotalDataForm" class="card-header mt-3"
           OnValidSubmit="AddTotalAmount">
-        <div class="d-flex justify-content-around">
-            <div class="text-center d-flex col-2">
+        <div class="totals-bar">
+            <div class="totals-actions">
+                <MudButton id="bulk-entry-open" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="() => salesOrderLines!.OpenBulkEntryAsync()" data-shortcut="bulk" title="Alt+B">Bulk Entry</MudButton>
                 <button type="submit" id="button-submit" class="btn btn-success" @onclick="AddTotalAmount">Save Total Amount</button>
             </div>
-            <div class="d-flex col-3">
-                <label for="totalquantity" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Quantity</label>
-                <InputNumber @bind-Value="SalesOrderTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+            <div class="field totals-field">
+                <label for="totalquantity" class="form-label">Total Quantity</label>
+                <InputNumber @bind-Value="SalesOrderTotalData.TotalQuantity" id="totalquantity" class="form-control text-center" disabled />
             </div>
-            <div class="text-center d-flex col-3">
-                <label for="discount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Discount</label>
+            <div class="field totals-field">
+                <label for="discount" class="form-label">Discount</label>
                 <MudNumericField T="decimal" Value="SalesOrderTotalData.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
             </div>
-            <div class="text-center d-flex col-3">
-                <label for="totalamount" class="form-label d-flex align-items-end me-2" style="font-size:20px;">Total Amount</label>
-                <InputNumber @bind-Value="SalesOrderTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
+            <div class="field totals-field">
+                <label for="totalamount" class="form-label">Total Amount</label>
+                <InputNumber @bind-Value="SalesOrderTotalData.TotalAmount" id="totalamount" class="form-control text-center" disabled />
             </div>
         </div>
     </EditForm>

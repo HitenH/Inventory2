@@ -2,9 +2,14 @@
 @using Inventory.Domain.Entities
 @using Inventory.Domain.Repository.Abstract
 
-<TransactionLineEditor Lines="lines" ChangeState="ChangeState" />
+<TransactionLineEditor @ref="editor" Lines="lines" ChangeState="ChangeState" />
 
 @code {
+    private TransactionLineEditor? editor;
+
+    /// <summary>Bulk Entry button in the page's totals bar (batch 17).</summary>
+    public Task OpenBulkEntryAsync() => editor?.OpenBulkEntryAsync() ?? Task.CompletedTask;
+
     [Parameter] public PurchaseEntity Purchase { get; set; } = default!;
     [Parameter] public EventCallback<bool> ChangeState { get; set; }
     [Inject] private IPurchaseVariantRepository PurchaseVariantRepository { get; set; } = default!;

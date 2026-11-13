@@ -70,7 +70,7 @@ namespace Inventory.Service
                     LinesDefault = "#DCE3E9",
                     LinesInputs = "#C5CFD8",
                     TableLines = "#DCE3E9",
-                    TableStriped = "#F8FAFB",
+                    TableStriped = "#FFFFFF",
                     TableHover = "#EEF2F5",
                 },
                 PaletteDark = new PaletteDark
@@ -99,7 +99,7 @@ namespace Inventory.Service
                     LinesDefault = "#2C3741",
                     LinesInputs = "#3A4753",
                     TableLines = "#2C3741",
-                    TableStriped = "#1A222A",
+                    TableStriped = "#1C242C",
                     TableHover = "#222C35",
                 },
                 LayoutProperties = new LayoutProperties

@@ -84,3 +84,66 @@
 .lines-table .c-vid { width: 80px; }
 .lines-table .c-amt, .lines-table .c-amt2 { width: 96px; }
 .lines-table .c-rem { width: 100px; }
+
+/* ==== Batch 17, round 2 (owner's feedback, 13 Nov) ==== */
+
+/* 1. Rows like the mock-up: no dark/light stripes, no vertical lines, one light line under each row, a soft header,
+      a rounded outer border. Applies to the Bootstrap line tables and the MudBlazor lists alike. */
+.table-striped > tbody > tr:nth-of-type(odd) > *,
+.app-dark .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: transparent;
+    --bs-table-bg-type: transparent;
+    --bs-table-striped-bg: transparent;
+    box-shadow: none;
+}
+.table.table-bordered > :not(caption) > * { border-width: 0; }
+.table.table-bordered > :not(caption) > * > * { border-width: 0 0 1px 0; border-color: var(--mud-palette-lines-default); }
+.table.table-bordered > tbody > tr:last-child > * { border-bottom-width: 0; }
+.lines-table {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 10px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    background: var(--mud-palette-surface);
+}
+.lines-table thead th { background: var(--mud-palette-background); }
+.lines-table tbody tr:hover > * { background: var(--mud-palette-table-hover); }
+.mud-table-bordered .mud-table-container .mud-table-root .mud-table-body .mud-table-row .mud-table-cell,
+.mud-table-bordered .mud-table-container .mud-table-root .mud-table-head .mud-table-row .mud-table-cell { border-right: 0 !important; }
+.mud-table-root thead th.mud-table-cell { background: var(--mud-palette-background); }
+
+/* 3. Purchase / Sales Order entry row on ONE line at normal screen widths; the product box no longer stretches. */
+.lineform { flex-wrap: wrap; gap: 8px; }
+.lineform-a { flex: 0 1 auto; }
+.lineform-b { flex: 0 0 auto; flex-wrap: nowrap; }
+.field-sl { flex: 0 0 48px; }
+.field-prod { flex: 0 1 300px; min-width: 200px; }
+.field-var { flex: 0 0 100px; }
+.field-num { flex: 0 0 82px; }
+.field-rem { flex: 0 0 110px; }
+.sale-line .field-prod { flex: 1 1 300px; }
+
+/* 3. Totals bar under the lines: one compact row, the same height as the supplier/customer card. */
+.totals-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 24px; }
+.totals-actions { display: flex; gap: 8px; align-items: center; margin-right: auto; }
+.totals-field { flex: 0 0 140px; }
+.totals-field .form-control { height: 40px; }
+
+/* 4. Sales Summary: Rate / Amount / Discount / After Disc. boxes narrow; Product Name takes the rest. */
+.summary-table .c-in { width: 104px; }
+.summary-table .c-disc { width: 72px; }
+.summary-table td.c-in input { width: 100%; height: 30px; text-align: right; border: 1px solid var(--mud-palette-lines-inputs); border-radius: 6px; background: var(--mud-palette-surface); color: var(--mud-palette-text-primary); padding: 0 6px; }
+.summary-table td.c-in input:disabled { background: var(--mud-palette-background); color: var(--mud-palette-text-secondary); }
+/* Round 2 fine-tuning: Sales Order (with Remarks) fits on one line at 1366px; product box grows a little on wide screens. */
+.lineform-a { flex: 1 1 auto; }
+.field-prod { flex: 1 1 220px; min-width: 180px; max-width: 340px; }
+.field-num { flex: 0 0 76px; }
+.field-rem { flex: 0 0 100px; }
+.field-sl { flex: 0 0 54px; }
+.field-sl .form-control { padding-left: 6px; padding-right: 6px; }
+.lineform label, .totals-bar label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table .c-vid { width: 92px; }
+.totals-bar .mud-input-control { margin-top: 0; margin-bottom: 0; }
+/* The browser measured group A at the product box's full maximum when deciding to wrap; give it a fixed starting size. */
+.lineform-a { flex: 1 1 470px; min-width: 0; }

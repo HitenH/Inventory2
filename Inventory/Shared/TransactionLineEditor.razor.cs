@@ -74,7 +74,8 @@ namespace Inventory.Shared
         /// Bulk Entry pop-up (owner's request, Nov 2026): one product, many variants, product can be changed;
         /// all rows are added to this voucher together (all or nothing), numbered after the existing lines.
         /// </summary>
-        private async Task OpenBulkEntryAsync()
+        /// The button sits in the page's totals bar (batch 17), which calls this through the lines component.
+        public async Task OpenBulkEntryAsync()
         {
             if (Lines.HeaderId == Guid.Empty)
             {

@@ -241,6 +241,9 @@ public partial class SalesOrder
         SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
     }
 
+    // Batch 17: the totals bar's Bulk Entry button opens the pop-up of this sales order's line editor.
+    private Inventory.Shared.SalesOrderVariantComponent? salesOrderLines;
+
     public async Task ChangeStateSalesOrderVariant(bool change)
     {
         if (change && SalesOrderId != null)

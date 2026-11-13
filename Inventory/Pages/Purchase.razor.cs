@@ -459,6 +459,9 @@ public partial class Purchase
 
 
 
+    // Batch 17: the totals bar's Bulk Entry button opens the pop-up of this purchase's line editor.
+    private Inventory.Shared.PurchaseVariantComponent? purchaseLines;
+
     public async Task ChangeStatePurchaseVariant(bool change)
 
     {

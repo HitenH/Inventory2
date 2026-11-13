@@ -13,6 +13,7 @@ const SCREENS = {
   'purchase-new': '/purchase',
   sale: '/sale/BF00895C-D5ED-498A-9D65-F07790DF7F9C',
   'sale-new': '/sale',
+  salessummary: '/salessummary/BF00895C-D5ED-498A-9D65-F07790DF7F9C',
   salesorder: '/salesorder/D79A3BAA-A960-48B1-AF9A-31E3E71754CF',
   products: '/products',
   customers: '/customers',

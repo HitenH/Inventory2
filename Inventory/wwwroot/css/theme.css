@@ -12,6 +12,15 @@ html, body {
 .btn {
     border-radius: 6px;
     font-weight: 500;
+    font-size: 14px;
+    padding: 5px 14px;
+    line-height: 1.4;
+}
+
+/* MudBlazor buttons the same size as the Bootstrap ones (owner: "the buttons are too big"). */
+.mud-button-root.mud-button:not(.mud-button-size-small) {
+    font-size: 14px;
+    padding: 5px 14px;
 }
 
 .btn-success, .btn-warning, .btn-primary {
@@ -57,14 +66,7 @@ img[src="img/cancel.png"], img[src="img/delete.png"] {
     color: var(--mud-palette-error);
 }
 
-/* Focus ring: a plain outline (black in light mode, white in dark), replaces the blue glow. */
-.btn:focus-visible, .form-control:focus, .form-select:focus, .mud-button-root:focus-visible,
-.mud-input:focus-within, .mud-input-control:focus-within .mud-input,
-input:focus-visible, select:focus-visible, td:focus-visible {
-    outline: 2px solid var(--mud-palette-text-primary) !important;
-    outline-offset: 1px;
-    box-shadow: none !important;
-}
+/* (The black focus border was removed at the owner's request; boxes show the normal coloured focus again.) */
 
 /* Panels used as cards by the forms. */
 .card-header {

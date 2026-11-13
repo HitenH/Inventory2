@@ -21,8 +21,7 @@
             <button type="button" id="button-close" class="btn btn-light btn-cancel-add" @onclick="CancelLine">
                 <img src="img/cancel.png" alt="cancel" class="purchase-cancel-img" />
             </button>
-            <MudButton id="bulk-entry-open" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="ms-1"
-                       StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="OpenBulkEntryAsync" data-shortcut="bulk" title="Alt+B">Bulk Entry</MudButton>
+            @* Batch 17: the Bulk Entry button moved to the page's totals bar (owner's request), so this row fits on one line. *@
         </div>
         <div class="field field-sl">
             <label for="serialnumber" class="form-label">Sl.</label>
@@ -82,7 +81,7 @@
             <MudNumericField T="decimal?" @bind-Value="line.Amount" Disabled="true" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="field field-num">
-            <label for="discount" class="form-label">Discount (%)</label>
+            <label for="discount" class="form-label" title="Discount (%)">Disc %</label>
             <MudNumericField T="int?" Value="line.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="field field-num">
