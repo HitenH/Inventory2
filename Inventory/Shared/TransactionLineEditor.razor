@@ -2,7 +2,7 @@
 @using Inventory.Shared.Selectors
 
 
-<EditForm Model="@line" class="card-header mt-5 enter-moves-on"
+<EditForm Model="@line" class="card-header mt-3 enter-moves-on"
           OnValidSubmit="async ()=>
                 {
                     if(line.Id == Guid.Empty){
@@ -69,7 +69,7 @@
     </div>
     <div class="lineform-b">
         <div class="field field-num">
-            <label for="quantity" class="form-label">Quantity</label>
+            <label for="quantity" class="form-label" title="Quantity">Qty</label>
             <MudNumericField T="int?" Value="line.Quantity" ValueChanged="(value)=>QuantityChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="field field-num">

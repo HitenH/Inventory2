@@ -1,40 +1,43 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<MudPaper Class="pa-4" Elevation="3">
+@* Batch 17 round 3: boxes wrap onto a second line on a narrow screen instead of squeezing the buttons out of sight;
+   outlined boxes with the label on the border, like the rest of the app. *@
+<MudPaper Class="pa-4 variant-card" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">Variants</MudText>
     <EditForm EditContext="editContext" OnSubmit="async () => await (variantModel.Id == Guid.Empty ? AddVariant() : EditVariant())">
         <DataAnnotationsValidator />
-        <MudStack Row="true" Spacing="3">
-            <MudTextField Label="Variant ID"
+        <div class="variant-row">
+            <MudTextField Label="Variant ID" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="vf-id"
                           @ref="variantInputRef"
                           @bind-Value="variantModel.VariantId"
                           InputType="InputType.Text" />
-            <MudTextField Label="Variant Name"
+            <MudTextField Label="Variant Name" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="vf-name"
                           @bind-Value="variantModel.Name"
                           InputType="InputType.Text" />
-            <MudTextField Label="Stock In Hand"
+            <MudTextField Label="Stock In Hand" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="vf-num"
                           @bind-Value="variantModel.StockInHand"
                           Disabled
                           InputType="InputType.Number" />
-            <MudTextField Label="Reorder Level"
+            <MudTextField Label="Reorder Level" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="vf-num"
                           @bind-Value="variantModel.ReorderLevel"
                           InputType="InputType.Number" />
-            <div>
+            <div class="field vf-file">
                 <label for="image" class="form-label">Image (jpeg)</label>
                 @if (!bclearinputfile)
                 {
                     <InputFile OnChange="UploadFile" accept=".jpg, .jpeg" class="form-control" />
                 }
             </div>
-            <MudStack Spacing="3">
-                <MudIconButton Color="Color.Primary" Icon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Submit" />
-                <MudIconButton OnClick="CancelVariant" Icon="@Icons.Material.Filled.Cancel" />
-            </MudStack>
-        </MudStack>
+            <div class="vf-actions">
+                <MudIconButton Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Submit" title="Add / save variant" />
+                <MudIconButton Color="Color.Error" Variant="MudBlazor.Variant.Filled" Size="Size.Small" OnClick="CancelVariant" Icon="@Icons.Material.Filled.Close" title="Cancel" />
+            </div>
+        </div>
         <ValidationSummary />
     </EditForm>
 </MudPaper>
-<MudTable Items="variants" Dense="true" Bordered="true" Striped="true" Class="mt-2">
+<MudTable Items="variants" Dense="true" Bordered="true" Striped="false" Outlined="true" Elevation="0" Class="mt-2">
     <HeaderContent>
         <MudTh></MudTh>
         <MudTh>
@@ -65,26 +68,26 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd>
-            <MudIconButton Variant="MudBlazor.Variant.Filled" OnClick="() => UpdateVariant(context)" Icon="@Icons.Material.Filled.Edit">
+            <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="Size.Small" OnClick="() => UpdateVariant(context)" Icon="@Icons.Material.Filled.Edit">
             </MudIconButton>
-            <MudIconButton Variant="MudBlazor.Variant.Filled" OnClick="() => DeleteVariant(context.Id)" Icon="@Icons.Material.Filled.Delete">
+            <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteVariant(context.Id)" Icon="@Icons.Material.Filled.Delete">
             </MudIconButton>
         </MudTd>
         <MudTd>@context.VariantId</MudTd>
-        <MudTd>@context.Name</MudTd>
+        <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
         <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
         <MudTd>@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
             {
                 <MudImage Src="@GetImage(context.Image)"
-                          Width="80"
-                          Height="80"
+                          Width="56"
+                          Height="56"
                           Alt="@($"Photo of variant {context.VariantId}")"
                           @onclick="() => OpenImagePopup(context.Image)"
                           Elevation="25"
-                          Class="rounded-lg ma-4" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                          Class="rounded-lg ma-1" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
                                OnClick="async () => await DeleteFile(context.Image)"
                                Variant="MudBlazor.Variant.Filled">
                 </MudIconButton>

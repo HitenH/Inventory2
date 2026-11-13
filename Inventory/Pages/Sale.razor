@@ -16,7 +16,7 @@
 
 
     <div class="card-header">
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between align-items-center">
         
         <div class="field field-wide">
             <label class="form-label d-block text-center"><h4>Customer</h4></label>
@@ -155,6 +155,7 @@
                         <th class="c-pid column-item">Product ID</th>
                         <th class="c-vid column-item">Variant ID</th>
                         <th class="c-name column-item">Product Name</th>
+                        <th class="c-vname column-item">Variant Name</th>
                         <th class="c-qty num column-item">Qty</th>
                     </tr>
                 </thead>
@@ -177,8 +178,9 @@
                                 <td class="c-pid">@item.ProductId</td>
                                 <td class="c-vid">@item.VariantId</td>
                                 <td class="c-name" title="@item.ProductName">@item.ProductName</td>
+                                <td class="c-vname" title="@item.VariantName">@item.VariantName</td>
                                 <td class="c-qty num">
-                                    <input type="number" @bind-value="item.Quantity" />
+                                    <input type="number" class="qty-box" @bind-value="item.Quantity" />
                                 </td>
                             </tr>
                         }

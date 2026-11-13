@@ -67,6 +67,7 @@ public partial class Sale
                         Product = v.Product?.ToModel(),
                         VariantEntityId = v.VariantEntityId,
                         VariantId = v.ProductVariant?.VariantId ?? "",
+                        VariantName = v.ProductVariant?.Name,
                         Quantity = v.Quantity,
                         IsCreated = true
                     }).ToList() ?? new();
@@ -230,6 +231,7 @@ public partial class Sale
                 if (productVariant != null)
                 {
                     salesVariantModel.VariantId = productVariant.VariantId;
+                    salesVariantModel.VariantName = productVariant.Name;
                     salesVariantModel.ProductId = productDb.ProductId;
                     salesVariantModel.ProductName = productDb.Name;
                     salesVariantModel.ProductEntityId = productDb.Id;
@@ -295,6 +297,7 @@ public partial class Sale
                     if (productVariant != null)
                     {
                         salesModelVariants[indexElement].VariantId = productVariant.VariantId;
+                        salesModelVariants[indexElement].VariantName = productVariant.Name;
 
                         salesModelVariants[indexElement].ProductId = pickedProduct.ProductId;
                         salesModelVariants[indexElement].ProductName = pickedProduct.Name;
@@ -411,6 +414,7 @@ public partial class Sale
                             ProductName = productDb.Name,
                             ProductEntityId = productDb.Id,
                             VariantId = productVariant.VariantId,
+                            VariantName = productVariant.Name,
                             VariantEntityId = productVariant.Id,
                             Product = productDb.ToModel(),
                             Quantity = 1,

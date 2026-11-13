@@ -5,7 +5,7 @@
 <FocusOnOpen Selector="@(PurchaseId == null ? ".focus-supplier" : ".focus-line-product")" />
 
 
-<EditForm Model="@purchaseModel" class="card-header mt-5"
+<EditForm Model="@purchaseModel" class="card-header mt-2 head-card"
           OnValidSubmit="async ()=>
                 {
                     if(PurchaseId == null){
@@ -18,15 +18,17 @@
 
     <DataAnnotationsValidator />
 
-    <div class="d-flex justify-content-between">
-        <div class="text-center field field-wide" style="min-width:350px;">
+    @* Batch 17 round 3: supplier, voucher, date and the buttons on one row (owner: the top was too big).
+       Remarks moved to the bar under the lines. *@
+    <div class="head-row">
+        <div class="field field-wide">
             <label for="voucher" class="form-label"><h4>Supplier</h4></label>
             <SupplierAutocomplete T="SupplierModel" Class="focus-supplier" EnterPressed="OnSupplierEnter" SelectedSupplier="selectedSupplier" SelectedSupplierChanged="OnSupplierSelected"/>
 
             <InputText @bind-Value="purchaseModel.SupplierId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="purchaseModel.SupplierName" class="form-control text-center ms-2" disabled hidden />
         </div>
-        <div class="text-center field">
+        <div class="field field-voucher">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
             @if (IsDisabled)
             {
@@ -38,31 +40,28 @@
             }
             
         </div>
-        <div class="text-center field">
+        <div class="field field-date">
             <label for="date" class="form-label"><h4>Date</h4></label>
-            <DateBox TValue="DateOnly" @bind-Value="purchaseModel.Date" Style="width:170px;" OpenLeft="true" />
+            <DateBox TValue="DateOnly" @bind-Value="purchaseModel.Date" Style="width:168px;" OpenLeft="true" />
+        </div>
+        <div class="head-actions">
+            @if (PurchaseId == null)
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
+            }
+            else
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
+            }
+            <NavLink type="button" href="/purchases" id="button-close" class="btn btn-info">Close</NavLink>
+            @if (PurchaseId != null)
+            {
+                <button type="button" class="btn btn-danger" @onclick="DeletePurchase">Delete</button>
+            }
+            <NavLink class="btn btn-secondary" href="/">Home</NavLink>
         </div>
     </div>
-    <div class="text-center d-block mt-3">
-        <InputText @bind-Value="purchaseModel.Remarks" id="Remarks" class="form-control text-start w-100" placeholder="Remarks/Narration" />
-    </div>
     <ValidationSummary />
-    <div class="mt-3">
-        @if (PurchaseId == null)
-        {
-            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
-        }
-        else
-        {
-            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
-        }
-        <NavLink type="button" href="/purchases" id="button-close" class="btn btn-info ms-2">Close</NavLink>
-        @if (PurchaseId != null)
-        {
-            <button type="button" class="btn btn-danger ms-3" @onclick="DeletePurchase">Delete</button>
-        }
-        <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
-    </div>
 </EditForm>
 
 
@@ -78,6 +77,11 @@
                 <MudButton id="bulk-entry-open" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="() => purchaseLines!.OpenBulkEntryAsync()" data-shortcut="bulk" title="Alt+B">Bulk Entry</MudButton>
                 <button type="submit" id="button-submit" class="btn btn-success" @onclick="AddTotalAmount">Save Total Amount</button>
+            </div>
+            @* Batch 17 round 3: Remarks/Narration moved here from the top card; saved by Update and by Save Total Amount. *@
+            <div class="field totals-remarks">
+                <label for="Remarks" class="form-label">Remarks / Narration</label>
+                <InputText @bind-Value="purchaseModel.Remarks" id="Remarks" class="form-control text-start" />
             </div>
             <div class="field totals-field">
                 <label for="totalquantity" class="form-label">Total Quantity</label>

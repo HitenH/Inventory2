@@ -365,6 +365,10 @@ public partial class Purchase
 
             purchaseEntity.TotalAmountProduct = PurchaseTotalData.TotalAmount;
 
+            // Batch 17 round 3: the Remarks box now sits in this bar, so this button saves it too.
+
+            purchaseEntity.Remarks = purchaseModel.Remarks;
+
             purchaseEntity.Discount = PurchaseTotalData.Discount;
 
             await PurchaseRepository.Update(purchaseEntity);

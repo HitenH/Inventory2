@@ -15,6 +15,8 @@ namespace Inventory.Models
         public string VariantId { get; set; }
         public int? Quantity { get; set; } = 1;
         public string ProductName { get; set; }
+        /// <summary>Shown in the Sale table after the product name (batch 17); not saved, filled from the chosen variant.</summary>
+        public string? VariantName { get; set; }
         public bool IsCreated { get; set; } = false;
         public int InnerId { get; set; }
 

@@ -4,7 +4,7 @@
 @* Cursor: Customer on a new sales order; once it is saved (or when an existing one is opened), the product box of the line. *@
 <FocusOnOpen Selector="@(SalesOrderId == null ? ".focus-customer" : ".focus-line-product")" />
 
-<EditForm Model="@salesOrderModel" class="card-header mt-5"
+<EditForm Model="@salesOrderModel" class="card-header mt-2 head-card"
           OnValidSubmit="async ()=>
                 {
                     if(SalesOrderId == null){
@@ -16,9 +16,10 @@
     <DataAnnotationsValidator />
 
 
-    <div class="d-flex justify-content-between">
-        <div style="min-width:350px;">
-            <label class="form-label d-block text-center"><h4>Customer</h4></label>
+    @* Batch 17 round 3: customer, voucher, status, dates and the buttons on one row (owner: the top was too big). *@
+    <div class="head-row">
+        <div class="field field-wide">
+            <label class="form-label"><h4>Customer</h4></label>
 
             <CustomerAutocomplete T="CustomerModel" Class="focus-customer" EnterPressed="OnCustomerEnter"
                                   SelectedCustomer="customerModel"
@@ -27,7 +28,7 @@
             <InputText @bind-Value="salesOrderModel.CustomerId" class="form-control text-center" disabled hidden />
             <InputText @bind-Value="salesOrderModel.CustomerName" class="form-control text-center ms-2" disabled hidden />
         </div>
-        <div class="text-center">
+        <div class="field field-voucher">
             <label for="voucher" class="form-label"><h4>Voucher</h4></label>
             @if (IsDisabled)
             {
@@ -38,8 +39,8 @@
                 <InputNumber @bind-Value="salesOrderModel.VoucherId" id="voucher" class="form-control text-center" />
             }
         </div>
-        <div class="text-center">
-            <label for="orderstatus" class="form-label text-center"><h4>OrderStatus</h4></label>
+        <div class="field field-status">
+            <label for="orderstatus" class="form-label"><h4>Order Status</h4></label>
             <InputSelect @bind-Value="salesOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
                 <option value="@OrderStatus.None" class="text-center">None</option>
                 <option value="@OrderStatus.Open" class="text-center">Open</option>
@@ -47,32 +48,32 @@
                 <option value="@OrderStatus.Partly" class="text-center">Partly</option>
             </InputSelect>
         </div>
-        <div class="text-center">
+        <div class="field field-date">
             <label for="date" class="form-label"><h4>Date</h4></label>
-            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.Date" Style="width:170px;" OpenLeft="true" />
+            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.Date" Style="width:168px;" OpenLeft="true" />
         </div>
-        <div class="text-center">
-            <label for="duedate" class="form-label"><h4>DueDate</h4></label>
-            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.DueDate" Style="width:170px;" OpenLeft="true" />
+        <div class="field field-date">
+            <label for="duedate" class="form-label"><h4>Due Date</h4></label>
+            <DateBox TValue="DateOnly" @bind-Value="salesOrderModel.DueDate" Style="width:168px;" OpenLeft="true" />
+        </div>
+        <div class="head-actions">
+            @if (SalesOrderId == null)
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
+            }
+            else
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
+            }
+            <NavLink type="button" href="/salesorders" id="button-close" class="btn btn-info">Close</NavLink>
+            @if (SalesOrderId != null)
+            {
+                <button type="button" class="btn btn-danger" @onclick="DeleteOrder">Delete</button>
+            }
+            <NavLink class="btn btn-secondary" href="/">Home</NavLink>
         </div>
     </div>
     <ValidationSummary />
-    <div class="mt-3">
-        @if (SalesOrderId == null)
-        {
-            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
-        }
-        else
-        {
-            <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
-        }
-        <NavLink type="button" href="/salesorders" id="button-close" class="btn btn-info ms-2">Close</NavLink>
-        @if (SalesOrderId != null)
-        {
-            <button type="button" class="btn btn-danger ms-3" @onclick="DeleteOrder">Delete</button>
-        }
-        <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
-    </div>
 </EditForm>
 
 

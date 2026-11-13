@@ -147,3 +147,96 @@
 .totals-bar .mud-input-control { margin-top: 0; margin-bottom: 0; }
 /* The browser measured group A at the product box's full maximum when deciding to wrap; give it a fixed starting size. */
 .lineform-a { flex: 1 1 470px; min-width: 0; }
+
+/* ==== Batch 17, round 3 (owner's feedback, 13 Nov, after round 2 was pushed) ==== */
+
+/* Labels sit ON the top border of their box (like MudBlazor's outlined boxes), so they take no height of their own.
+   Applies to every ".field" box: Purchase / Sales Order / Sale headers, the line rows and the totals bar.
+   The upper half of the label takes the card colour (hides the border line), the lower half shows the box underneath. */
+.field { position: relative; }
+.field > .form-label {
+    position: absolute;
+    top: -7px;
+    left: 8px;
+    z-index: 2;
+    margin: 0;
+    padding: 0 4px;
+    font-size: 10.5px;
+    line-height: 14px;
+    letter-spacing: .3px;
+    max-width: calc(100% - 16px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    text-align: left;
+    background: linear-gradient(to bottom, var(--mud-palette-surface) 60%, transparent 60%);
+}
+/* The customer / supplier / product pickers start with the "pick from list" button; the label sits over the box beside it. */
+.field:has(> .lookup-box) > .form-label, .field:has(.lookup-box) > .form-label { left: 56px; max-width: calc(100% - 64px); }
+/* Cards no longer need room above each box for its label. */
+.card-header { padding: 14px 16px 12px; }
+.lineform, .totals-bar, .head-row, .sale-scan .d-flex.flex-row { row-gap: 16px; }
+
+/* Purchase / Sales Order top card: everything on one row, the buttons on the right. */
+.head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 12px; }
+.head-row .field-wide { flex: 1 1 260px; min-width: 240px; max-width: 520px; }
+.head-row .field-voucher { flex: 0 0 110px; }
+.head-row .field-status { flex: 0 0 130px; }
+.head-row .field-date { flex: 0 0 150px; }
+.head-row .form-control { height: 40px; }
+.head-row .mud-input-control { margin-top: 0; margin-bottom: 0; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+.head-actions .btn { white-space: nowrap; }
+
+/* Totals bar: Remarks / Narration (moved down from the Purchase top card) takes the free width. */
+.totals-remarks { flex: 1 1 220px; min-width: 180px; }
+.totals-remarks .form-control { height: 40px; }
+.totals-bar { align-items: center; }
+
+/* Sale: Variant Name after Product Name; the Quantity box in each row looks like an input box (it can be changed). */
+.lines-table .c-vname { width: 22%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table td.c-qty input.qty-box {
+    height: 28px;
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: 6px;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    padding: 0 6px;
+}
+.lines-table td.c-qty input.qty-box:focus { outline: none; border-color: var(--mud-palette-primary); box-shadow: 0 0 0 1px var(--mud-palette-primary); }
+
+/* Customer / supplier / product pick-from-list pop-up: full names show (they were cut to "..." by the list rule above). */
+.lookup-dialog td.mud-table-cell { max-width: none; white-space: normal; overflow: visible; }
+.lookup-dialog td.mud-table-cell:first-child, .lookup-dialog th.mud-table-cell:first-child { width: 160px; white-space: nowrap; }
+
+/* Reports > Products > Reorder Level: the Product Name column gets real room. */
+/* Names show in full here (no "..."); the other columns take only what they need, so nothing scrolls sideways. */
+.reorder-grid td.mud-table-cell { max-width: none; }
+.reorder-grid .c-pname { min-width: 240px; }
+
+/* Add / edit product: the variant boxes wrap onto a second line instead of pushing the buttons out of sight. */
+.variant-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 12px; }
+.variant-row > .mud-input-control { margin: 0; flex: 0 0 auto; }
+.variant-row .vf-id { width: 140px; }
+.variant-row .vf-name { flex: 1 1 200px !important; min-width: 180px; }
+.variant-row .vf-num { width: 120px; }
+.variant-row .vf-file { flex: 0 1 240px; min-width: 200px; }
+.variant-row .vf-file .form-control { height: 40px; padding-top: 7px; }
+.vf-actions { display: flex; gap: 8px; }
+.variant-card .field > .form-label, .product-card .field > .form-label { background: linear-gradient(to bottom, var(--mud-palette-surface) 60%, transparent 60%); }
+/* In the line row the MudBlazor boxes sit 4px below the top of their field (bottom-aligned with the taller Bootstrap ones);
+   move their labels down by the same amount so every label sits on its border. */
+/* MudBlazor boxes add a 4px top margin; inside a labelled field it would lift the label off the border. */
+.field .mud-input-control { margin-top: 0 !important; }
+.head-row .field-date { flex: 0 0 168px; }
+/* Cells holding buttons (edit / delete) keep their full width; the "shorten long names" rule above squeezed them to a sliver
+   (the half-visible buttons on the product's variant list). */
+.mud-table-root td.mud-table-cell:has(.mud-icon-button, .mud-button-root) { max-width: none; width: 1%; white-space: nowrap; overflow: visible; }
+.variant-row .vf-num { width: 140px; }
+/* Product page variant list: the Name column gets room before the others. */
+.mud-table-root td.c-vname-p { min-width: 200px; }
+/* Report grids (MudDataGrid): the sort / filter / menu icons in each header took ~90px per column, which pushed the
+   Reorder Level table past its box. Same icons, less padding; the hidden sort number takes no space. */
+.mud-table-root th .column-options .mud-icon-button { padding: 1px; }
+.mud-table-root th .column-options .mud-sort-index.invisible { display: none; }

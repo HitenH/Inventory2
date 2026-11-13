@@ -116,7 +116,9 @@
     {
         var options = new DialogOptions
         {
-            MaxWidth = MaxWidth.Large,
+            // Batch 17 round 3: always the full medium width, so long names show in full (owner's request).
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
             CloseOnEscapeKey = true,
             CloseButton = true,
             Position = DialogPosition.Center,

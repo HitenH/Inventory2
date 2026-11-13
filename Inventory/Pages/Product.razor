@@ -4,21 +4,23 @@
 @* New product: the cursor starts in Name (owner's request). *@
 <FocusOnOpen Selector=".product-name" When="ProductId == null" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+@* Batch 17 round 3: the new look (outlined boxes with the label on the border, filled buttons, full width). *@
+<MudContainer MaxWidth="MaxWidth.False" Class="px-0 mt-2">
     <MudGrid Spacing="2">
         <MudItem xs="12" md="@(ProductId != null && productEntity != null ? 3 : 12)"
                  sm="@(ProductId != null && productEntity != null ? 3 : 12)">
-            <MudPaper>
+            <MudPaper Outlined="true" Class="pa-4 product-card">
+                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight:600;">@(ProductId == null ? "New product" : "Product")</MudText>
                 <EditForm EditContext="editContext"
                           OnSubmit="async ()=> await (ProductId == null ? AddProduct() : UpdateProduct())">
                     <DataAnnotationsValidator />
 
                     <MudStack Spacing="2">
-                        <MudTextField Label="Name" @bind-Value="productModel.Name" Variant="MudBlazor.Variant.Filled" Class="product-name" />
-                        <MudTextField Label="Product ID" @bind-Value="productModel.ProductId" Variant="MudBlazor.Variant.Filled" />
-                        <MudTextField Label="Rate" @bind-Value="productModel.Rate" Variant="MudBlazor.Variant.Filled" />
-                        <MudTextField Label="Description" @bind-Value="productModel.Description" Variant="MudBlazor.Variant.Filled" />
-                        <MudSelect T="Guid" Label="Category" @bind-Value="categoryId" Variant="MudBlazor.Variant.Filled">
+                        <MudTextField Label="Name" @bind-Value="productModel.Name" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="product-name" />
+                        <MudTextField Label="Product ID" @bind-Value="productModel.ProductId" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField Label="Rate" @bind-Value="productModel.Rate" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField Label="Description" @bind-Value="productModel.Description" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
+                        <MudSelect T="Guid" Label="Category" @bind-Value="categoryId" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense">
                             <MudSelectItem Value="@(Guid.Empty)">-</MudSelectItem>
                             @if (categories.Count != 0)
                             {
@@ -31,14 +33,16 @@
                     </MudStack>
                     <ValidationSummary />
 
-                    <MudButton Class="ma-1" Color="Color.Primary" ButtonType="MudBlazor.ButtonType.Submit" data-shortcut="save">
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                    <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" ButtonType="MudBlazor.ButtonType.Submit" data-shortcut="save">
                         @(ProductId == null ? "Save" : "Update")
                     </MudButton>
-                    <MudButton Class="ma-1" Href="/Products">Close</MudButton>
+                    <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Href="/Products">Close</MudButton>
                     @if (ProductId != null)
                     {
-                        <MudButton Class="ma-1" Color="Color.Warning" OnClick="DeleteProduct">Delete</MudButton>
+                        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" OnClick="DeleteProduct">Delete</MudButton>
                     }
+                    </div>
                 </EditForm>
             </MudPaper>
         </MudItem>

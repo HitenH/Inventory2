@@ -1,7 +1,7 @@
 @using Inventory.Domain.Repository.Abstract
 @using Inventory.Service
 
-<MudDataGrid T="ProductReportItem" MultiSelection="true" Items="@productReportItems" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+<MudDataGrid T="ProductReportItem" Class="reorder-grid" MultiSelection="true" Items="@productReportItems" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
              Hideable="true">
     <ToolBarContent>
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -10,7 +10,7 @@
     <Columns>
         <SelectColumn T="ProductReportItem" />
         <PropertyColumn Property="x => x.ProductId" Title="Product ID" />
-        <PropertyColumn Property="x => x.ProductName" Title="Product Name" />
+        <PropertyColumn Property="x => x.ProductName" Title="Product Name" HeaderClass="c-pname" CellClass="c-pname" />
         <PropertyColumn Property="x => x.VariantId" Title="Variant ID" />
         <PropertyColumn Property="x => x.VariantName" Title="Variant Name" />
         <PropertyColumn Property="x => x.StockInHand" Title="Stock In Hand" />
