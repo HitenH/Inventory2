@@ -2,7 +2,7 @@
 
 **Purpose:** working plan for small, safe batches. A new session starts here, then reads `REVIEW.md` "Open items" only if it needs a finding's detail.
 **Owner:** Hiten (business owner, not a developer). Plain English, business impact first, no code in explanations. He tests in the browser at http://localhost:5259 and says "push" when happy.
-**Last updated:** 13 Nov 2026, session 9 (batch 17 UI refresh built, awaiting Hiten's test). Build 0 errors / 333 warnings; 150 tests pass. Revert point for the UI refresh: tag `before-ui-refresh`.
+**Last updated:** 13 Nov 2026, end of session 9 (batch 17 UI refresh, rounds 1–4, all pushed). Build 0 errors / 333 warnings; 150 tests pass. Rollback tags: `before-ui-refresh` (whole refresh), `ui-refresh-round2` (before rounds 3–4).
 
 ---
 
@@ -35,7 +35,7 @@
 5. **Open review findings N5–N13** (REVIEW.md, "Session 8 findings"). Each changes what the operator sees, so each needs Hiten's yes before it is built. Smaller items to fold in where they fit: B9, B11, B12, S5, S6, D6.
 6. **Final rollout** (section 6) only when Hiten says "ready".
 
-**Inserted 13 Nov (session 9): Batch 17 – UI refresh.** Mock-up approved (third draft, https://claude.ai/artifact/Fdw5mrPdduQt2W9Dz9NWdx); built and verified the same day, see section 7. **Committed locally in three commits on top of `06ac981` (theme / tables + entry rows / check + plan) plus a round-2 commit, not pushed, NOT yet tested by Hiten.** Revert: `git checkout before-ui-refresh -- .` (or revert the three commits).
+**Inserted 13 Nov (session 9): Batch 17 – UI refresh.** Mock-up approved (third draft, https://claude.ai/artifact/Fdw5mrPdduQt2W9Dz9NWdx); built and verified the same day, see section 7. Rounds 1–2 approved by Hiten and pushed; rounds 3–4 pushed at his request. **Round 4 (floating labels) was pushed WITHOUT running the ui-check scripts (Hiten short of time) – run them first next session.** Revert: `git checkout before-ui-refresh -- .`
 
 ### Pinned decisions (do not touch until Hiten raises them)
 - **Users and roles** → step 3 above.
@@ -190,6 +190,9 @@ tools/ui-check/               browser checks (hidden Chrome) against a TEST copy
 **Pushed 13 Nov** after Hiten approved round 2 (tag `ui-refresh-round2` = rollback point for round 3).
 
 **Round 3 (Hiten's feedback, 13 Nov):** (1) Add/edit Product page in the new look (outlined boxes, filled Save/Close/Delete); variant list edit/delete buttons were squeezed to a sliver by the `td{max-width:0}` ellipsis rule – button cells now exempt; variant boxes wrap. (2) Customer/supplier/product pick-from-list pop-up: `FullWidth` at `MaxWidth.Medium` (960 px), names not cut. (3) Purchase / Sales Order top card on one row (fields + buttons, `.head-row`); Purchase Remarks/Narration moved to the totals bar (saved by Update **and now also by Save Total Amount**); labels sit on the box border for every `.field` (CSS only). (4) Sale: Variant Name column (display-only `SalesVariantModel.VariantName`), Quantity box bordered. (5) Reorder Level report: Product Name min 240 px, grid header icons tightened so it does not scroll sideways. Checks: check-look (now 15 screens incl. product pages), all six flow scripts, Remarks save via both buttons, 150 tests, 0 errors / 333 warnings.
+
+**Round 4 (13 Nov, pushed untested):** floating labels everywhere – every `div` with a direct `label.form-label` gets the label inside the box while empty and on the border when focused or filled (CSS `:has()` + `:placeholder-shown` in `tables.css` round-4 block; `main.js` gives those inputs `placeholder=" "` via a MutationObserver). Picker boxes (customer/supplier/product) do the same: label offset 62 px (inside: 72 px) past the pick button, grey hint hidden until focused. Drop-downs and file inputs keep the label on the border.
+**Next session first:** restart test copy on 5299, run `check-look.mjs` + all six flow scripts, look at Customer/Supplier/Category/Login/PurchaseOrder/SalesSummary/BulkEntry screenshots (the generic label rule reached them for the first time; non-`.field` hosts got `margin-top:10px`).
 
 **Not done / for Hiten to decide:** Purchase Orders list at 1366 px shows cut names ("1 NO LED FRA…") – twelve columns cannot all be wide; full name needs a hover `title` (not added, MudTd). Sales Order summary headings (TOTAL QUANTITY / DISCOUNT / TOTAL AMOUNT) are still large. The top-bar Light/Dark switch stays (it saves the choice too). Hiten's own screen width is unknown; at 1366 the Purchase entry row wraps its number boxes to a second line by design.
 
