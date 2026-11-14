@@ -57,6 +57,13 @@ export async function launch() {
       for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased'])
         await send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 });
     },
+    // Choose file(s) in an <input type=file> (bypasses the picker and its accept filter).
+    async setFiles(selector, files) {
+      const { root } = await send('DOM.getDocument', { depth: 0 });
+      const { nodeId } = await send('DOM.querySelector', { nodeId: root.nodeId, selector });
+      if (!nodeId) throw new Error('No element ' + selector);
+      await send('DOM.setFileInputFiles', { nodeId, files });
+    },
     active() { return b.eval(`(() => { const a = document.activeElement; if (!a) return 'none'; const box = a.closest('[class*="focus-"]'); return a.tagName + '#' + (a.id||'') + (box ? ' in .' + [...box.classList].filter(c => c.startsWith('focus-')).join('.') : ''); })()`); },
     snack() { return b.eval(`[...document.querySelectorAll('.mud-snackbar')].map(s => s.innerText).join(' | ')`); },
     path() { return b.eval('location.pathname'); },

@@ -1,6 +1,7 @@
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
+using Inventory.Service.Import;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -11,6 +12,7 @@ namespace Inventory.Pages
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private ILogger<Customers> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
+        [Inject] private IDialogService DialogService { get; set; } = default!;
 
         private List<CustomerModel> customers = new();
         private List<CustomerModel> customersAfterSearch = new();
@@ -20,22 +22,37 @@ namespace Inventory.Pages
         {
             if (firstRender)
             {
-                try
+                await LoadAsync();
+            }
+        }
+
+        private async Task LoadAsync()
+        {
+            try
+            {
+                var list = await CustomerRepository.GetAll();
+                var salesTotals = await CustomerRepository.GetSalesTotalsByCustomerAsync();
+                if (list.Count != 0)
                 {
-                    var list = await CustomerRepository.GetAll();
-                    var salesTotals = await CustomerRepository.GetSalesTotalsByCustomerAsync();
-                    if (list.Count != 0)
-                    {
-                        customers = list.Select(c => c.ToModel(salesTotals)).ToList();
-                        customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
-                        GetTotalAmount();
-                        StateHasChanged();
-                    }
+                    customers = list.Select(c => c.ToModel(salesTotals)).ToList();
+                    customersAfterSearch = [.. customers.OrderBy(o => o.Name)];
+                    GetTotalAmount();
+                    StateHasChanged();
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Customers page error");
-                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Customers page error");
+            }
+        }
+
+        // Import pop-up (batch 8): on a successful import the list is loaded again so the new customers show.
+        private async Task OpenImportAsync()
+        {
+            if (await Inventory.MudBlazorComponents.ImportDialog.ShowAsync(DialogService, ImportKind.Customers))
+            {
+                await LoadAsync();
+                StateHasChanged();
             }
         }
         // Batch 14: the list shows one page at a time (see ListPaging).

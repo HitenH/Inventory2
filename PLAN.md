@@ -2,7 +2,7 @@
 
 **Purpose:** working plan for small, safe batches. A new session starts here, then reads `REVIEW.md` "Open items" only if it needs a finding's detail.
 **Owner:** Hiten (business owner, not a developer). Plain English, business impact first, no code in explanations. He tests in the browser at http://localhost:5259 and says "push" when happy.
-**Last updated:** 13 Nov 2026, end of session 9 (batch 17 UI refresh, rounds 1–4, all pushed). Build 0 errors / 333 warnings; 150 tests pass. Rollback tags: `before-ui-refresh` (whole refresh), `ui-refresh-round2` (before rounds 3–4).
+**Last updated:** 14 Nov 2026, session 10: discount rename (15d) and the new Import (batch 8) are built but **uncommitted and untested by Hiten** – see section 8. Before that: end of session 9 (batch 17 UI refresh, rounds 1–4, all pushed). Build 0 errors / 333 warnings; 215 tests pass. Rollback tags: `before-ui-refresh` (whole refresh), `ui-refresh-round2` (before rounds 3–4).
 
 ---
 
@@ -207,3 +207,15 @@ tools/ui-check/               browser checks (hidden Chrome) against a TEST copy
    - After the first start, check the log: the DB is copied to `%ProgramData%\InventoryApp\` and `Inventory.db-HAS-MOVED.txt` is left beside the old file.
    - Log in as Hiten and as Admin with the old passwords (they are hashed on first start), then change both via **Change Password**. Keep them outside Git.
    - Old backups made before batch 2 may be incomplete (WAL). Keep them; do not rely on them.
+
+## 8. Session 10 (14 Nov 2026) – NOT committed, NOT yet tested by Hiten
+
+**Batch 15d – discount naming (done, uncommitted).** `Discount` → `DiscountPercent` (lines: PurchaseVariant, SalesOrderVariant, SalesSummary, LineEditorModel, BulkEntry) / `DiscountAmount` (headers: Purchase, SalesOrder, Sales, PurchaseModel, ComponentTotalData). The six entity properties carry `[Column("Discount")]`, so the database is unchanged and there is **no migration** (`dotnet ef migrations has-pending-model-changes` = none). Screen labels unchanged.
+
+**Batch 8 – new Import (built, uncommitted).** Hiten asked for it on 14 Nov: Customers, Suppliers, Products; CSV and Excel; exact mapping; Import button; downloadable sample CSV. Built by sub-agents (Sonnet = logic + tests, Haiku = screens, Sonnet = browser check), reviewed by Fable.
+- **Where:** `Service/Import/` – `ImportTemplates.cs` (THE column list + sample file; everything else reads it), `ImportContract.cs`, `ImportFileReader.cs` (own CSV parser; ClosedXML 0.105.0 for .xlsx; UTF-8 with Latin-1 fallback), `ImportChecker.cs` (pure rules), `MasterImportService.cs` (preview + one-transaction save, re-checks the DB before writing), `ImportEndpoints.cs` (`/import-sample/{customers|suppliers|products}`, no login, like `/photos`). Screen: `MudBlazorComponents/ImportDialog.razor`; "Import" button on the Customers / Suppliers / Products lists (each list got a `LoadAsync()` and reloads after an import). CSS: "Batch 8 import" block at the end of `tables.css`.
+- **Rules (my choices – Hiten has not confirmed them):** add only, never updates (an existing ID is a problem); all or nothing (one bad row = nothing imported); headings must match the sample (any order, case/spaces ignored; unknown or missing heading stops it); IDs unique ignoring case, max 50 characters; Mobiles separated by `;`, at most `CustomerNumberMobile` / `SupplierNumberMobile` (3), digits/spaces/`-`/leading `+`, 6–15 digits; Products = one row per variant with the product details repeated and identical on every row, Rate optional – empty = 0 (Hiten, 14 Nov; digits and a decimal point only), Description optional, Category ID optional but must exist, Variant ID + Variant Name together, Reorder Level optional whole number (blank = none); `.csv` / `.xlsx`, 5 MB, 5,000 rows. Escape does not close the pop-up (cannot be dismissed mid-import).
+- **Checked:** build 0 errors / 333 warnings; **216 tests** (66 new: `ImportTests`, `ImportRuleTests`, `ImportServiceTests`); `tools/ui-check/check-import.mjs` (new; `cdp.mjs` got a `setFiles` helper) passed all 12 checks on a test copy on port 5299, plus `check-look.mjs` clean. After that run one label was changed (the disabled Import button no longer shows a count) – not re-run in the browser.
+- **Not done:** updating existing records by import; adding variants to an existing product by import; `.xls`; roles (Import is open to every user until batch 16). Small look notes: long IDs wrap in the preview at 1366 px; the success message can linger onto the next page.
+
+**Launching the dev app:** plain `dotnet run --launch-profile http` from `Inventory`. Never with `--artifacts-path` – in Development the data folder is the output folder, so a scratch output folder creates an empty database and Hiten cannot log in (happened 14 Nov).

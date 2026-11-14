@@ -1,6 +1,7 @@
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
 using Inventory.Service;
+using Inventory.Service.Import;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -10,12 +11,18 @@ public partial class Products
 {
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private ILogger<Products> Logger { get; set; }
+    [Inject] private IDialogService DialogService { get; set; } = default!;
 
     private List<ProductModel> products = new();
     private List<ProductModel> productsAfterSearch = new();
     private bool isLoaded;
 
     protected async override Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
     {
         try
         {
@@ -34,6 +41,16 @@ public partial class Products
         finally
         {
             isLoaded = true;
+        }
+    }
+
+    // Import pop-up (batch 8): on a successful import the list is loaded again so the new products show.
+    private async Task OpenImportAsync()
+    {
+        if (await Inventory.MudBlazorComponents.ImportDialog.ShowAsync(DialogService, ImportKind.Products))
+        {
+            await LoadAsync();
+            StateHasChanged();
         }
     }
 

@@ -306,3 +306,25 @@ div:has(> label.form-label) .lookup-box input:not(:focus)::placeholder { color: 
 .field-var { flex: 0 0 140px; }
 .sale-line .field-var { flex: 0 0 180px; }
 .field-var select.form-control { text-overflow: ellipsis; padding-left: 6px; padding-right: 22px; }
+
+/* ---- Batch 8 import: the Import pop-up (MudBlazorComponents/ImportDialog.razor) ---- */
+.import-dialog { min-width: 0; }
+.import-section-title { font-weight: 600; margin-bottom: 6px; }
+.import-columns { table-layout: fixed; }
+.import-col-name { width: 34%; }
+.import-required { font-size: 11px; color: var(--mud-palette-error); margin-left: 4px; white-space: nowrap; }
+.import-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.import-action { text-decoration: none; }
+.import-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.import-pick { cursor: pointer; display: inline-block; }
+.import-checking { display: flex; flex-direction: column; gap: 6px; color: var(--mud-palette-text-secondary); }
+.import-file-issues { padding-left: 20px; margin-bottom: 0; }
+.import-preview-scroll { max-height: 50vh; overflow-y: auto; overflow-x: hidden; }
+.import-preview { table-layout: fixed; }
+.import-preview th, .import-preview td { overflow-wrap: anywhere; word-break: break-word; }
+.import-preview .import-cell { white-space: normal; }
+.import-row-no { width: 56px; }
+.import-problem-col { width: 28%; }
+.import-row-problem > td { background-color: rgba(220, 53, 69, 0.12) !important; }
+.import-problem { color: var(--mud-palette-error); white-space: normal; }
+.import-dialog .mud-alert { overflow-wrap: anywhere; }

@@ -1,6 +1,7 @@
 using Inventory.Domain.Entities;
 using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service.Import;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -13,12 +14,18 @@ public partial class Suppliers
     [Inject] private ISupplierRepository SupplierRepository { get; set; }
     [Inject] private ILogger<Suppliers> Logger { get; set; }
     [Inject] private NavigationManager navManager { get; set; }
+    [Inject] private IDialogService DialogService { get; set; } = default!;
 
     private List<SuppliersDisplayModel> suppliersDisplayModels = new();
     private List<SuppliersDisplayModel> suppliersAfterSearch = new();
     private bool isLoaded;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
     {
         try
         {
@@ -42,6 +49,16 @@ public partial class Suppliers
         {
             Logger.LogError(ex, "Suppliers page error");
             isLoaded = true;
+        }
+    }
+
+    // Import pop-up (batch 8): on a successful import the list is loaded again so the new suppliers show.
+    private async Task OpenImportAsync()
+    {
+        if (await Inventory.MudBlazorComponents.ImportDialog.ShowAsync(DialogService, ImportKind.Suppliers))
+        {
+            await LoadAsync();
+            StateHasChanged();
         }
     }
 

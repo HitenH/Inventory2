@@ -1,0 +1,278 @@
+@* Import pop-up (batch 8): pick a .csv or .xlsx file, see every row checked, then import the whole file or nothing.
+   Opened from the Customers, Suppliers and Products pages. Nothing is saved until "Import" on the preview. *@
+@using Inventory.Service.Import
+
+<MudDialog>
+    <DialogContent>
+        <div class="import-dialog">
+            @if (preview is null)
+            {
+                <p class="mb-3">Import adds new @ImportTemplates.Noun(Kind, 2). Records already in the list are never changed.</p>
+
+                <div class="import-section-title">Columns in the file</div>
+                <table class="table table-sm table-bordered lines-table import-columns mb-3">
+                    <thead>
+                        <tr>
+                            <th class="import-col-name">Column</th>
+                            <th>Hint</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var column in ImportTemplates.Columns(Kind))
+                        {
+                            <tr>
+                                <td class="import-col-name">
+                                    @column.Header
+                                    @if (column.Required)
+                                    {
+                                        <span class="import-required">required</span>
+                                    }
+                                </td>
+                                <td class="import-cell">@column.Hint</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="import-actions mb-3">
+                    <a class="mud-button-root mud-button mud-button-filled mud-button-filled-secondary import-action"
+                       href="/import-sample/@Kind.ToString().ToLowerInvariant()" download="@ImportTemplates.SampleFileName(Kind)">Download sample file (CSV)</a>
+                </div>
+
+                @* The file input stays in place while the file is checked; a new key gives a fresh, empty picker. *@
+                <InputFile @key="fileInputKey" id="import-file-input" class="import-file-input" accept=".csv,.xlsx" OnChange="OnFileChosenAsync" />
+                @if (isChecking)
+                {
+                    <div class="import-checking">
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                        <span>Checking the file…</span>
+                    </div>
+                }
+                else
+                {
+                    <label for="import-file-input" class="mud-button-root mud-button mud-button-filled mud-button-filled-primary import-action import-pick">Choose file (.csv or .xlsx)</label>
+                }
+            }
+            else
+            {
+                <div class="mb-2"><strong>File:</strong> @preview.FileName</div>
+
+                @if (preview.IssueCount == 0 && preview.RecordCount > 0)
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2">
+                        Ready to import: @preview.RecordCount @ImportTemplates.Noun(Kind, preview.RecordCount)@(Kind == ImportKind.Products && preview.VariantCount > 0 ? $" with {preview.VariantCount} {(preview.VariantCount == 1 ? "variant" : "variants")}" : "")
+                    </MudAlert>
+                }
+                else if (preview.IssueCount == 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">The file has no records to import.</MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">
+                        @preview.IssueCount problem(s) found. Nothing will be imported until every problem is fixed in the file.
+                    </MudAlert>
+                    @if (preview.FileIssues.Count > 0)
+                    {
+                        <ul class="import-file-issues mb-2">
+                            @foreach (var issue in preview.FileIssues)
+                            {
+                                <li class="import-problem">@issue.Message</li>
+                            }
+                        </ul>
+                    }
+                }
+
+                @if (previewRows.Count > 0)
+                {
+                    <div class="import-preview-scroll">
+                        <table class="table table-sm table-bordered lines-table import-preview mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="import-row-no num">Row</th>
+                                    @foreach (var column in ImportTemplates.Columns(Kind))
+                                    {
+                                        <th title="@column.Header">@column.Header</th>
+                                    }
+                                    <th class="import-problem-col">Problem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in previewRows)
+                                {
+                                    <tr class="@(row.Issues.Count > 0 ? "import-row-problem" : null)">
+                                        <td class="import-row-no num">@row.RowNumber</td>
+                                        @for (var i = 0; i < ImportTemplates.Columns(Kind).Count; i++)
+                                        {
+                                            var text = i < row.Cells.Count ? row.Cells[i] : "";
+                                            <td class="import-cell" title="@text">@text</td>
+                                        }
+                                        <td class="import-problem-col import-cell">
+                                            @foreach (var issue in row.Issues)
+                                            {
+                                                <div class="import-problem">@issue.Message</div>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (preview.Rows.Count > MaxPreviewRows)
+                    {
+                        <div class="text-muted small mt-1">Showing @MaxPreviewRows of @preview.Rows.Count rows.</div>
+                    }
+                }
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        @if (preview is not null)
+        {
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="ImportAsync"
+                       Disabled="@(!preview.CanImport || importFailed || isImporting)">
+                @* The count is shown only when the file is clean: "Import 6 customers" on a file with problems would mislead. *@
+                @(preview.CanImport ? $"Import {preview.RecordCount} {ImportTemplates.Noun(Kind, preview.RecordCount)}" : "Import")
+            </MudButton>
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="ChooseAnotherFile" Disabled="isImporting">Choose another file</MudButton>
+        }
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Close" Disabled="isImporting">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Opens the pop-up. Returns true when records were imported (the list should be reloaded).</summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService, ImportKind kind)
+    {
+        var parameters = new DialogParameters<ImportDialog>
+        {
+            { x => x.Kind, kind },
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseButton = true,
+            BackdropClick = false,
+            // Escape would close the pop-up in the middle of an import; the Close button waits for it instead.
+            CloseOnEscapeKey = false,
+        };
+        // Titles: "Import Customers", "Import Suppliers", "Import Products".
+        var dialog = await dialogService.ShowAsync<ImportDialog>($"Import {kind}", parameters, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
+
+    private const long MaxFileBytes = 5 * 1024 * 1024;
+    private const int MaxPreviewRows = 200;
+
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ImportKind Kind { get; set; }
+
+    [Inject] private IMasterImportService ImportService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private ILogger<ImportDialog> Logger { get; set; } = default!;
+
+    private ImportPreview? preview;
+    // Problem rows first, then the rest; at most MaxPreviewRows. Built once per file, not on every redraw.
+    private List<ImportPreviewRow> previewRows = new();
+    private bool isChecking;
+    private bool isImporting;
+    // Set when the save was refused; Import stays off until another file is chosen.
+    private bool importFailed;
+    private Guid fileInputKey = Guid.NewGuid();
+
+    private async Task OnFileChosenAsync(InputFileChangeEventArgs e)
+    {
+        if (isChecking || isImporting)
+        {
+            return;
+        }
+
+        var file = e.File;
+        if (file.Size > MaxFileBytes)
+        {
+            Snackbar.Add("The file is larger than 5 MB.", Severity.Error);
+            fileInputKey = Guid.NewGuid();
+            return;
+        }
+
+        isChecking = true;
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxFileBytes);
+            var result = await ImportService.PreviewAsync(Kind, stream, file.Name);
+            preview = result;
+            previewRows = result.Rows
+                .Where(r => r.Issues.Count > 0)
+                .Concat(result.Rows.Where(r => r.Issues.Count == 0))
+                .Take(MaxPreviewRows)
+                .ToList();
+            importFailed = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Import: reading the file failed");
+            Snackbar.Add("The file could not be read.", Severity.Error);
+        }
+        finally
+        {
+            isChecking = false;
+            // A new picker, so the same file can be chosen again.
+            fileInputKey = Guid.NewGuid();
+        }
+    }
+
+    private void ChooseAnotherFile()
+    {
+        if (isImporting)
+        {
+            return;
+        }
+
+        preview = null;
+        previewRows = new();
+        importFailed = false;
+        fileInputKey = Guid.NewGuid();
+    }
+
+    private async Task ImportAsync()
+    {
+        if (preview is null || !preview.CanImport || importFailed || isImporting)
+        {
+            return;
+        }
+
+        isImporting = true;
+        try
+        {
+            var count = await ImportService.ImportAsync(preview);
+            Snackbar.Add($"Imported {count} {ImportTemplates.Noun(Kind, count)}.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(count));
+        }
+        catch (ImportException ex)
+        {
+            importFailed = true;
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Import: saving the records failed");
+            Snackbar.Add("Import failed. Nothing was saved.", Severity.Error);
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+
+    private void Close()
+    {
+        if (isImporting)
+        {
+            return;
+        }
+
+        MudDialog.Cancel();
+    }
+}

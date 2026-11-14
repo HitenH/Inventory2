@@ -76,6 +76,8 @@ builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepositoryEF>();
 builder.Services.AddScoped<ISalesOrderVariantRepository, SalesOrderVariantRepositoryEF>();
 builder.Services.AddScoped<ISaleRepository, SaleRepositoryEF>();
 builder.Services.AddTransient<IMobileService, MobileService>();
+// Batch 8: import of customers, suppliers and products from CSV / Excel.
+builder.Services.AddScoped<Inventory.Service.Import.IMasterImportService, Inventory.Service.Import.MasterImportService>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService<BackupScheduler>();
 builder.Services.AddMudServices();
@@ -141,6 +143,8 @@ app.UseStaticFiles();
 app.MapStaticAssets();
 // Batch 14: variant photos are fetched by the browser from /photos/{id} (still stored in the database).
 app.MapPhotos();
+// Batch 8: sample import files (headings + example rows).
+Inventory.Service.Import.ImportEndpoints.MapImportSamples(app);
 
 // Login is kept in browser session storage, which only the live Blazor connection can read.
 // So the login check happens inside the app (AuthorizeRouteView in Routes.razor redirects to /login),
