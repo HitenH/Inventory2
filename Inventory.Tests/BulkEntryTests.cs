@@ -13,7 +13,7 @@ public class BulkEntryTests
     private static BulkEntryRow Row(Seed seed, Guid variant, string code, int qty, decimal? rate = 10, int? discount = null, string? remarks = null) => new()
     {
         ProductEntityId = seed.ProductId, ProductId = "P1", ProductName = "Product One",
-        VariantEntityId = variant, VariantId = code, Quantity = qty, Rate = rate, Discount = discount, Remarks = remarks,
+        VariantEntityId = variant, VariantId = code, Quantity = qty, Rate = rate, DiscountPercent = discount, Remarks = remarks,
     };
 
     [Theory]

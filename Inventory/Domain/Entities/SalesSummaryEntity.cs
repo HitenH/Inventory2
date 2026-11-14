@@ -10,7 +10,8 @@ public class SalesSummaryEntity
     public int Quantity { get; set; }
     public decimal ProductRate { get; set; }
     public decimal Amount { get; set; }
-    public int Discount { get; set; }
+    [System.ComponentModel.DataAnnotations.Schema.Column("Discount")]
+    public int DiscountPercent { get; set; }
     public decimal AmountAfterDiscount { get; set; }
     public Guid SalesEntityId { get; set; }
     public SalesEntity Sale { get; set; }

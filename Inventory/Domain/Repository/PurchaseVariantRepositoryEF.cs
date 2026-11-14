@@ -26,7 +26,7 @@ namespace Inventory.Domain.Repository
                 Quantity = variant.Quantity,
                 ProductRate = variant.ProductRate,
                 Amount = variant.Amount,
-                Discount = variant.Discount,
+                DiscountPercent = variant.DiscountPercent,
                 AmountAfterDiscount = variant.AmountAfterDiscount
             };
 
@@ -57,7 +57,7 @@ namespace Inventory.Domain.Repository
                     Quantity = variant.Quantity,
                     ProductRate = variant.ProductRate,
                     Amount = variant.Amount,
-                    Discount = variant.Discount,
+                    DiscountPercent = variant.DiscountPercent,
                     AmountAfterDiscount = variant.AmountAfterDiscount
                 });
             }
@@ -106,7 +106,7 @@ namespace Inventory.Domain.Repository
             existing.Quantity = variant.Quantity;
             existing.ProductRate = variant.ProductRate;
             existing.Amount = variant.Amount;
-            existing.Discount = variant.Discount;
+            existing.DiscountPercent = variant.DiscountPercent;
             existing.AmountAfterDiscount = variant.AmountAfterDiscount;
 
             await SaveWithTotalAsync(context, existing.PurchaseEntityId);

@@ -58,7 +58,7 @@ public partial class SalesSummary
                             ProductName = product?.Name ?? savedSummary?.ProductName ?? "Unknown",
                             Quantity = group.Sum(v => v.Quantity ?? 0),
                             ProductRate = savedSummary?.ProductRate ?? product?.Rate ?? 0m,
-                            Discount = savedSummary?.Discount ?? 0,
+                            DiscountPercent = savedSummary?.DiscountPercent ?? 0,
                             Amount = savedSummary?.Amount ?? 0m,
                             AmountAfterDiscount = savedSummary?.AmountAfterDiscount ?? 0m
                         };
@@ -69,14 +69,14 @@ public partial class SalesSummary
                 {
                     salesSummaryEntityList[i].SerialNumber = i + 1;
                     var (amount, afterDiscount) = ComputeLineAmounts(
-                        salesSummaryEntityList[i].ProductRate, salesSummaryEntityList[i].Quantity, salesSummaryEntityList[i].Discount);
+                        salesSummaryEntityList[i].ProductRate, salesSummaryEntityList[i].Quantity, salesSummaryEntityList[i].DiscountPercent);
                     salesSummaryEntityList[i].Amount = amount;
                     salesSummaryEntityList[i].AmountAfterDiscount = afterDiscount;
                 }
 
                 SalesTotalData = new()
                 {
-                    Discount = Math.Round(salesEntity.Discount, 2),
+                    DiscountAmount = Math.Round(salesEntity.DiscountAmount, 2),
                 };
 
                 GetTotalAmount();
@@ -117,7 +117,7 @@ public partial class SalesSummary
         {
             salesEntity.SalesSummaries = salesSummaryEntityList;
             salesEntity.TotalQuantity = SalesTotalData.TotalQuantity;
-            salesEntity.Discount = SalesTotalData.Discount;
+            salesEntity.DiscountAmount = SalesTotalData.DiscountAmount;
             salesEntity.TotalAmountProduct = SalesTotalData.TotalAmount;
             // null = leave the scanned items as they are (only the summary is saved here)
             salesEntity.SalesVariants = null;
@@ -198,12 +198,12 @@ public partial class SalesSummary
 
         if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value < 0 || value > 100)
         {
-            Snackbar.Add($"Discount must be a whole number from 0 to 100 (percent). Kept {salesSummaryEntityList[index].Discount}.", Severity.Warning);
+            Snackbar.Add($"DiscountPercent must be a whole number from 0 to 100 (percent). Kept {salesSummaryEntityList[index].DiscountPercent}.", Severity.Warning);
             inputVersion++;
             return;
         }
 
-        salesSummaryEntityList[index].Discount = value;
+        salesSummaryEntityList[index].DiscountPercent = value;
         AmountAfterDiscountChanged(index);
         GetTotalAmount();
     }
@@ -211,12 +211,12 @@ public partial class SalesSummary
     public void AmountAfterDiscountChanged(int index)
     {
         var line = salesSummaryEntityList[index];
-        line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.Discount) ?? 0;
+        line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.DiscountPercent) ?? 0;
     }
 
     private void DiscountForTotalAmountChanged(decimal value)
     {
-        SalesTotalData.Discount = Math.Round(value, 2);
+        SalesTotalData.DiscountAmount = Math.Round(value, 2);
         GetTotalAmount();
     }
 
@@ -226,6 +226,6 @@ public partial class SalesSummary
         var amount = salesSummaryEntityList.Select(v => v.AmountAfterDiscount).Sum();
 
         //Calculate total after discount
-        SalesTotalData.TotalAmount = Math.Round(amount - SalesTotalData.Discount, 2);
+        SalesTotalData.TotalAmount = Math.Round(amount - SalesTotalData.DiscountAmount, 2);
     }
 }

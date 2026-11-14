@@ -87,7 +87,7 @@ public partial class SalesOrder
 
         // Batch 7: the discount is stored. Orders saved before batch 7 had it worked out backwards
         // from the total; the migration stored that same value, so the screen shows what it showed before.
-        SalesOrderTotalData.Discount = salesOrderEntity.Discount ?? 0;
+        SalesOrderTotalData.DiscountAmount = salesOrderEntity.DiscountAmount ?? 0;
         GetTotalAmount();
     }
 
@@ -154,7 +154,7 @@ public partial class SalesOrder
             salesOrderEntity.Date = salesOrderModel.Date;
             salesOrderEntity.DueDate = salesOrderModel.DueDate;
             salesOrderEntity.OrderStatus = salesOrderModel.OrderStatus;
-            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
+            salesOrderEntity.DiscountAmount = SalesOrderTotalData.DiscountAmount;
 
             await SalesOrderRepository.Update(salesOrderEntity);
             await ReloadSalesOrderAsync();
@@ -193,7 +193,7 @@ public partial class SalesOrder
     {
         try
         {
-            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
+            salesOrderEntity.DiscountAmount = SalesOrderTotalData.DiscountAmount;
             salesOrderEntity.TotalAmountProduct = SalesOrderTotalData.TotalAmount;   // recalculated on save as well
             await SalesOrderRepository.Update(salesOrderEntity);
             navManager.NavigateTo("/salesorders");
@@ -207,7 +207,7 @@ public partial class SalesOrder
 
     private async Task DiscountChanged(decimal value)
     {
-        SalesOrderTotalData.Discount = value;
+        SalesOrderTotalData.DiscountAmount = value;
         GetTotalAmount();
         if (salesOrderEntity.Id == Guid.Empty)
         {
@@ -219,8 +219,8 @@ public partial class SalesOrder
         try
         {
             // Always save what the box shows now (the latest value, even if several changes came in quickly).
-            await SalesOrderRepository.UpdateDiscount(salesOrderEntity.Id, SalesOrderTotalData.Discount);
-            salesOrderEntity.Discount = SalesOrderTotalData.Discount;
+            await SalesOrderRepository.UpdateDiscount(salesOrderEntity.Id, SalesOrderTotalData.DiscountAmount);
+            salesOrderEntity.DiscountAmount = SalesOrderTotalData.DiscountAmount;
         }
         catch (Exception ex)
         {
@@ -238,7 +238,7 @@ public partial class SalesOrder
         var lines = salesOrderEntity.SalesOrderVariants ?? new List<SalesOrderVariantEntity>();
         SalesOrderTotalData.TotalQuantity = lines.Select(x => x.Quantity).Sum() ?? 0;
         var amount = lines.Select(v => v.AmountAfterDiscount).Sum() ?? 0;
-        SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.Discount;
+        SalesOrderTotalData.TotalAmount = amount - SalesOrderTotalData.DiscountAmount;
     }
 
     // Batch 17: the totals bar's Bulk Entry button opens the pop-up of this sales order's line editor.

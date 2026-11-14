@@ -27,7 +27,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
             VoucherId = order.VoucherId,
             OrderStatus = order.OrderStatus,
             TotalAmountProduct = order.TotalAmountProduct,
-            Discount = order.Discount
+            DiscountAmount = order.DiscountAmount
         };
 
         await context.SalesOrders.AddAsync(entity);
@@ -129,7 +129,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
         existing.DueDate = order.DueDate;
         existing.VoucherId = order.VoucherId;
         existing.OrderStatus = order.OrderStatus;
-        existing.Discount = order.Discount;
+        existing.DiscountAmount = order.DiscountAmount;
         // Batch 7: the total is always recalculated from the saved lines and this discount.
         await TransactionTotals.RecalculateSalesOrderAsync(context, existing.Id);
 
@@ -149,7 +149,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
             return;
         }
 
-        existing.Discount = discount;
+        existing.DiscountAmount = discount;
         await TransactionTotals.RecalculateSalesOrderAsync(context, existing.Id);
         await context.SaveChangesAsync();
         await transaction.CommitAsync();

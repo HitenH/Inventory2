@@ -50,7 +50,7 @@ public class TransactionTests
         await purchases.Update(header);
         Assert.Equal(80, await PurchaseTotal(db, id));
         await using var c = db.Open();
-        Assert.Equal(20, c.Purchases.Single(p => p.Id == id).Discount);
+        Assert.Equal(20, c.Purchases.Single(p => p.Id == id).DiscountAmount);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class TransactionTests
 
         await using var c = db.Open();
         var order = c.SalesOrders.Single(o => o.Id == id);
-        Assert.Equal(25, order.Discount);
+        Assert.Equal(25, order.DiscountAmount);
         Assert.Equal(275, order.TotalAmountProduct);
         Assert.Equal(1, c.Customers.Count());   // no empty customer was created
     }
@@ -119,9 +119,9 @@ public class TransactionTests
         var summary = await sales.GetById(id);
         summary.SalesSummaries = new()
         {
-            new SalesSummaryEntity { ProductEntityId = seed.ProductId, SerialNumber = 1, ProductId = "P1", ProductName = "Product One", Quantity = 2, ProductRate = 40, Amount = 80, Discount = 10, AmountAfterDiscount = 72 }
+            new SalesSummaryEntity { ProductEntityId = seed.ProductId, SerialNumber = 1, ProductId = "P1", ProductName = "Product One", Quantity = 2, ProductRate = 40, Amount = 80, DiscountPercent = 10, AmountAfterDiscount = 72 }
         };
-        summary.Discount = 2;
+        summary.DiscountAmount = 2;
         summary.TotalAmountProduct = 70;
         summary.Remarks = "paid cash";
         summary.SalesVariants = null;
@@ -129,7 +129,7 @@ public class TransactionTests
 
         var saved = await sales.GetById(id);
         Assert.Equal(40, saved.SalesSummaries!.Single().ProductRate);
-        Assert.Equal(2, saved.Discount);
+        Assert.Equal(2, saved.DiscountAmount);
         Assert.Equal("paid cash", saved.Remarks);
         Assert.Equal(2, saved.SalesVariants!.Single().Quantity);
     }

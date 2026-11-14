@@ -25,7 +25,7 @@ namespace Inventory.Domain.Repository
                 Date = purchase.Date,
                 VoucherId = purchase.VoucherId,
                 Remarks = purchase.Remarks,
-                Discount = purchase.Discount,
+                DiscountAmount = purchase.DiscountAmount,
                 TotalAmountProduct = purchase.TotalAmountProduct
             };
 
@@ -123,7 +123,7 @@ namespace Inventory.Domain.Repository
             existing.Date = purchase.Date;
             existing.VoucherId = purchase.VoucherId;
             existing.Remarks = purchase.Remarks;
-            existing.Discount = purchase.Discount;
+            existing.DiscountAmount = purchase.DiscountAmount;
             // Batch 7: the total is always recalculated from the saved lines and this discount.
             await TransactionTotals.RecalculatePurchaseAsync(context, existing.Id);
 
@@ -143,7 +143,7 @@ namespace Inventory.Domain.Repository
                 return;
             }
 
-            existing.Discount = discount;
+            existing.DiscountAmount = discount;
             await TransactionTotals.RecalculatePurchaseAsync(context, existing.Id);
             await context.SaveChangesAsync();
             await transaction.CommitAsync();

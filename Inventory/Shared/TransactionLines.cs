@@ -58,7 +58,7 @@ namespace Inventory.Shared
             {
                 Amount = v.Amount,
                 AmountAfterDiscount = v.AmountAfterDiscount,
-                Discount = v.Discount,
+                DiscountPercent = v.DiscountPercent,
                 Id = v.Id,
                 ProductId = v.Product?.ProductId ?? "",
                 ProductName = v.Product?.Name ?? "",
@@ -80,7 +80,7 @@ namespace Inventory.Shared
                 SerialNumber = serialNumber,
                 Quantity = line.Quantity,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 ProductRate = line.ProductRate
             });
@@ -95,7 +95,7 @@ namespace Inventory.Shared
                 SerialNumber = line.SerialNumber,
                 Quantity = line.Quantity,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 ProductRate = line.ProductRate
             });
@@ -111,7 +111,7 @@ namespace Inventory.Shared
                 SerialNumber = line.SerialNumber,
                 Quantity = line.Quantity,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 ProductRate = line.ProductRate
             }).ToList());
@@ -141,7 +141,7 @@ namespace Inventory.Shared
             {
                 Amount = v.Amount,
                 AmountAfterDiscount = v.AmountAfterDiscount,
-                Discount = v.Discount,
+                DiscountPercent = v.DiscountPercent,
                 Id = v.Id,
                 ProductId = v.Product?.ProductId ?? "",
                 ProductName = v.Product?.Name ?? "",
@@ -165,7 +165,7 @@ namespace Inventory.Shared
                 Quantity = line.Quantity,
                 ProductRate = line.ProductRate,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 Remarks = line.Remarks
             });
@@ -181,7 +181,7 @@ namespace Inventory.Shared
                 Quantity = line.Quantity,
                 ProductRate = line.ProductRate,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 Remarks = line.Remarks
             });
@@ -196,7 +196,7 @@ namespace Inventory.Shared
                 Quantity = line.Quantity,
                 ProductRate = line.ProductRate,
                 Amount = line.Amount,
-                Discount = line.Discount,
+                DiscountPercent = line.DiscountPercent,
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 Remarks = line.Remarks
             }).ToList());

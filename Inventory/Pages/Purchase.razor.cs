@@ -157,7 +157,7 @@ public partial class Purchase
 
 
 
-        PurchaseTotalData.Discount = purchaseEntity.Discount.GetValueOrDefault(0);
+        PurchaseTotalData.DiscountAmount = purchaseEntity.DiscountAmount.GetValueOrDefault(0);
 
         GetTotalAmount();
 
@@ -283,7 +283,7 @@ public partial class Purchase
 
             purchaseEntity.Date = purchaseModel.Date;
 
-            purchaseEntity.Discount = PurchaseTotalData.Discount;
+            purchaseEntity.DiscountAmount = PurchaseTotalData.DiscountAmount;
 
 
 
@@ -369,7 +369,7 @@ public partial class Purchase
 
             purchaseEntity.Remarks = purchaseModel.Remarks;
 
-            purchaseEntity.Discount = PurchaseTotalData.Discount;
+            purchaseEntity.DiscountAmount = PurchaseTotalData.DiscountAmount;
 
             await PurchaseRepository.Update(purchaseEntity);
 
@@ -395,7 +395,7 @@ public partial class Purchase
 
     {
 
-        PurchaseTotalData.Discount = value;
+        PurchaseTotalData.DiscountAmount = value;
 
         GetTotalAmount();
 
@@ -419,9 +419,9 @@ public partial class Purchase
 
             // Always save what the box shows now (the latest value, even if several changes came in quickly).
 
-            await PurchaseRepository.UpdateDiscount(purchaseEntity.Id, PurchaseTotalData.Discount);
+            await PurchaseRepository.UpdateDiscount(purchaseEntity.Id, PurchaseTotalData.DiscountAmount);
 
-            purchaseEntity.Discount = PurchaseTotalData.Discount;
+            purchaseEntity.DiscountAmount = PurchaseTotalData.DiscountAmount;
 
         }
 
@@ -457,7 +457,7 @@ public partial class Purchase
 
         var amount = lines.Select(v => v.AmountAfterDiscount).Sum() ?? 0;
 
-        PurchaseTotalData.TotalAmount = amount - PurchaseTotalData.Discount;
+        PurchaseTotalData.TotalAmount = amount - PurchaseTotalData.DiscountAmount;
 
     }
 

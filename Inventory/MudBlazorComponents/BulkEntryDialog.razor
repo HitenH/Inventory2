@@ -120,7 +120,7 @@
                             <td class="c-rate num">@row.Rate</td>
                             @if (HasDiscount)
                             {
-                                <td class="c-disc num">@row.Discount</td>
+                                <td class="c-disc num">@row.DiscountPercent</td>
                                 <td class="c-amt2 num">@row.AmountAfterDiscount</td>
                             }
                             @if (HasRemarks)
@@ -264,7 +264,7 @@
             VariantName = variant.Name,
             Quantity = quantity!.Value,
             Rate = rate,
-            Discount = HasDiscount ? discount : null,
+            DiscountPercent = HasDiscount ? discount : null,
             Remarks = HasRemarks ? remarks : null,
         });
         // Next row: same product, rate and discount; a new variant and quantity. The cursor goes back to Product

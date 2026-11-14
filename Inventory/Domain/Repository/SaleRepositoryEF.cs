@@ -129,7 +129,7 @@ namespace Inventory.Domain.Repository
                 ? sale.CustomerEntityId
                 : sale.Customer?.Id ?? existing.CustomerEntityId;
             existing.Remarks = sale.Remarks;
-            existing.Discount = sale.Discount;
+            existing.DiscountAmount = sale.DiscountAmount;
             existing.TotalQuantity = sale.TotalQuantity;
             existing.TotalAmountProduct = sale.TotalAmountProduct;
 
@@ -165,7 +165,7 @@ namespace Inventory.Domain.Repository
                     Quantity = s.Quantity,
                     ProductRate = s.ProductRate,
                     Amount = s.Amount,
-                    Discount = s.Discount,
+                    DiscountPercent = s.DiscountPercent,
                     AmountAfterDiscount = s.AmountAfterDiscount
                 }).ToList();
             }

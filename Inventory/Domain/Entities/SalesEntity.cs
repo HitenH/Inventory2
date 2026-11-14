@@ -14,7 +14,8 @@ namespace Inventory.Domain.Entities
         public List<SalesSummaryEntity>? SalesSummaries { get; set; } = new();
         public string? Remarks { get; set; }
         public decimal TotalQuantity { get; set; }
-        public decimal Discount { get; set; }
+    [System.ComponentModel.DataAnnotations.Schema.Column("Discount")]
+        public decimal DiscountAmount { get; set; }
         public decimal TotalAmountProduct { get; set; }
     }
 }

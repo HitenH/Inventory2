@@ -13,7 +13,7 @@ public class LineEditorTests
     private static LineEditorModel NewLine(Guid variantId, int qty, decimal rate, string? remarks = null) => new()
     {
         VariantEntityId = variantId, Quantity = qty, ProductRate = rate,
-        Amount = qty * rate, Discount = 0, AmountAfterDiscount = qty * rate, Remarks = remarks,
+        Amount = qty * rate, DiscountPercent = 0, AmountAfterDiscount = qty * rate, Remarks = remarks,
     };
 
     [Fact]

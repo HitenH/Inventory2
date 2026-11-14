@@ -21,7 +21,7 @@ namespace Inventory.Models
         public int? Quantity { get; set; } = default(int);
         public decimal? ProductRate { get; set; } = default(decimal);
         public decimal? Amount { get; set; } = default(decimal);
-        public int? Discount { get; set; } = default(int);
+        public int? DiscountPercent { get; set; } = default(int);
         public decimal? AmountAfterDiscount { get; set; } = default(decimal);
         /// <summary>Sales orders only.</summary>
         public string? Remarks { get; set; }

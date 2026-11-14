@@ -57,7 +57,7 @@
                                     <input type="number" class="text-center" @bind-value="item.Amount" disabled />
                                 </td>
                                 <td class="c-in num">
-                                    <input @key="(item.ProductEntityId, inputVersion, 2)" type="number" class="text-center" value="@item.Discount" @onchange="(e)=>DiscountChanged(e,item.ProductEntityId)" />
+                                    <input @key="(item.ProductEntityId, inputVersion, 2)" type="number" class="text-center" value="@item.DiscountPercent" @onchange="(e)=>DiscountChanged(e,item.ProductEntityId)" />
                                 </td>
                                 <td class="c-in num">
                                     <input type="number" class="text-center" @bind-value="item.AmountAfterDiscount" disabled />
@@ -92,7 +92,7 @@
             </div>
             <div class="text-center d-flex col-3">
                 <label for="discount" class="form-label d-flex align-items-end me-2">Discount</label>
-                <MudNumericField T="decimal" Value="SalesTotalData.Discount" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
+                <MudNumericField T="decimal" Value="SalesTotalData.DiscountAmount" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
             </div>
             <div class="text-center d-flex col-3">
                 <label for="totalamount" class="form-label d-flex align-items-end me-2">Total Amount</label>

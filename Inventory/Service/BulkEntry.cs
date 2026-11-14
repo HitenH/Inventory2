@@ -27,11 +27,11 @@ public sealed class BulkEntryRow
     public int Quantity { get; set; }
     public decimal? Rate { get; set; }
     /// <summary>Discount in percent (Purchase and Sales Order lines only).</summary>
-    public int? Discount { get; set; }
+    public int? DiscountPercent { get; set; }
     public string? Remarks { get; set; }
 
     public decimal Amount => LineAmounts.ComputeAmount(Rate, Quantity);
-    public decimal? AmountAfterDiscount => LineAmounts.ComputeAmountAfterDiscount(Amount, Discount);
+    public decimal? AmountAfterDiscount => LineAmounts.ComputeAmountAfterDiscount(Amount, DiscountPercent);
 }
 
 /// <summary>The supplier, dates and status that every row of a bulk purchase order gets.</summary>
@@ -90,7 +90,7 @@ public static class BulkEntry
             Quantity = r.Quantity,
             ProductRate = r.Rate,
             Amount = r.Amount,
-            Discount = r.Discount,
+            DiscountPercent = r.DiscountPercent,
             AmountAfterDiscount = r.AmountAfterDiscount,
             Remarks = withRemarks ? r.Remarks : null,
         }).ToList();

@@ -82,7 +82,7 @@
         </div>
         <div class="field field-num">
             <label for="discount" class="form-label" title="Discount (%)">Disc %</label>
-            <MudNumericField T="int?" Value="line.Discount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
+            <MudNumericField T="int?" Value="line.DiscountPercent" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
         <div class="field field-num">
             <label for="amountafterdiscount" class="form-label">Amount</label>
@@ -112,7 +112,7 @@
             <th class="c-qty num column-item" @onclick="@(()=>SortItem("Quantity"))">Qty</th>
             <th class="c-rate num column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
             <th class="c-amt num column-item" @onclick="@(()=>SortItem("Amount"))">Amount</th>
-            <th class="c-disc num column-item" @onclick="@(()=>SortItem("Discount"))">Disc %</th>
+            <th class="c-disc num column-item" @onclick="@(()=>SortItem("DiscountPercent"))">Disc %</th>
             <th class="c-amt2 num column-item" @onclick="@(()=>SortItem("AmmountAfterDiscount"))">Amount</th>
             @if (Lines.HasRemarks)
             {
@@ -143,7 +143,7 @@
                     <td class="c-qty num">@variant.Quantity</td>
                     <td class="c-rate num">@variant.ProductRate</td>
                     <td class="c-amt num">@variant.Amount</td>
-                    <td class="c-disc num">@variant.Discount</td>
+                    <td class="c-disc num">@variant.DiscountPercent</td>
                     <td class="c-amt2 num">@variant.AmountAfterDiscount</td>
                     @if (Lines.HasRemarks)
                     {

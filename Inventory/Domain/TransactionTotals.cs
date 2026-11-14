@@ -21,7 +21,7 @@ public static class TransactionTotals
             .Select(l => l.AmountAfterDiscount)
             .ToListAsync();
 
-        header.TotalAmountProduct = amounts.Sum(a => a ?? 0) - (header.Discount ?? 0);
+        header.TotalAmountProduct = amounts.Sum(a => a ?? 0) - (header.DiscountAmount ?? 0);
     }
 
     public static async Task RecalculateSalesOrderAsync(AppDbContext context, Guid salesOrderId)
@@ -35,6 +35,6 @@ public static class TransactionTotals
             .Select(l => l.AmountAfterDiscount)
             .ToListAsync();
 
-        header.TotalAmountProduct = amounts.Sum(a => a ?? 0) - (header.Discount ?? 0);
+        header.TotalAmountProduct = amounts.Sum(a => a ?? 0) - (header.DiscountAmount ?? 0);
     }
 }

@@ -165,13 +165,13 @@ namespace Inventory.Shared
         public void GetAmount()
         {
             line.Amount = LineAmounts.ComputeAmount(line.ProductRate, line.Quantity);
-            line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.Discount);
+            line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.DiscountPercent);
         }
 
         private void DiscountChanged(int? value)
         {
-            line.Discount = value;
-            line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.Discount);
+            line.DiscountPercent = value;
+            line.AmountAfterDiscount = LineAmounts.ComputeAmountAfterDiscount(line.Amount, line.DiscountPercent);
         }
 
         public async Task EditLineClicked(LineEditorModel model)
@@ -208,7 +208,7 @@ namespace Inventory.Shared
                 { "Quantity", c => c.Quantity },
                 { "ProductRate", c => c.ProductRate },
                 { "Amount", c => c.Amount },
-                { "Discount", c => c.Discount },
+                { "DiscountPercent", c => c.DiscountPercent },
                 { "AmmountAfterDiscount", c => c.AmountAfterDiscount },
                 { "Remarks", c => c.Remarks },
             });
