@@ -1,7 +1,9 @@
 ﻿using Inventory.Domain.Repository.Abstract;
 using Inventory.Models;
+using Inventory.Service.Import;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Inventory.Pages
 {
@@ -10,6 +12,7 @@ namespace Inventory.Pages
     {
         [Inject] private IPurchaseRepository PurchaseRepository { get; set; }
         [Inject] private ILogger<Purchases> Logger { get; set; }
+        [Inject] private IDialogService DialogService { get; set; } = default!;
 
         private List<PurchaseModel> purchases = new();
         private List<PurchaseModel> purchasesAfterSearch = new();
@@ -18,31 +21,46 @@ namespace Inventory.Pages
         {
             if (firstRender)
             {
-                try
+                await LoadAsync();
+            }
+        }
+
+        private async Task LoadAsync()
+        {
+            try
+            {
+                var list = await PurchaseRepository.GetAll();
+                if (list.Count != 0)
                 {
-                    var list = await PurchaseRepository.GetAll();
-                    if (list.Count != 0)
-                    {
-                        purchases = list.Select(c =>
-                         new PurchaseModel()
-                         {
-                             Date = c.Date,
-                             Id = c.Id,
-                             Remarks = c.Remarks,
-                             SupplierId = c.Supplier.SupplierId,
-                             SupplierName = c.Supplier.Name,
-                             VoucherId = c.VoucherId,
-                             TotalAmountProduct = c.TotalAmountProduct
-                         }
-                        ).ToList();
-                        purchasesAfterSearch = [.. purchases.OrderByDescending(o => o.Date)];
-                    }
-                    StateHasChanged();
+                    purchases = list.Select(c =>
+                     new PurchaseModel()
+                     {
+                         Date = c.Date,
+                         Id = c.Id,
+                         Remarks = c.Remarks,
+                         SupplierId = c.Supplier.SupplierId,
+                         SupplierName = c.Supplier.Name,
+                         VoucherId = c.VoucherId,
+                         TotalAmountProduct = c.TotalAmountProduct
+                     }
+                    ).ToList();
+                    purchasesAfterSearch = [.. purchases.OrderByDescending(o => o.Date)];
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Purchases error");
-                }
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Purchases error");
+            }
+        }
+
+        // Import pop-up (batch 8): on a successful import the list is loaded again so the new purchases show.
+        private async Task OpenImportAsync()
+        {
+            if (await Inventory.MudBlazorComponents.ImportDialog.ShowAsync(DialogService, ImportKind.Purchases))
+            {
+                await LoadAsync();
+                StateHasChanged();
             }
         }
        

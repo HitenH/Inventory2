@@ -11,12 +11,14 @@ namespace Inventory.Service;
 ///   backup_yyyyMMddHHmmss.db         – made with the Backup button (never deleted automatically)
 ///   daily_yyyyMMddHHmmss.db          – made by BackupScheduler (only the newest N are kept)
 ///   before-restore_yyyyMMddHHmmss.db – the live database saved just before a restore
+///   before-import_yyyyMMddHHmmss.db  – saved just before a purchases import (never deleted automatically; listed as Manual)
 /// </summary>
 public class BackupService
 {
     public const string ManualPrefix = "backup_";
     public const string DailyPrefix = "daily_";
     public const string BeforeRestorePrefix = "before-restore_";
+    public const string BeforeImportPrefix = "before-import_";
     private const string TimestampFormat = "yyyyMMddHHmmss";
 
     private readonly DataPaths paths;
@@ -39,6 +41,9 @@ public class BackupService
 
     /// <summary>Makes a backup with the Backup button. Returns the new file's path.</summary>
     public Task<string> BackupDatabaseAsync() => CreateAsync(ManualPrefix);
+
+    /// <summary>Makes the safety copy taken just before a purchases file is imported (batch 8). Returns the new file's path.</summary>
+    public Task<string> BackupBeforeImportAsync() => CreateAsync(BeforeImportPrefix);
 
     /// <summary>Makes a scheduled backup and removes daily backups beyond <paramref name="keep"/>.</summary>
     public async Task<string> CreateDailyBackupAsync(int keep)

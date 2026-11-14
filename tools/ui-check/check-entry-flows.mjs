@@ -15,7 +15,7 @@ async function pickFromList(text) {
 async function addLine(qty) {
   await b.eval(`(() => { const s = document.querySelector('#variantid'); s.selectedIndex = 1; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
   await sleep(400);
-  await b.eval(`(() => { const label = [...document.querySelectorAll('label')].find(l => l.textContent.trim() === 'Quantity'); label.parentElement.querySelector('input').focus(); })()`);
+  await b.eval(`(() => { const label = [...document.querySelectorAll('label')].find(l => l.textContent.trim() === 'Qty'); label.parentElement.querySelector('input').focus(); })()`);
   await b.type(String(qty));
   await b.key('Tab');
   await sleep(400);

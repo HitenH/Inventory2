@@ -1,8 +1,8 @@
-// Import feature (batch 8): Import pop-up on Customers, Suppliers and Products. Run against the TEST copy only (see README).
+// Import feature (batch 8): Import pop-up on Customers, Suppliers, Products and Purchases. Run against the TEST copy only (see README).
 // Needs: SCRATCH env var, Python (sqlite3; openpyxl for the .xlsx check, falls back to CSV without it).
 // Usage: $env:SCRATCH='<scratch>'; node tools\ui-check\check-import.mjs
 import { launch, login, sleep } from './cdp.mjs';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -33,7 +33,7 @@ const dialogText = () => b.eval(`(document.querySelector('${dlg}')||{innerText:'
 async function clickText(text, scope = 'body') {
   const ok = await b.eval(`(() => { const e = [...document.querySelectorAll('${scope} button, ${scope} a, ${scope} label')].find(x => x.innerText.trim().toLowerCase().startsWith(${JSON.stringify(text.toLowerCase())})); if (!e) return false; e.setAttribute('data-ck','1'); return true; })()`);
   if (!ok) throw new Error('No button ' + text);
-  await b.click('[data-ck="1"]'); await b.eval(`document.querySelector('[data-ck]').removeAttribute('data-ck')`);
+  await b.click('[data-ck="1"]'); await b.eval(`document.querySelector('[data-ck]')?.removeAttribute('data-ck')`);
 }
 const importBtn = () => b.eval(`(() => { const e = [...document.querySelectorAll('${dlg} .mud-dialog-actions button')].find(x => /^import/i.test(x.innerText.trim())); return e ? { text: e.innerText.trim(), disabled: e.disabled } : null; })()`);
 const clickImport = () => b.eval(`[...document.querySelectorAll('${dlg} .mud-dialog-actions button')].find(x => /^import/i.test(x.innerText.trim())).click()`);
@@ -66,7 +66,7 @@ try {
   await b.eval(`localStorage.setItem('inventory-theme', JSON.stringify({ colour: 'Teal', mode: 'Light' }))`);
 
   // 1 + 2: the pop-up on each list page, and the sample file
-  const kinds = [['customers', 'Customers', '/customers'], ['suppliers', 'Suppliers', '/suppliers'], ['products', 'Products', '/products']];
+  const kinds = [['customers', 'Customers', '/customers'], ['suppliers', 'Suppliers', '/suppliers'], ['products', 'Products', '/products'], ['purchases', 'Purchases', '/purchases']];
   for (const [k, title, path] of kinds) {
     await openImport(path);
     const toolbar = await b.eval(`[...document.querySelectorAll('.mud-toolbar button, .mud-toolbar a')].map(x => x.innerText.trim())`);
@@ -268,6 +268,120 @@ wb.save(sys.argv[1])`;
     has("Rate '1,250'") && has('does not exist') && has('differs from row') && has("Variant ID 'V1' is also on") && ib && ib.disabled, JSON.stringify(msgs));
   check('10 bad products: no sideways scroll', noScroll(w), JSON.stringify(w));
   await shot('10-bad-products');
+  await closeDialog();
+
+  // 12: Purchases (opening stock). Uses a real supplier, product and two of its variants from the test copy, and a date with no purchases.
+  await openImport('/purchases');
+  const introText = await dialogText();
+  check('12 Purchases pop-up intro line says stock goes up and a backup is taken',
+    introText.includes('Import adds new purchases. Stock goes up as soon as they are imported, and a backup is taken first.'), introText.slice(0, 200));
+  await shot('12-purchases-popup');
+  await closeDialog();
+
+  const pick = q(`select s.SupplierId, p.ProductId, v1.VariantId, v2.VariantId, v1.Id, v2.Id from Products p
+    join Variants v1 on v1.ProductEntityId = p.Id join Variants v2 on v2.ProductEntityId = p.Id and v2.Id > v1.Id, Suppliers s limit 400`)
+    .find(r => r.slice(0, 4).every(x => /^[A-Za-z0-9]+$/.test(String(x))) && r[2].toLowerCase() !== r[3].toLowerCase());
+  const [sup, prod, var1, var2, vid1, vid2] = pick;
+  const supName = q('select Name from Suppliers where SupplierId = ?', sup)[0][0];
+  // A day in April 2019 with no purchases yet (01 normally), so the check can be run again on the same test copy.
+  let D = '01';
+  for (let day = 1; day <= 28 && q(`select count(*) from Purchases where Date like '2019-04-${String(day).padStart(2, '0')}%'`)[0][0] > 0; day++) D = String(day + 1).padStart(2, '0');
+  const PURCH_H = 'Date,Supplier ID,Product ID,Variant ID,Quantity,Rate,Discount %,Remarks';
+  const remark = `ZZIMP-${stamp}`;
+  const purchaseCount = () => q('select count(*) from Purchases')[0][0];
+  const stockOf = vid => q('select coalesce((select sum(Quantity) from PurchaseVariant where VariantEntityId=?),0) - coalesce((select sum(Quantity) from SalesVariants where VariantEntityId=?),0)', vid, vid)[0][0];
+  const backupDir = join(scratch, 'data', 'Backups');
+  const beforeImportBackups = () => existsSync(backupDir) ? readdirSync(backupDir).filter(f => f.startsWith('before-import_') && f.endsWith('.db')) : [];
+  console.log(`   using supplier ${sup}, product ${prod}, variants ${var1} and ${var2}`);
+  check(`12 the chosen date ${D}-04-2019 has no purchases yet`, q(`select count(*) from Purchases where Date like '2019-04-${D}%'`)[0][0] === 0);
+
+  // bad file
+  await openImport('/purchases');
+  const pbadFile = csv('purchases-bad.csv', [PURCH_H,
+    `${D}-04-2019,NOSUCH${stamp},${prod},${var1},5,,,`,
+    `${D}-04-2019,${sup},${prod},NOVAR,5,,,`,
+    `02-04-2019,${sup},${prod},${var1},0,,,`,
+    `31-13-2019,${sup},${prod},${var1},5,,,`,
+    `03-04-2019,${sup},${prod},${var1},2,,,`,
+    `03-04-2019,${sup},${prod},${var1},3,,,`]);
+  await chooseFile(pbadFile);
+  p = await preview(); ib = await importBtn(); w = await widths();
+  const pmsgs = await problemMsgs();
+  const hasP = s => pmsgs.some(m => m.includes(s));
+  check('12 bad purchases file: unknown supplier, unknown variant, quantity 0, bad date, duplicate line (6 rows), Import disabled',
+    /problem\(s\) found/.test(p.alert) && p.problems === 6 && hasP(`Supplier ID 'NOSUCH${stamp}' does not exist. Add the supplier first.`) &&
+    hasP(`Variant ID 'NOVAR' does not exist for product '${prod}'.`) && hasP("Quantity '0' must be a whole number greater than 0.") &&
+    hasP("Date '31-13-2019' is not a valid date. Use day-month-year, like 01-04-2026.") && hasP('of the same purchase. Add the quantities together on one row.') && ib && ib.disabled,
+    `alert="${p.alert.replace(/\s+/g, ' ')}" problemRows=${p.problems} messages=${JSON.stringify(pmsgs)}`);
+  check('12 bad purchases file: no sideways scroll (dialog, preview, page)', noScroll(w), JSON.stringify(w));
+  await shot('12-bad-purchases');
+  await closeDialog();
+
+  // good file
+  const total = 10 * 250 + (4 * 99.5 - 4 * 99.5 * 0.10);   // 2858.2
+  const goodP = csv('purchases-good.csv', [PURCH_H,
+    `${D}-04-2019,${sup},${prod},${var1},10,250,,${remark}`,
+    `${D}-04-2019,${sup},${prod},${var2},4,99.5,10,${remark}`]);
+  const stock1Before = stockOf(vid1), stock2Before = stockOf(vid2), purchasesBefore = purchaseCount(), backupsBefore = beforeImportBackups().length;
+  await openImport('/purchases');
+  await chooseFile(goodP);
+  p = await preview(); ib = await importBtn(); w = await widths();
+  check('12 good purchases file: "Ready to import: 1 purchase with 2 lines", button "Import 1 purchase" enabled',
+    /Ready to import: 1 purchase with 2 lines/.test(p.alert) && ib && ib.text === 'Import 1 purchase' && !ib.disabled, `alert="${p.alert.trim()}" import=${JSON.stringify(ib)}`);
+  check('12 good purchases file: no sideways scroll', noScroll(w), JSON.stringify(w));
+  await shot('12-good-purchases');
+  await clickImport(); await sleep(3000);
+  const sn12 = await b.snack();
+  check('12 Purchases import: snackbar "Imported 1 purchase.", pop-up closes', /Imported 1 purchase\./.test(sn12) && !(await dialogOpen()), `snack="${sn12}"`);
+
+  const hdr = q(`select p.Id, p.VoucherId, p.Remarks, p.TotalAmountProduct, p.Discount from Purchases p join Suppliers s on s.Id = p.SupplierEntityId where p.Date like '2019-04-${D}%' and s.SupplierId = ?`, sup);
+  const lns = hdr.length ? q('select SerialNumber, Quantity, ProductRate, Amount, Discount, AmountAfterDiscount from PurchaseVariant where PurchaseEntityId = ? order by SerialNumber', hdr[0][0]) : [];
+  check('12 DB: one purchase, voucher number 1, remarks, total 2858.2; two lines numbered 1 and 2 with the right amounts',
+    purchaseCount() === purchasesBefore + 1 && hdr.length === 1 && hdr[0][1] === 1 && hdr[0][2] === remark && Math.abs(Number(hdr[0][3]) - total) < 0.001 &&
+    lns.length === 2 && lns[0][0] === 1 && lns[0][1] === 10 && Number(lns[0][3]) === 2500 && lns[1][0] === 2 && lns[1][1] === 4 && Number(lns[1][3]) === 398 && lns[1][4] === 10 && Math.abs(Number(lns[1][5]) - 358.2) < 0.001,
+    JSON.stringify({ hdr, lns }));
+  const newBackups = beforeImportBackups();
+  check('12 a before-import backup file was created in the Backups folder', newBackups.length === backupsBefore + 1, JSON.stringify(newBackups));
+  check('12 stock of both variants rose by the quantities (10 and 4)', stockOf(vid1) === stock1Before + 10 && stockOf(vid2) === stock2Before + 4,
+    `variant ${var1}: ${stock1Before} -> ${stockOf(vid1)}; variant ${var2}: ${stock2Before} -> ${stockOf(vid2)}`);
+
+  // the stock report on screen
+  await b.goto('/reports');
+  await b.waitFor(`document.querySelector('.mud-tab')`);
+  const tab = name => b.eval(`[...document.querySelectorAll('.mud-tab')].find(x => x.innerText.trim().toLowerCase() === ${JSON.stringify(name)}).click()`);
+  await tab('products'); await sleep(800); await tab('variants list table'); await sleep(2000);
+  await b.eval(`(() => { const i = document.querySelector('input[placeholder="Search"]'); i.focus(); })()`);
+  await b.type(prod); await sleep(1500);
+  const stockRows = await b.eval(`[...document.querySelectorAll('.mud-table-body tr')].map(r => r.innerText.replace(/\\s+/g,' ').trim())`);
+  const rowFor = v => stockRows.find(r => r.includes(prod) && new RegExp('\\b' + v + '\\b').test(r)) || '';
+  check('12 stock report on screen shows the new stock for both variants', rowFor(var1).trim().endsWith(String(stockOf(vid1))) && rowFor(var2).trim().endsWith(String(stockOf(vid2))),
+    `${rowFor(var1)} || ${rowFor(var2)}`);
+  await shot('12-stock-report');
+
+  // the new purchase in the list, and opened on the normal Purchase screen
+  await b.goto('/purchases'); await sleep(1500);
+  await b.waitFor(`document.querySelector('input[placeholder="Enter search term"]')`);
+  await search('2019');
+  const lp = await listText();
+  check('12 imported purchase appears in the Purchases list (remarks and supplier name)', lp.includes(remark) && lp.includes(supName), lp.slice(0, 300));
+  await shot('12-purchases-list');
+  await b.eval(`(() => { const r = [...document.querySelectorAll('.mud-table-body tr')].find(x => x.innerText.includes(${JSON.stringify(remark)})); r.querySelector('a, button').setAttribute('data-ck','1'); })()`);
+  await b.click('[data-ck="1"]'); await sleep(3500);
+  await shot('12-purchase-opened');
+  // The total and voucher are in boxes, so the boxes' values are read too.
+  const pageTxt = await b.eval(`document.body.innerText.replace(/\\s+/g,' ') + ' INPUTS: ' + [...document.querySelectorAll('input')].map(i => i.value).join(' | ')`);
+  check('12 imported purchase opens on the normal Purchase screen with its lines and total', /\/purchase\//.test(await b.path()) && pageTxt.includes(prod) && /2,?858\.2/.test(pageTxt) && /\b2,?500(\.0+)?\b/.test(pageTxt) && /358\.2/.test(pageTxt),
+    `${await b.path()} :: ${pageTxt.slice(pageTxt.indexOf('INPUTS'))}`);
+
+  // the same file again: the double-import guard
+  await openImport('/purchases');
+  await chooseFile(goodP);
+  p = await preview(); ib = await importBtn();
+  const gmsgs = await problemMsgs();
+  check('12 same purchases file again: both rows refused by the guard (voucher 1), Import disabled, nothing added',
+    p.problems === 2 && gmsgs.every(m => m.includes(`A purchase from supplier '${sup}' dated ${D}-04-2019 with exactly the same items and quantities already exists (voucher 1). Importing it again would count the stock twice.`)) && ib && ib.disabled && purchaseCount() === purchasesBefore + 1,
+    `problemRows=${p.problems} messages=${JSON.stringify(gmsgs)}`);
+  await shot('12-second-import-guard');
   await closeDialog();
 } catch (e) {
   failures++;

@@ -1,5 +1,5 @@
 @* Import pop-up (batch 8): pick a .csv or .xlsx file, see every row checked, then import the whole file or nothing.
-   Opened from the Customers, Suppliers and Products pages. Nothing is saved until "Import" on the preview. *@
+   Opened from the Customers, Suppliers, Products and Purchases pages. Nothing is saved until "Import" on the preview. *@
 @using Inventory.Service.Import
 
 <MudDialog>
@@ -7,7 +7,14 @@
         <div class="import-dialog">
             @if (preview is null)
             {
-                <p class="mb-3">Import adds new @ImportTemplates.Noun(Kind, 2). Records already in the list are never changed.</p>
+                @if (Kind == ImportKind.Purchases)
+                {
+                    <p class="mb-3">Import adds new purchases. Stock goes up as soon as they are imported, and a backup is taken first.</p>
+                }
+                else
+                {
+                    <p class="mb-3">Import adds new @ImportTemplates.Noun(Kind, 2). Records already in the list are never changed.</p>
+                }
 
                 <div class="import-section-title">Columns in the file</div>
                 <table class="table table-sm table-bordered lines-table import-columns mb-3">
@@ -60,7 +67,7 @@
                 @if (preview.IssueCount == 0 && preview.RecordCount > 0)
                 {
                     <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2">
-                        Ready to import: @preview.RecordCount @ImportTemplates.Noun(Kind, preview.RecordCount)@(Kind == ImportKind.Products && preview.VariantCount > 0 ? $" with {preview.VariantCount} {(preview.VariantCount == 1 ? "variant" : "variants")}" : "")
+                        Ready to import: @preview.RecordCount @ImportTemplates.Noun(Kind, preview.RecordCount)@(Kind == ImportKind.Products && preview.VariantCount > 0 ? $" with {preview.VariantCount} {(preview.VariantCount == 1 ? "variant" : "variants")}" : "")@(Kind == ImportKind.Purchases ? $" with {preview.LineCount} {(preview.LineCount == 1 ? "line" : "lines")}" : "")
                     </MudAlert>
                 }
                 else if (preview.IssueCount == 0)
@@ -157,7 +164,7 @@
             // Escape would close the pop-up in the middle of an import; the Close button waits for it instead.
             CloseOnEscapeKey = false,
         };
-        // Titles: "Import Customers", "Import Suppliers", "Import Products".
+        // Titles: "Import Customers", "Import Suppliers", "Import Products", "Import Purchases".
         var dialog = await dialogService.ShowAsync<ImportDialog>($"Import {kind}", parameters, options);
         var result = await dialog.Result;
         return result is { Canceled: false };

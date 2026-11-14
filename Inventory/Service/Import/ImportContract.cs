@@ -1,7 +1,7 @@
 namespace Inventory.Service.Import;
 
 /// <summary>Which master list a file is imported into (batch 8).</summary>
-public enum ImportKind { Customers, Suppliers, Products }
+public enum ImportKind { Customers, Suppliers, Products, Purchases }
 
 /// <summary>One column of an import file. <see cref="Header"/> is the exact heading in the sample file.</summary>
 public sealed record ImportColumn(string Header, bool Required, string Example1, string Example2, string Hint);
@@ -26,10 +26,12 @@ public sealed class ImportPreview
     /// <summary>Problems with the file as a whole: wrong type, missing or unknown headings, no data rows, too many rows.</summary>
     public IReadOnlyList<ImportIssue> FileIssues { get; init; } = [];
     public IReadOnlyList<ImportPreviewRow> Rows { get; init; } = [];
-    /// <summary>Customers, suppliers or products that would be created.</summary>
+    /// <summary>Customers, suppliers, products or purchases that would be created.</summary>
     public int RecordCount { get; init; }
     /// <summary>Variants that would be created (Products only; otherwise 0).</summary>
     public int VariantCount { get; init; }
+    /// <summary>Item lines that would be created (Purchases only; otherwise 0).</summary>
+    public int LineCount { get; init; }
 
     public int IssueCount => FileIssues.Count + Rows.Sum(r => r.Issues.Count);
     public bool CanImport => IssueCount == 0 && RecordCount > 0;

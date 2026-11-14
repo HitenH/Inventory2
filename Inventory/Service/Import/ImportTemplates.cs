@@ -16,6 +16,7 @@ public static class ImportTemplates
         ContactPerson = "Contact Person", Address = "Address", Area = "Area", Remarks = "Remarks", Mobiles = "Mobiles";
     public const string ProductId = "Product ID", ProductName = "Product Name", Rate = "Rate", Description = "Description",
         CategoryId = "Category ID", VariantId = "Variant ID", VariantName = "Variant Name", ReorderLevel = "Reorder Level";
+    public const string DateColumn = "Date", Quantity = "Quantity", DiscountPercent = "Discount %";
 
     private static readonly ImportColumn[] CustomerColumns =
     [
@@ -52,10 +53,24 @@ public static class ImportTemplates
         new(ReorderLevel, false, "5", "10", "Optional whole number."),
     ];
 
+    // One row per item line. Rows with the same Date and Supplier ID are ONE purchase (the owner uses this for opening stock).
+    private static readonly ImportColumn[] PurchaseColumns =
+    [
+        new(DateColumn, true, "01-04-2026", "01-04-2026", "Day-month-year, like 01-04-2026. Rows with the same Date and Supplier ID make one purchase."),
+        new(SupplierId, true, "S001", "S001", "Must already exist. Add the supplier first."),
+        new(ProductId, true, "P001", "P001", "Must already exist. Add the product first."),
+        new(VariantId, true, "G", "L", "Must be a variant of that product."),
+        new(Quantity, true, "10", "5", "Whole number, 1 or more."),
+        new(Rate, false, "250", "250", "Optional (empty = 0). Number, no commas (1250.50)."),
+        new(DiscountPercent, false, "", "10", "Optional. Whole number from 0 to 100 (empty = 0)."),
+        new(Remarks, false, "Opening stock", "Opening stock", "Optional. Same on every row of the purchase."),
+    ];
+
     public static IReadOnlyList<ImportColumn> Columns(ImportKind kind) => kind switch
     {
         ImportKind.Customers => CustomerColumns,
         ImportKind.Suppliers => SupplierColumns,
+        ImportKind.Purchases => PurchaseColumns,
         _ => ProductColumns,
     };
 
@@ -64,6 +79,7 @@ public static class ImportTemplates
     {
         ImportKind.Customers => count == 1 ? "customer" : "customers",
         ImportKind.Suppliers => count == 1 ? "supplier" : "suppliers",
+        ImportKind.Purchases => count == 1 ? "purchase" : "purchases",
         _ => count == 1 ? "product" : "products",
     };
 

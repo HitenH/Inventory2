@@ -29,8 +29,8 @@ namespace Inventory.Domain
 
         /// <summary>
         /// If a save fails (for example a duplicate ID refused by the database), undo the pending changes in memory.
-        /// This context lives for the whole browser tab (see REVIEW A2), so without this the failed change
-        /// would stay queued and make every later save in the same tab fail too.
+        /// A context may be used again after a failed save, so without this the failed change
+        /// would stay queued and make every later save on the same context fail too.
         /// </summary>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
@@ -83,7 +83,7 @@ namespace Inventory.Domain
 
             // Business IDs must be unique (batch 5). Empty (NULL) IDs are allowed more than once by SQLite,
             // so the few old blank rows do not block these rules.
-            // Voucher numbers per day are NOT made unique yet: old data has duplicates (decision pinned in PLAN.md).
+            // Voucher numbers per day are NOT made unique yet: old data has duplicates (decision pinned, see README.md and ROADMAP.md).
             modelBuilder.Entity<ProductEntity>()
                         .HasIndex(p => p.ProductId)
                         .IsUnique();

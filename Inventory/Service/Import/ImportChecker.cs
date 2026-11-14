@@ -28,12 +28,18 @@ public static class ImportChecker
     private const int PartyId = 0, PartyName = 1, PartyMobiles = 6;
     private const int ProdId = 0, ProdName = 1, ProdRate = 2, ProdDescription = 3, ProdCategory = 4,
         ProdVariantId = 5, ProdVariantName = 6, ProdReorder = 7;
+    private const int PurDate = 0, PurSupplier = 1, PurProduct = 2, PurVariant = 3, PurQuantity = 4, PurRate = 5,
+        PurDiscount = 6, PurRemarks = 7;
+
+    // Day-first only. Excel's date cells arrive as yyyy-MM-dd. Month-first (04-01-2026 meaning 1 April) is never guessed.
+    private static readonly string[] DateFormats = ["dd-MM-yyyy", "dd/MM/yyyy", "d-M-yyyy", "d/M/yyyy", "yyyy-MM-dd"];
+    public const int MinYear = 1900, MaxYear = 2100;
 
     // ---- headings -------------------------------------------------------------------------------------------
 
-    /// <summary>"Customer_Id", " customer id *" and "CustomerID" all become "customerid".</summary>
+    /// <summary>"Customer_Id", " customer id *" and "CustomerID" all become "customerid"; "Discount %" and "discount%" become "discount".</summary>
     public static string NormalizeHeading(string heading) =>
-        new string(heading.Trim().TrimEnd('*').Where(c => c != ' ' && c != '_' && c != '-' && !char.IsWhiteSpace(c)).ToArray())
+        new string(heading.Trim().TrimEnd('*').Where(c => c != ' ' && c != '_' && c != '-' && c != '%' && !char.IsWhiteSpace(c)).ToArray())
             .ToLowerInvariant();
 
     public static MappedTable MapHeadings(ImportKind kind, RawTable table)
@@ -288,6 +294,183 @@ public static class ImportChecker
         $"{header} differs from row {first.RowNumber} ({(firstValue.Length == 0 ? "empty" : $"'{firstValue}'")}). " +
         $"All rows of product '{productId}' must have the same product details.";
 
+    // ---- purchases ------------------------------------------------------------------------------------------
+
+    /// <summary>Reads a Date cell; null when it is not one of the accepted forms.</summary>
+    public static DateOnly? ParseDate(string text)
+    {
+        if (!DateOnly.TryParseExact(text.Trim(), DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            return null;
+        return date.Year is >= MinYear and <= MaxYear ? date : null;
+    }
+
+    /// <summary>The date the way the operator types it: 01-04-2026.</summary>
+    public static string DateText(DateOnly date) => date.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+
+    /// <summary>The message for a purchase that is already in the database (used by the preview and again at save time).</summary>
+    public static string PurchaseExistsMessage(string supplierId, DateOnly date, IReadOnlyList<int> vouchers) =>
+        $"A purchase from supplier '{supplierId}' dated {DateText(date)} with exactly the same items and quantities already exists " +
+        $"({(vouchers.Count == 1 ? "voucher" : "vouchers")} {string.Join(", ", vouchers)}). Importing it again would count the stock twice.";
+
+    /// <summary>
+    /// True when an existing purchase holds exactly these items and quantities (order and upper/lower case do not matter).
+    /// Another purchase from the same supplier on the same date is allowed (owner, 14 Nov 2026); only an exact copy is stopped.
+    /// </summary>
+    public static bool HasSameLines(ExistingPurchase existing, IEnumerable<(string ProductId, string VariantId, int Quantity)> lines) =>
+        existing.Lines is { Count: > 0 }
+        && LinesKey(existing.Lines.Select(l => (l.ProductId, l.VariantId, l.Quantity))) == LinesKey(lines);
+
+    private static string LinesKey(IEnumerable<(string ProductId, string VariantId, int Quantity)> lines) =>
+        string.Join("\n", lines
+            .Select(l => $"{l.ProductId.ToLowerInvariant()}|{l.VariantId.ToLowerInvariant()}|{l.Quantity}")
+            .Order(StringComparer.Ordinal));
+
+    public static List<ImportPreviewRow> CheckPurchases(IReadOnlyList<TemplateRow> rows, IEnumerable<string?> supplierIds,
+        IEnumerable<KnownProduct> products, IEnumerable<ExistingPurchase> existingPurchases)
+    {
+        var suppliers = new HashSet<string>(supplierIds.Where(i => i != null)!, StringComparer.OrdinalIgnoreCase);
+        var variantsOf = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var product in products)
+            variantsOf[product.ProductId] = new HashSet<string>(product.VariantIds, StringComparer.OrdinalIgnoreCase);
+        var existing = existingPurchases.ToList();
+        var issues = NewIssueLists(rows);
+
+        for (var r = 0; r < rows.Count; r++)
+        {
+            var row = rows[r];
+            var list = issues[r];
+
+            var dateText = Cell(row, PurDate);
+            if (dateText.Length == 0)
+                list.Add(Issue(row, ImportTemplates.DateColumn, "Date is required."));
+            else if (ParseDate(dateText) == null)
+                list.Add(Issue(row, ImportTemplates.DateColumn, $"Date '{dateText}' is not a valid date. Use day-month-year, like 01-04-2026."));
+
+            var supplier = Cell(row, PurSupplier);
+            if (supplier.Length == 0)
+                list.Add(Issue(row, ImportTemplates.SupplierId, "Supplier ID is required."));
+            else if (!suppliers.Contains(supplier))
+                list.Add(Issue(row, ImportTemplates.SupplierId, $"Supplier ID '{supplier}' does not exist. Add the supplier first."));
+
+            var productId = Cell(row, PurProduct);
+            var variantId = Cell(row, PurVariant);
+            HashSet<string>? variants = null;
+            if (productId.Length == 0)
+                list.Add(Issue(row, ImportTemplates.ProductId, "Product ID is required."));
+            else if (!variantsOf.TryGetValue(productId, out variants))
+                list.Add(Issue(row, ImportTemplates.ProductId, $"Product ID '{productId}' does not exist. Add the product first."));
+
+            if (variantId.Length == 0)
+                list.Add(Issue(row, ImportTemplates.VariantId, "Variant ID is required."));
+            else if (variants != null && !variants.Contains(variantId))
+                list.Add(Issue(row, ImportTemplates.VariantId, $"Variant ID '{variantId}' does not exist for product '{productId}'."));
+
+            var quantity = Cell(row, PurQuantity);
+            if (quantity.Length == 0)
+                list.Add(Issue(row, ImportTemplates.Quantity, "Quantity is required."));
+            else if (!WholeNumberShape.IsMatch(quantity) || !int.TryParse(quantity, NumberStyles.None, CultureInfo.InvariantCulture, out var q) || q < 1)
+                list.Add(Issue(row, ImportTemplates.Quantity, $"Quantity '{quantity}' must be a whole number greater than 0."));
+
+            ParseRate(Cell(row, PurRate), row, list);
+
+            var discount = Cell(row, PurDiscount);
+            if (discount.Length > 0 &&
+                (!WholeNumberShape.IsMatch(discount) || !int.TryParse(discount, NumberStyles.None, CultureInfo.InvariantCulture, out var d) || d > 100))
+                list.Add(Issue(row, ImportTemplates.DiscountPercent, $"Discount % '{discount}' must be a whole number from 0 to 100."));
+        }
+
+        // Rows with the same Date and Supplier ID (ignoring case) are one purchase; the first row is the reference for the others.
+        foreach (var group in PurchaseGroups(rows))
+        {
+            var first = rows[group.Rows[0]];
+            var supplier = Cell(first, PurSupplier);
+
+            foreach (var r in group.Rows.Skip(1))
+            {
+                var remarks = Cell(rows[r], PurRemarks);
+                var theirs = Cell(first, PurRemarks);
+                if (!string.Equals(remarks, theirs, StringComparison.OrdinalIgnoreCase))
+                    issues[r].Add(Issue(rows[r], ImportTemplates.Remarks,
+                        $"Remarks differs from row {first.RowNumber} ({(theirs.Length == 0 ? "empty" : $"'{theirs}'")}). " +
+                        $"All rows of the purchase from supplier '{supplier}' dated {DateText(group.Date)} must have the same Remarks."));
+            }
+
+            var lineGroups = group.Rows
+                .Where(r => Cell(rows[r], PurProduct).Length > 0 && Cell(rows[r], PurVariant).Length > 0)
+                .GroupBy(r => (Cell(rows[r], PurProduct).ToLowerInvariant(), Cell(rows[r], PurVariant).ToLowerInvariant()))
+                .Where(g => g.Count() > 1);
+            foreach (var lines in lineGroups)
+                foreach (var r in lines)
+                {
+                    var others = lines.Where(o => o != r).Select(o => rows[o].RowNumber).ToList();
+                    issues[r].Add(Issue(rows[r], ImportTemplates.VariantId,
+                        $"Product '{Cell(rows[r], PurProduct)}' with Variant ID '{Cell(rows[r], PurVariant)}' is also on {RowsText(others)} of the same purchase. Add the quantities together on one row."));
+                }
+
+            // Double-import guard: a purchase from this supplier on this date with exactly the same items and quantities
+            // is already in the database. (A different purchase on the same day is fine.)
+            var mine = new List<(string, string, int)>();
+            var complete = true;
+            foreach (var r in group.Rows)
+            {
+                if (Cell(rows[r], PurProduct).Length > 0 && Cell(rows[r], PurVariant).Length > 0
+                    && int.TryParse(Cell(rows[r], PurQuantity), NumberStyles.None, CultureInfo.InvariantCulture, out var lineQuantity))
+                    mine.Add((Cell(rows[r], PurProduct), Cell(rows[r], PurVariant), lineQuantity));
+                else
+                    complete = false;
+            }
+
+            List<int> vouchers = !complete ? [] : existing
+                .Where(e => e.Date == group.Date && string.Equals(e.SupplierId, supplier, StringComparison.OrdinalIgnoreCase)
+                            && HasSameLines(e, mine))
+                .Select(e => e.VoucherId).Order().ToList();
+            if (vouchers.Count > 0)
+                foreach (var r in group.Rows)
+                    issues[r].Add(Issue(rows[r], ImportTemplates.DateColumn, PurchaseExistsMessage(supplier, group.Date, vouchers)));
+        }
+
+        return Build(rows, issues);
+    }
+
+    private sealed record RowGroup(DateOnly Date, List<int> Rows);
+
+    /// <summary>The rows (by position) of each purchase, in the order the purchases first appear. Rows without a valid date or without a supplier are left out.</summary>
+    private static List<RowGroup> PurchaseGroups(IReadOnlyList<TemplateRow> rows)
+    {
+        var groups = new List<RowGroup>();
+        var byKey = new Dictionary<(DateOnly, string), RowGroup>();
+        for (var r = 0; r < rows.Count; r++)
+        {
+            var supplier = Cell(rows[r], PurSupplier);
+            if (ParseDate(Cell(rows[r], PurDate)) is not { } date || supplier.Length == 0)
+                continue;
+            var key = (date, supplier.ToLowerInvariant());
+            if (!byKey.TryGetValue(key, out var group))
+            {
+                group = new RowGroup(date, []);
+                byKey[key] = group;
+                groups.Add(group);
+            }
+            group.Rows.Add(r);
+        }
+        return groups;
+    }
+
+    /// <summary>Turns the rows of a clean file into purchases (one per Date + Supplier ID, in file order).</summary>
+    public static List<PurchaseDraft> BuildPurchases(IReadOnlyList<TemplateRow> rows) =>
+        PurchaseGroups(rows).Select(g =>
+        {
+            var first = rows[g.Rows[0]];
+            var remarks = Cell(first, PurRemarks);
+            return new PurchaseDraft(g.Date, Cell(first, PurSupplier), remarks.Length == 0 ? null : remarks,
+                g.Rows.Select(r => new PurchaseLineDraft(
+                    Cell(rows[r], PurProduct),
+                    Cell(rows[r], PurVariant),
+                    int.Parse(Cell(rows[r], PurQuantity), CultureInfo.InvariantCulture),
+                    RateOrZero(Cell(rows[r], PurRate)) ?? 0m,
+                    Cell(rows[r], PurDiscount) is { Length: > 0 } d ? int.Parse(d, CultureInfo.InvariantCulture) : 0)).ToList());
+        }).ToList();
+
     // ---- shared helpers -------------------------------------------------------------------------------------
 
     private static string Cell(TemplateRow row, int index) => (row.Cells[index] ?? "").Trim();
@@ -392,6 +575,21 @@ public static class ImportChecker
         return drafts;
     }
 }
+
+/// <summary>A product that exists, with the Variant IDs it has (what the purchase rows are checked against).</summary>
+public sealed record KnownProduct(string ProductId, IReadOnlyList<string> VariantIds);
+
+/// <summary>A purchase already in the database (what the double-import guard looks at).</summary>
+public sealed record ExistingPurchase(string SupplierId, DateOnly Date, int VoucherId, IReadOnlyList<ExistingLine>? Lines = null);
+
+/// <summary>One item line of a purchase that is already in the database.</summary>
+public sealed record ExistingLine(string ProductId, string VariantId, int Quantity);
+
+/// <summary>One item line of a purchase to import. Rate empty in the file = 0; Discount % empty = 0.</summary>
+public sealed record PurchaseLineDraft(string ProductId, string VariantId, int Quantity, decimal Rate, int DiscountPercent);
+
+/// <summary>A purchase ready to save: all the file rows with the same Date and Supplier ID.</summary>
+public sealed record PurchaseDraft(DateOnly Date, string SupplierId, string? Remarks, IReadOnlyList<PurchaseLineDraft> Lines);
 
 /// <summary>A product ready to save, plus the Category ID it should be linked to (null = no category).</summary>
 public sealed record ProductDraft(ProductEntity Product, string? CategoryId);
