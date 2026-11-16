@@ -40,7 +40,27 @@
 
     <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
         <MudText Typo="Typo.body2"><b>Database:</b> @backupService.DatabasePath</MudText>
-        <MudText Typo="Typo.body2"><b>Backup folder:</b> @backupService.BackupFolder</MudText>
+        <div class="d-flex flex-wrap align-center gap-2">
+            <MudText Typo="Typo.body2"><b>Backup folder:</b> @backupService.BackupFolder</MudText>
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="MudBlazor.Size.Small" OnClick="ChangeFolder"
+                       Disabled="@(busy || backupService.RestartRequired)">
+                Change folder…
+            </MudButton>
+        </div>
+        @if (!backupService.BackupFolderReachable)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">
+                The backup folder cannot be reached, so no backups are being made. If it is on a USB drive, plug the drive in
+                (the app tries again every hour), or choose another folder.
+            </MudAlert>
+        }
+        else if (backupService.BackupsOnSameDiskAsData)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="my-2">
+                Backups are on the same disk as the data. If this disk fails, both are lost. For safety, choose a folder on
+                another drive, a USB drive that stays plugged in, or a OneDrive / Google Drive folder.
+            </MudAlert>
+        }
         <MudText Typo="Typo.body2">
             <b>Last backup:</b>
             @(lastBackup is null ? "none yet" : lastBackup.Value.ToString("dd MMM yyyy HH:mm"))
@@ -132,6 +152,65 @@
         catch (Exception ex)
         {
             snackbar.Add("Failed to create backup. " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+            Reload();
+        }
+    }
+
+    private async Task ChangeFolder()
+    {
+        var parameters = new DialogParameters<FolderPickerDialog>
+        {
+            { x => x.StartFolder, backupService.BackupFolder },
+            { x => x.StandardFolder, backupService.StandardBackupFolder }
+        };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<FolderPickerDialog>("Choose the backup folder", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string folder)
+        {
+            return;
+        }
+
+        var problem = backupService.CheckNewBackupFolder(folder);
+        if (problem is not null)
+        {
+            snackbar.Add(problem, Severity.Warning);
+            return;
+        }
+
+        var oldFolder = backupService.BackupFolder;
+        var copyExisting = false;
+        if (backupFiles.Count > 0)
+        {
+            var answer = await DialogService.ShowMessageBoxAsync(
+                "Backup folder",
+                $"From now on backups will go to {folder}. Also copy the {backupFiles.Count} existing backup(s) there? " +
+                $"(The originals stay in {oldFolder}.)",
+                yesText: "Copy them", noText: "Don't copy", cancelText: "Cancel");
+            if (answer is null)
+            {
+                return;
+            }
+
+            copyExisting = answer == true;
+        }
+
+        busy = true;
+        try
+        {
+            var copied = await backupService.ChangeBackupFolderAsync(folder, copyExisting);
+            snackbar.Add(copyExisting
+                ? $"Backups now go to {folder}. {copied} backup(s) copied there."
+                : $"Backups now go to {folder}. Earlier backups are still in {oldFolder}.",
+                Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            snackbar.Add("The backup folder was not changed. " + ex.Message, Severity.Error);
         }
         finally
         {

@@ -32,7 +32,108 @@ public class BackupService
     }
 
     public string BackupFolder => paths.BackupFolder;
+    public string StandardBackupFolder => paths.StandardBackupFolder;
     public string DatabasePath => paths.DatabasePath;
+
+    /// <summary>False when the backup folder is missing, e.g. its USB drive is not plugged in.</summary>
+    public bool BackupFolderReachable => Directory.Exists(paths.BackupFolder);
+
+    /// <summary>True when backups are on the same disk as the data (a disk failure would lose both).</summary>
+    public bool BackupsOnSameDiskAsData => DataPaths.SameDisk(paths.BackupFolder, paths.DataFolder);
+
+    /// <summary>
+    /// Checks a folder chosen on Settings. Returns null when it can be used, otherwise the reason in plain words.
+    /// </summary>
+    public string? CheckNewBackupFolder(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder.Trim()))
+        {
+            return "Choose a full folder path, for example E:\\Inventory Backups.";
+        }
+
+        string full;
+        try
+        {
+            full = Path.GetFullPath(folder.Trim());
+        }
+        catch (Exception)
+        {
+            return "That is not a valid folder path.";
+        }
+
+        if (DataPaths.SamePath(full, paths.BackupFolder))
+        {
+            return "That is already the backup folder.";
+        }
+
+        // A folder holding the live database would list Inventory.db as a "backup" that could be restored or deleted.
+        if (DataPaths.SamePath(full, paths.DataFolder) || DataPaths.SamePath(full, paths.LegacyFolder)
+            || File.Exists(Path.Combine(full, DataPaths.DatabaseFileName)))
+        {
+            return "That folder holds the Inventory database itself. Choose a separate folder for backups.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Switches backups to <paramref name="folder"/> (after checking it can be written to) and remembers the choice.
+    /// With <paramref name="copyExisting"/>, the current backups are copied there too (the originals stay where they are).
+    /// Returns how many backups were copied.
+    /// </summary>
+    public async Task<int> ChangeBackupFolderAsync(string folder, bool copyExisting)
+    {
+        var problem = CheckNewBackupFolder(folder);
+        if (problem is not null)
+        {
+            throw new InvalidOperationException(problem);
+        }
+
+        var target = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder.Trim()));
+
+        await gate.WaitAsync();
+        try
+        {
+            return await Task.Run(() =>
+            {
+                Directory.CreateDirectory(target);
+
+                // Prove the app can write there before switching.
+                var probe = Path.Combine(target, $".write-test-{Guid.NewGuid():N}.tmp");
+                File.WriteAllText(probe, "test");
+                File.Delete(probe);
+
+                var copied = 0;
+                if (copyExisting)
+                {
+                    foreach (var backup in GetBackupFiles())
+                    {
+                        var destination = Path.Combine(target, backup.Name);
+                        if (!File.Exists(destination))
+                        {
+                            File.Copy(backup.Path, destination);
+                            File.SetLastWriteTime(destination, backup.CreatedAt);
+                            copied++;
+                        }
+                    }
+                }
+
+                var old = paths.BackupFolder;
+                paths.SetBackupFolder(target);
+                logger.LogWarning("Backup folder changed from {Old} to {New}. {Count} backup(s) copied.", old, target, copied);
+                return copied;
+            });
+        }
+        catch (Exception ex) when (ex is not InvalidOperationException)
+        {
+            logger.LogError(ex, "Could not change the backup folder to {Folder}", target);
+            throw new Exception("The app cannot use that folder: " + ex.Message, ex);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 
     /// <summary>True after a restore. The app must be restarted before anyone keeps working.</summary>
     public bool RestartRequired { get; private set; }

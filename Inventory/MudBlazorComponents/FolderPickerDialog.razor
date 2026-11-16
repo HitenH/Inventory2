@@ -1,0 +1,240 @@
+@* Folder browser for choosing where backups go (Settings → Change folder).
+   The app runs on this computer, so it lists this computer's drives and folders directly.
+   Returns the chosen full path, or Cancel. *@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Drives</MudText>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var drive in drives)
+            {
+                <MudButton Variant="MudBlazor.Variant.Filled" Size="MudBlazor.Size.Small" Color="Color.Tertiary"
+                           OnClick="() => Open(drive.Root)" title="@drive.Root">
+                    @drive.Text
+                </MudButton>
+            }
+        </div>
+
+        <MudTextField T="string" @bind-Value="pathText" Label="Folder" Variant="MudBlazor.Variant.Outlined"
+                      Immediate="true" OnKeyDown="PathKeyDown"
+                      HelperText="You can also type or paste a folder path here and press Enter." />
+
+        @if (message is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">@message</MudAlert>
+        }
+
+        <div class="d-flex flex-wrap gap-2 mt-3 mb-1">
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="MudBlazor.Size.Small"
+                       OnClick="Up" Disabled="@(Parent(current) is null)">Up one level</MudButton>
+            <MudTextField T="string" @bind-Value="newFolderName" Immediate="true" OnKeyDown="NameKeyDown" Placeholder="New folder name" Margin="Margin.Dense"
+                          Variant="MudBlazor.Variant.Outlined" Disabled="@(current is null)" Style="max-width:220px" />
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="MudBlazor.Size.Small"
+                       OnClick="MakeFolder" Disabled="@(current is null || string.IsNullOrWhiteSpace(newFolderName))">Make new folder</MudButton>
+        </div>
+
+        <MudPaper Outlined="true" Elevation="0" Style="height:300px;overflow-y:auto" Class="mt-2">
+            @if (current is null)
+            {
+                <MudText Class="pa-3">Choose a drive above.</MudText>
+            }
+            else if (subfolders.Count == 0)
+            {
+                <MudText Class="pa-3">No folders inside. You can choose this folder, or make a new one.</MudText>
+            }
+            else
+            {
+                <MudList T="string" Dense="true">
+                    @foreach (var folder in subfolders)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Folder" OnClick="() => Open(folder)">
+                            @Path.GetFileName(folder)
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="UseStandard" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary">Use the standard folder</MudButton>
+        <MudSpacer />
+        <MudButton OnClick="Cancel" Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="MudBlazor.Variant.Filled" OnClick="Choose" Disabled="@(current is null)">
+            Use this folder
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>The folder to start in (the current backup folder).</summary>
+    [Parameter] public string? StartFolder { get; set; }
+
+    /// <summary>The folder used when nothing is chosen.</summary>
+    [Parameter] public string StandardFolder { get; set; } = "";
+
+    private record DriveChoice(string Root, string Text);
+
+    private List<DriveChoice> drives = new();
+    private List<string> subfolders = new();
+    private string? current;
+    private string? pathText;
+    private string? newFolderName;
+    private string? message;
+
+    protected override void OnInitialized()
+    {
+        drives = ListDrives();
+        // Start in the current backup folder; if it cannot be reached (USB unplugged), in the nearest folder above it that exists.
+        var start = StartFolder;
+        while (start is not null && !Directory.Exists(start))
+        {
+            start = Parent(start);
+        }
+
+        if (start is not null)
+        {
+            Open(start);
+        }
+    }
+
+    private static List<DriveChoice> ListDrives()
+    {
+        var list = new List<DriveChoice>();
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            try
+            {
+                if (!drive.IsReady)
+                {
+                    continue;
+                }
+
+                var kind = drive.DriveType switch
+                {
+                    DriveType.Removable => "USB drive",
+                    DriveType.Network => "Network",
+                    DriveType.CDRom => "CD/DVD",
+                    _ => "Disk"
+                };
+                var label = string.IsNullOrWhiteSpace(drive.VolumeLabel) ? kind : $"{kind}, {drive.VolumeLabel}";
+                var free = drive.AvailableFreeSpace / 1024d / 1024d / 1024d;
+                list.Add(new DriveChoice(drive.RootDirectory.FullName,
+                    $"{drive.Name.TrimEnd('\\')}  {label}  ({free:0.#} GB free)"));
+            }
+            catch (Exception)
+            {
+                // A drive that cannot be read is simply not listed.
+            }
+        }
+
+        return list;
+    }
+
+    private void Open(string? folder)
+    {
+        message = null;
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            return;
+        }
+
+        folder = folder.Trim().Trim('"');
+        if (!Path.IsPathFullyQualified(folder))
+        {
+            message = "Type a full path, for example E:\\Inventory Backups.";
+            return;
+        }
+
+        try
+        {
+            var full = Path.GetFullPath(folder);
+            if (!Directory.Exists(full))
+            {
+                message = "That folder does not exist. Go to the folder above it and use 'Make new folder'.";
+                pathText = current;
+                return;
+            }
+
+            var inside = new DirectoryInfo(full).EnumerateDirectories()
+                .Where(d => (d.Attributes & (FileAttributes.Hidden | FileAttributes.System)) == 0)
+                .Select(d => d.FullName)
+                .OrderBy(d => d, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            current = full;
+            pathText = full;
+            subfolders = inside;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            message = "Windows does not allow the app to open that folder. Choose another one.";
+            pathText = current;
+        }
+        catch (Exception ex)
+        {
+            message = "Cannot open that folder: " + ex.Message;
+            pathText = current;
+        }
+    }
+
+    private void PathKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Open(pathText);
+        }
+    }
+
+    private void NameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            MakeFolder();
+        }
+    }
+
+    private void Up() => Open(Parent(current));
+
+    private static string? Parent(string? folder) =>
+        string.IsNullOrEmpty(folder) ? null : Directory.GetParent(Path.TrimEndingDirectorySeparator(folder))?.FullName;
+
+    private void MakeFolder()
+    {
+        message = null;
+        var name = newFolderName?.Trim();
+        if (current is null || string.IsNullOrEmpty(name))
+        {
+            return;
+        }
+
+        if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            message = "A folder name cannot contain any of these: \\ / : * ? \" < > |";
+            return;
+        }
+
+        try
+        {
+            var created = Directory.CreateDirectory(Path.Combine(current, name)).FullName;
+            newFolderName = null;
+            Open(created);
+        }
+        catch (Exception ex)
+        {
+            message = "Could not make the folder: " + ex.Message;
+        }
+    }
+
+    private void Choose()
+    {
+        if (current is not null)
+        {
+            MudDialog.Close(DialogResult.Ok(current));
+        }
+    }
+
+    private void UseStandard() => MudDialog.Close(DialogResult.Ok(StandardFolder));
+
+    private void Cancel() => MudDialog.Cancel();
+}

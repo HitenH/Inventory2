@@ -37,7 +37,7 @@ The app is in daily use on the counter PC. The rule for all work is: improve it,
 - **Sale**: the counter screen. Pick the customer, scan product and variant barcodes (or use **Scan Mass Products** to scan many in a row), then press **Summarize**.
 - **Sales Summary**: after Summarize you set the rate and discount per line and an overall discount, then Save. The total is stored here.
 - **Reports** (tabs): Customer (By Area, Customers), Supplier, Products (Reorder Level Table, Variant Report Table, Variants List Table), Purchases Orders, Sales Orders, Sales & Purchases (totals for a chosen period such as Today, Last 7 days, This month, This financial year starting April).
-- **Settings**: Appearance (theme colour and Light/Dark), backup list with Backup, Restore and Delete buttons, and where the database and backup folder are.
+- **Settings**: Appearance (theme colour and Light/Dark), backup list with Backup, Restore and Delete buttons, where the database is, and the backup folder with a **Change folder…** button (folder browser in the app; warns when backups are on the same disk as the data or the folder cannot be reached).
 - **Change Password**: every user changes their own password.
 - **Login**: every page except Login needs a login. There are two users, Hiten and Admin. The owner knows the passwords.
 
@@ -179,6 +179,7 @@ All in `Service/BackupService.cs` and `BackupScheduler.cs`. Every backup uses SQ
 
 - **Daily schedule**: 30 seconds after the app starts, a daily backup is made if none exists for today (the counter PC is often off at night, so this is the one that usually runs); and every day at `BackupDailyAt` (default 02:00) while the app is running.
 - **Restore** (Settings, with a confirmation): checks the chosen backup is healthy, saves the live database as `before-restore_*.db`, writes the backup into the live database, then says "restart the app". The scheduler makes no backups until the restart. Only files inside the backup folder can be restored or deleted.
+- **Choosing the backup folder** (Settings → Change folder…, `MudBlazorComponents/FolderPickerDialog.razor`): lists this PC's drives (USB drives labelled) and folders, can make a new folder or take a pasted path. The app first checks it can write there; a folder holding `Inventory.db` is refused (the database would show up as a backup). It offers to copy the existing backups (the originals stay). The choice is saved in `<DataFolder>ackup-folder.txt` and wins over `BackupFolder` in `appsettings.json`, so it survives program updates; "Use the standard folder" deletes that file. If the folder cannot be reached (USB unplugged), the app still starts, Settings shows a red warning, and the daily backup is retried every hour.
 - **Before-import copy**: a purchases import makes a `before-import_*` copy first and is refused if that copy fails.
 - Backups made before the safe-backup work (1.0 build) were plain file copies in WAL mode and may be incomplete. Keep them, do not rely on them.
 
@@ -326,7 +327,7 @@ This is the next thing that will happen, and only when the owner says "ready".
 - data: `%ProgramData%\InventoryApp\Inventory.db`
 - backups: `%ProgramData%\InventoryApp\Backups`
 - logs: `%ProgramData%\InventoryApp\logs`
-- `DataFolder` = where the database lives (and logs and `initial-admin-password.txt`); `BackupFolder` = where backups go. Relative paths count from the program folder; `%VARIABLES%` are expanded. Other settings: `BackupDailyAt` (default `02:00`), `BackupKeepDaily` (30), `FileMaxSize`, `CustomerNumberMobile`, `SupplierNumberMobile`.
+- `DataFolder` = where the database lives (and logs and `initial-admin-password.txt`); `BackupFolder` = where backups go unless one is chosen on Settings (saved in `<DataFolder>ackup-folder.txt`, which wins). Relative paths count from the program folder; `%VARIABLES%` are expanded. Other settings: `BackupDailyAt` (default `02:00`), `BackupKeepDaily` (30), `FileMaxSize`, `CustomerNumberMobile`, `SupplierNumberMobile`.
 - On the first start of the new version, if the data folder has no database and the program folder has one, the database is **copied** (with SQLite's online backup, checked) to the data folder, and old `.db` backups are copied to the new backup folder. The old file is left untouched, and `Inventory.db-HAS-MOVED.txt` is written beside it.
 
 **Steps**
@@ -334,7 +335,7 @@ This is the next thing that will happen, and only when the owner says "ready".
 2. Run the smoke test (section 9) on that copy with the final build.
 3. Publish, install on the counter PC, and keep the old program folder for rollback.
 4. Steps for the owner:
-   - Choose the backup folder (a second drive, USB, NAS or a synced folder) and set `BackupFolder` in the installed `appsettings.json`.
+   - Choose the backup folder (a second drive, USB, NAS or a synced folder) on Settings → Change folder… after the first start.
    - After the first start, check the log: the database was copied to `%ProgramData%\InventoryApp\` and `Inventory.db-HAS-MOVED.txt` is beside the old file.
    - Log in as Hiten and as Admin with the old passwords (they are hashed on first start), then change both on **Change Password**. Keep passwords out of Git.
    - Old backups made before the safe-backup work may be incomplete (WAL mode). Keep them; do not rely on them.
