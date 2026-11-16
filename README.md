@@ -51,6 +51,7 @@ Import reads a CSV or Excel file, shows a preview with every problem listed, and
 
 - **1.0** - the May 2026 build, installed on the counter PC and still running there.
 - **2.0** - this version, concluded 14 Nov 2026 (git tag `v2.0`), the November 2026 improvement work: security (hashed passwords, login on every page), data safety (database rules, one-transaction saves, safe daily backups), upgrade to .NET 10, automatic tests, clean-up of duplicated code, speed, keyboard entry, a new look with themes, and Import.
+- **2.0 addition, 16 Nov 2026** - the backup folder can be chosen in the app: Settings → Change folder… (folder browser, saved in `backup-folder.txt` beside the database). Warnings for backups on the same disk as the data or an unreachable folder; a failed daily backup is retried every hour.
 - **3.0** - planned, not started: see [ROADMAP.md](ROADMAP.md). Several decisions in section 12 are scheduled there.
 
 ---
