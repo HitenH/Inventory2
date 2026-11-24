@@ -43,8 +43,8 @@ Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run
 As written in section 4 (stage 1). Batches will be listed here when 1a is finished and Hiten has answered the stage 1 questions below.
 
 **Stage 1 open questions, asked 24 Nov 2026 (section 9, Q10 and Q12):**
-- **Q10 (needed for 1b):** a first list of job titles and who is in them, so a first set of roles can be proposed.
-- **Q12 (needed for 1b/1c):** who stands in when an approver is away? May one person ever do two steps of the same entry (for example count the goods and also approve the count)?
+- **Q10 (needed for 1b): answered 24 Nov 2026** – the roles and tasks are in section 2.1.
+- **Q12 (needed for 1b/1c): answered 24 Nov 2026** – one person may hold several roles, and the Admin decides per pair of tasks whether one person may do both on the same entry (section 2.1). Still open: who stands in when an approver is away.
 
 ---
 
@@ -77,7 +77,29 @@ One app, one database, many people. Each person logs in and sees only the screen
 These make section 1 possible. They are also where the risk is.
 
 ### 2.1 Permissions
-Every screen, every action (approve, delete, correct stock) and every sensitive figure (purchase rate, sale rate) gets a switch. The Admin builds roles from these switches and gives each user a role and the locations they work in. The rules are enforced inside the program, not only by hiding buttons. A hidden rate is not sent to that person's screen at all, so it cannot be dug out.
+Every screen, every action (approve, delete, correct stock) and every sensitive figure (purchase rate, sale rate) gets a switch. The Admin builds roles from these switches and gives each user one or more roles and the locations they work in. The rules are enforced inside the program, not only by hiding buttons. A hidden rate is not sent to that person's screen at all, so it cannot be dug out.
+
+**Roles agreed 24 Nov 2026 (Hiten).** The tasks below are fixed in the program; which tasks make up a role, who holds it, and which tasks one person may not do on the same entry are all set by the Admin in the app, never hard-coded. A user may hold one role or several. For a single owner now, one person holds all of them; roles can be moved to other people as staff grow, without rebuilding anything.
+
+Tasks:
+1. **Supplier invoice entry** – enters the supplier's invoice when goods are dispatched.
+2. **Goods receiving** – counts the arriving goods, ideally without seeing the invoice quantities.
+3. **Label printing** – prints labels from the receiving count.
+4. **Purchase approval** – compares the invoice with the count and approves the purchase.
+5. **Order taking** – enters customer orders at the counter, from a salesman, or from a tablet.
+6. **Order picking** – collects the items on the pick list.
+7. **Pick verification** – scans each picked item to confirm it matches the order.
+8. **Sales invoicing** – raises the invoice and approves the sale.
+9. **Dispatch check** – scans the items again just before they leave.
+10. **Put-away** – assigns arriving stock to its shelf or location.
+11. **Stock transfer** – requests moves between locations and shelves.
+12. **Transfer approval** – approves those moves (split from 11, so one person can ask and another approve).
+13. **Physical stock check** – counts stock on the shelves and reports differences.
+14. **Stock adjustment approval** – approves damage and corrections (added; the roadmap already requires it).
+
+**Pair rule.** The Admin can block any pair of tasks from being done by the same person on the same entry (for example goods receiving and purchase approval). Default: nothing is blocked.
+
+**Cover when an approver is away (Hiten, 24 Nov 2026).** Either the Admin gives temporary access to an existing member of staff, or the entry waits in place for the approver to return. Temporary access is switched on and off by the Admin and recorded in the activity record.
 
 ### 2.2 Stock becomes a record of movements
 Today stock is simply "purchased minus sold". That cannot show "arrived", "damaged" or "which shelf". In future every change of stock is written down as a movement: what, how many, from where, to where, why, who, when. Stock in any state or place is the sum of its movements.
@@ -186,7 +208,7 @@ Today some rules still sit in the screens. **Before stage 1 adds new screens, th
   - a sale that is never summarised keeps a stored total of 0;
   - "not found" returns an empty record instead of nothing;
   - some error messages show technical text.
-- **1b. Users and permissions:** user management screen (add, disable, reset password); roles built from switches; menus and screens follow the role; purchase/sales split; rate hiding both ways; users tied to locations (one location for now).
+- **1b. Users and permissions:** user management screen (add, disable, reset password); roles built from switches, a user may hold several roles, the Admin sets the pair rule (section 2.1; default none blocked); menus and screens follow the role; purchase/sales split; rate hiding both ways; users tied to locations (one location for now).
 - **1c. Who and when:** "created by / changed by / when" on every record; "someone else changed this" protection; the Admin's activity record.
 - **1d. Shop network:** the app opens from other PCs on the shop network over a secure connection; lock-out, idle sign-out; the pinned duplicate-voucher-number decision is settled here, because numbers must now be given by the database.
 - **Done when:** a purchase user and a sales user work at the same time on two PCs, each seeing only their side, and the Admin can change what a role sees without a programmer.
@@ -332,9 +354,9 @@ Today some rules still sit in the screens. **Before stage 1 adds new screens, th
 7. **Locations (stage 3):** how many shops/godowns to start with, and are they on the same network or far apart? Do goods move between them?
 8. **Purchase Orders (stage 5):** should the supplier's invoice be matched against the Purchase Order you placed?
 9. **Returns (later):** goods returned by customers and goods sent back to suppliers are not in this plan yet. Needed?
-10. **Roles (stage 1):** a first list of job titles and the people in them, so the first set of roles can be proposed.
+10. **Roles (stage 1): answered 24 Nov 2026** – see section 2.1. The people in each role will be set in the app.
 11. **Scanning on phones (stage 4):** phone camera, or hand scanners paired with the phone/tablet?
-12. **Approvals (stage 1):** who stands in when an approver is away? May one person ever do two steps of the same entry (count and approve)?
+12. **Approvals (stage 1): answered 24 Nov 2026** – the Admin decides per pair of tasks whether one person may do both on the same entry (section 2.1). Cover when an approver is away: the Admin gives temporary access to existing staff, or the entry waits in place (section 2.1).
 13. **Differences on arrival (stage 5):** when the count is short or over the invoice, what happens in the business – pay as invoiced, pay as counted, claim from the supplier?
 
 ---
