@@ -1,0 +1,58 @@
+@using Inventory.Authentication
+@inject UserAdmin Users
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="name" Label="Name" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" AutoFocus="true" Immediate="true" />
+        <MudTextField T="string" @bind-Value="password" Label="@($"Password (at least {PasswordService.MinimumLength} characters)")" InputType="InputType.Password"
+                      Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="mt-2" Immediate="true" />
+        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Roles</MudText>
+        <RolePicker Picks="picks" />
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" id="user-dialog-error">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton id="user-save" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="busy" data-shortcut="save">Add user</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<RoleChoice> Roles { get; set; } = new();
+
+    private string? name;
+    private string? password;
+    private string? error;
+    private bool busy;
+    private List<RolePicker.RolePick> picks = new();
+
+    protected override void OnInitialized()
+        => picks = Roles.Select(r => new RolePicker.RolePick { Role = r }).ToList();
+
+    private async Task Save()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var result = await Users.AddAsync(name, password, picks.Where(p => p.Chosen).Select(p => p.ToAssignment()).ToList());
+            if (result.Ok)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

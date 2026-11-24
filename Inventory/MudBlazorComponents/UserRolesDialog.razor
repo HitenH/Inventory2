@@ -1,0 +1,62 @@
+@inject UserAdmin Users
+
+<MudDialog>
+    <DialogContent>
+        <RolePicker Picks="picks" />
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" id="user-dialog-error">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton id="user-save" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="busy" data-shortcut="save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int UserId { get; set; }
+    [Parameter] public List<RoleChoice> Roles { get; set; } = new();
+    [Parameter] public IReadOnlyList<UserRoleView> Current { get; set; } = Array.Empty<UserRoleView>();
+
+    private string? error;
+    private bool busy;
+    private List<RolePicker.RolePick> picks = new();
+
+    protected override void OnInitialized()
+        => picks = Roles.Select(r =>
+        {
+            var held = Current.FirstOrDefault(c => c.RoleId == r.Id);
+            return new RolePicker.RolePick
+            {
+                Role = r,
+                Chosen = held is not null,
+                Until = held?.ExpiresAt is { } end ? DateOnly.FromDateTime(end) : null
+            };
+        }).ToList();
+
+    private async Task Save()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var result = await Users.SetRolesAsync(UserId, picks.Where(p => p.Chosen).Select(p => p.ToAssignment()).ToList());
+            if (result.Ok)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

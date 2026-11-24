@@ -39,6 +39,12 @@
     </MudPaper>
 
     <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Users</MudText>
+        <MudButton id="settings-users" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="/users">Users</MudButton>
+        <MudText Typo="Typo.caption" Class="ml-2">Add users, give them roles, reset passwords.</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
         <MudText Typo="Typo.body2"><b>Database:</b> @backupService.DatabasePath</MudText>
         <div class="d-flex flex-wrap align-center gap-2">
             <MudText Typo="Typo.body2"><b>Backup folder:</b> @backupService.BackupFolder</MudText>

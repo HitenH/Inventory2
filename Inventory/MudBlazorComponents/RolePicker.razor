@@ -1,0 +1,29 @@
+@* One tick box per role, with an optional "until" date (blank = always). Used by the Add user and Roles pop-ups. *@
+<div class="role-picker">
+    @foreach (var pick in Picks)
+    {
+        <div class="d-flex flex-row align-center gap-3 mb-1">
+            <MudCheckBox T="bool" @bind-Value="pick.Chosen" Label="@pick.Role.Name" Style="min-width:160px;" />
+            @if (pick.Chosen)
+            {
+                <span>until</span>
+                <DateBox TValue="DateOnly?" @bind-Value="pick.Until" Style="width:180px;" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<RolePick> Picks { get; set; } = new();
+
+    public class RolePick
+    {
+        public RoleChoice Role { get; init; } = default!;
+        public bool Chosen { get; set; }
+        public DateOnly? Until { get; set; }
+
+        /// <summary>The chosen date is good through the end of that day.</summary>
+        public RoleAssignment ToAssignment()
+            => new(Role.Id, Until?.ToDateTime(new TimeOnly(23, 59, 59)));
+    }
+}

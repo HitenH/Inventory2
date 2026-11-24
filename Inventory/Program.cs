@@ -27,6 +27,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<PasswordService>();
+builder.Services.AddScoped<UserAdmin>();
 
 // Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
 // Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).
