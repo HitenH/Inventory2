@@ -45,7 +45,27 @@ namespace Inventory.Shared
             }
         }
 
+        // A second Enter pressed while the first line is still being saved must not save it again.
+        private bool addingLine;
+
         public async Task AddLine()
+        {
+            if (addingLine)
+            {
+                return;
+            }
+            addingLine = true;
+            try
+            {
+                await AddLineOnce();
+            }
+            finally
+            {
+                addingLine = false;
+            }
+        }
+
+        private async Task AddLineOnce()
         {
             if (Lines.HeaderId == Guid.Empty || line is null || product is null)
             {

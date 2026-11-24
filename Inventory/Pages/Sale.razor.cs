@@ -236,7 +236,27 @@ public partial class Sale
 
     /// <param name="fromScan">True for the barcode scan boxes (cursor returns there for the next scan);
     /// false for the line form below them (cursor returns to its Product ID search box).</param>
+    private bool addingVariant;
+
     public async Task AddVariant(bool fromScan = false)
+    {
+        // A second Enter pressed while the first line is still being looked up must not add it again.
+        if (addingVariant)
+        {
+            return;
+        }
+        addingVariant = true;
+        try
+        {
+            await AddVariantOnce(fromScan);
+        }
+        finally
+        {
+            addingVariant = false;
+        }
+    }
+
+    private async Task AddVariantOnce(bool fromScan)
     {
         // Stage 1a: one rule book for every line (Service/LineRules.cs). A sale line has no rate or
         // discount yet - those are set on Sales Summary - so the quantity is what there is to check.
