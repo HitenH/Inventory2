@@ -72,6 +72,10 @@ try {
   await b.click('.btn-order-add'); await sleep(2000);
   expect('a negative quantity line is saved', await lineCount(), before + 1);
 
+  // A saved line clears the form and puts the cursor back in Product, so pick the product again.
+  await pickFromList('LAZER');
+  await chooseFirstVariant();
+
   // A discount over 100 is the one that costs money: it makes the line amount negative.
   await typeInBox('Qty', 2);
   await typeInBox('Rate', 100);

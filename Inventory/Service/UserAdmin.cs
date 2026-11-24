@@ -54,21 +54,7 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         }
 
         await using var db = await factory.CreateDbContextAsync();
-        var name = userName.Trim().ToLower();
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Name.ToLower() == name);
-        if (user is null)
-        {
-            return false;
-        }
-
-        var roles = await (from ur in db.UserRoles.AsNoTracking()
-                           join r in db.Roles.AsNoTracking() on ur.RoleId equals r.Id
-                           where ur.UserId == user.Id
-                           select new { ur.ExpiresAt, r.IsAdmin, r.Id }).ToListAsync();
-        var keys = await db.RolePermissions.AsNoTracking().ToListAsync();
-        var grants = roles.Select(r => new RoleGrant(r.IsAdmin,
-            keys.Where(k => k.RoleId == r.Id).Select(k => k.Permission).ToHashSet(), r.ExpiresAt));
-        return Access.Has(user.IsDisabled, grants, Permissions.AdminUsers, DateTime.Now);
+        return (await AccessService.LoadAsync(db, userName, DateTime.Now)).Allows(Permissions.AdminUsers);
     }
 
     public async Task<UserAdminResult> AddAsync(string? name, string? password, IReadOnlyList<RoleAssignment> roles)

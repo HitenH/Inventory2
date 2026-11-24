@@ -62,6 +62,14 @@ namespace Inventory.Pages
                     return;
                 }
 
+                // Checked only after a correct password, so the message does not reveal which names exist.
+                if (user!.IsDisabled)
+                {
+                    errorMessage = "This user is disabled. Ask the Admin.";
+                    loginModel.Password = "";
+                    return;
+                }
+
                 if (rehashNeeded)
                 {
                     user!.Password = Passwords.Hash(user, loginModel.Password);

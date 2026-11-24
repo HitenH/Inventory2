@@ -1,10 +1,14 @@
 ﻿@using Inventory.Authentication
+@using Inventory.Service
 @implements IDisposable
 
 @inject NavigationManager NavigationManager
 
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home"><NavText Text="Dashboard" Url="/" /></MudNavLink>
+    @if (May(Permissions.ScreenDashboard))
+    {
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home"><NavText Text="Dashboard" Url="/" /></MudNavLink>
+    }
 
     <AuthorizeView>
         <Authorized>
@@ -12,22 +16,60 @@
                 @context.User.Identity?.Name
             </MudNavLink>
             <MudNavLink Icon="@Icons.Material.Filled.Key" Href="/changepassword">Change Password</MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Report" Href="/reports"><NavText Text="Reports" Url="/reports" /></MudNavLink>
-            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings"><NavText Text="Settings" Url="/settings" /></MudNavLink>
+            @if (May(Permissions.ScreenReports))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.Report" Href="/reports"><NavText Text="Reports" Url="/reports" /></MudNavLink>
+            }
+            @if (May(Permissions.AdminSettings))
+            {
+                <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings"><NavText Text="Settings" Url="/settings" /></MudNavLink>
+            }
+            else if (May(Permissions.AdminUsers))
+            {
+                @* Someone who manages users but not settings still needs a way in (Users and Roles are reached from Settings). *@
+                <MudNavLink Href="/users" Icon="@Icons.Material.Filled.ManageAccounts">Users and roles</MudNavLink>
+            }
             <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">Logout</MudNavLink>
 
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Masters</MudText>
-            <MudNavLink Icon="@Icons.Material.Filled.People" Href="/customers"><NavText Text="Customers" Url="/customers" /></MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Support" Href="/suppliers"><NavText Text="Suppliers" Url="/suppliers" /></MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products"><NavText Text="Products" Url="/products" /></MudNavLink>
+            @if (May(Permissions.ScreenCustomers) || May(Permissions.ScreenSuppliers) || May(Permissions.ScreenProducts))
+            {
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Masters</MudText>
+            }
+            @if (May(Permissions.ScreenCustomers))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.People" Href="/customers"><NavText Text="Customers" Url="/customers" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenSuppliers))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.Support" Href="/suppliers"><NavText Text="Suppliers" Url="/suppliers" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenProducts))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products"><NavText Text="Products" Url="/products" /></MudNavLink>
+            }
 
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
-            <MudNavLink Icon="@Icons.Material.Filled.BorderTop" Href="/purchaseorder"><NavText Text="Purchase Orders" Url="/purchaseorder" /></MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Shop" Href="/purchases"><NavText Text="Purchases" Url="/purchases" /></MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.Money" Href="/salesorders"><NavText Text="Sale Orders" Url="/salesorders" /></MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales"><NavText Text="Sales" Url="/sales" /></MudNavLink>
+            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales))
+            {
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
+            }
+            @if (May(Permissions.ScreenPurchaseOrders))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.BorderTop" Href="/purchaseorder"><NavText Text="Purchase Orders" Url="/purchaseorder" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenPurchases))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.Shop" Href="/purchases"><NavText Text="Purchases" Url="/purchases" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenSalesOrders))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.Money" Href="/salesorders"><NavText Text="Sale Orders" Url="/salesorders" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenSales))
+            {
+                <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales"><NavText Text="Sales" Url="/sales" /></MudNavLink>
+            }
         </Authorized>
         <NotAuthorized>
             <MudNavLink Icon="@Icons.Material.Filled.Login" Href="/login">Login</MudNavLink>
@@ -37,16 +79,25 @@
 
 @code {
     [Inject] private AuthenticationStateProvider authStateProvider { get; set; } = default!;
+    [Inject] private AccessService AccessService { get; set; } = default!;
 
-    protected override void OnInitialized()
+    // Batch 1b-4: the menu shows only what the person's roles allow, read again on every screen change.
+    private UserAccess access = UserAccess.Nobody;
+
+    // Before anyone logs in the Dashboard link shows as before (the login page takes over from there).
+    private bool May(string permission) => !access.SignedIn || access.Allows(permission);
+
+    protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += OnLocationChanged;
+        access = await AccessService.CurrentAsync();
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(async () =>
     {
+        access = await AccessService.CurrentAsync();
         StateHasChanged();
-    }
+    });
 
     public void Dispose()
     {

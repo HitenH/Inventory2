@@ -54,7 +54,26 @@ else
                 @* Batch 9: an error on one screen shows this box (and goes to the log file) instead of stopping the whole app. *@
                 <ErrorBoundary @ref="_errorBoundary">
                     <ChildContent>
-                        @Body
+                        @* Batch 1b-4: every screen passes this one check (Service/Permissions.ForPath), so a typed-in address is caught too. *@
+                        @if (_access is null)
+                        {
+                        }
+                        else if (!_access.SignedIn || _access.AllowsPath(CurrentPath))
+                        {
+                            @Body
+                        }
+                        else if (_access.IsDisabled)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="my-4" id="access-disabled">This user is disabled. Ask the Admin.</MudAlert>
+                        }
+                        else if (Inventory.Service.Permissions.ForPath(CurrentPath) == Inventory.Service.Permissions.ScreenDashboard)
+                        {
+                            <MudText Typo="Typo.h5" Class="my-4" id="access-welcome">Welcome, @_access.Name. Choose a screen from the menu.</MudText>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="my-4" id="access-denied">You do not have access to this screen.</MudAlert>
+                        }
                     </ChildContent>
                     <ErrorContent>
                         <MudAlert Severity="Severity.Error" Class="my-4">
@@ -128,8 +147,17 @@ else
 
     private ErrorBoundary? _errorBoundary;
 
-    // Opening another screen clears the error box.
-    protected override void OnParametersSet() => _errorBoundary?.Recover();
+    [Inject] private Inventory.Service.AccessService AccessService { get; set; } = default!;
+    private Inventory.Service.UserAccess? _access;
+    private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    // Opening another screen clears the error box and reads the person's roles again,
+    // so a role changed by the Admin applies from the next screen they open.
+    protected override async Task OnParametersSetAsync()
+    {
+        _errorBoundary?.Recover();
+        _access = await AccessService.CurrentAsync();
+    }
 
     private void RecoverFromError() => _errorBoundary?.Recover();
 

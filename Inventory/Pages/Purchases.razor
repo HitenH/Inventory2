@@ -15,7 +15,7 @@ else
                     <MudButton Class="ma-1" Href="/purchase" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary">
                         Add New Purchases
                     </MudButton>
-                    <MudButton Class="ma-1" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="OpenImportAsync">Import</MudButton>
+                    <Inventory.MudBlazorComponents.ImportButton OnClick="OpenImportAsync" />
                     <Search SearchItemCallBack="SearchItem" />
                 </MudToolBar>
             </MudPaper>

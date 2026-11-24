@@ -31,6 +31,44 @@ public static class Permissions
     public const string AdminGroup = "Admin";
     public const string RatesGroup = "Rates";
 
+    /// <summary>Required by a screen nobody has listed below: only an Admin role can open it.</summary>
+    public const string Unlisted = "unlisted";
+
+    // First part of the address -> the switch needed to open it (batch 1b-4).
+    private static readonly Dictionary<string, string> ScreenOf = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [""] = ScreenDashboard,
+        ["customers"] = ScreenCustomers, ["customer"] = ScreenCustomers,
+        ["suppliers"] = ScreenSuppliers, ["supplier"] = ScreenSuppliers,
+        ["products"] = ScreenProducts, ["product"] = ScreenProducts, ["category"] = ScreenProducts,
+        ["purchaseorder"] = ScreenPurchaseOrders,
+        ["purchases"] = ScreenPurchases, ["purchase"] = ScreenPurchases,
+        ["salesorders"] = ScreenSalesOrders, ["salesorder"] = ScreenSalesOrders,
+        ["sales"] = ScreenSales, ["sale"] = ScreenSales, ["salessummary"] = ScreenSales,
+        ["reports"] = ScreenReports,
+        ["settings"] = AdminSettings,
+        ["users"] = AdminUsers, ["roles"] = AdminUsers,
+    };
+
+    /// <summary>Screens every logged-in user may open, whatever their roles.</summary>
+    private static readonly HashSet<string> OpenToEveryone = new(StringComparer.OrdinalIgnoreCase) { "login", "changepassword" };
+
+    /// <summary>
+    /// The switch needed to open an address such as "/sale/123?x=1", or null when everyone may open it.
+    /// An address missing from the list needs <see cref="Unlisted"/>, so a new screen is closed until it is listed here.
+    /// </summary>
+    public static string? ForPath(string path)
+    {
+        var clean = path.Split('?', '#')[0].Trim('/');
+        var first = clean.Split('/')[0];
+        if (OpenToEveryone.Contains(first))
+        {
+            return null;
+        }
+
+        return ScreenOf.TryGetValue(first, out var key) ? key : Unlisted;
+    }
+
     public static IReadOnlyList<PermissionInfo> All { get; } = new List<PermissionInfo>
     {
         new(ScreenDashboard, "Open the Dashboard", ScreensGroup),

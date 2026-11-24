@@ -1,0 +1,17 @@
+@* The Import button of the list screens; shown only to people whose roles include "Import data" (batch 1b-4). *@
+@inject AccessService AccessService
+
+@if (allowed)
+{
+    <MudButton Class="ma-1" Size="Size" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="OnClick">Import</MudButton>
+}
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public MudBlazor.Size Size { get; set; } = MudBlazor.Size.Medium;
+
+    private bool allowed;
+
+    protected override async Task OnInitializedAsync()
+        => allowed = (await AccessService.CurrentAsync()).Allows(Permissions.AdminImport);
+}
