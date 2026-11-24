@@ -11,6 +11,10 @@ namespace Inventory.Domain
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<UserEntity> Users { get; set; }
+        public DbSet<RoleEntity> Roles { get; set; }
+        public DbSet<RolePermissionEntity> RolePermissions { get; set; }
+        public DbSet<UserRoleEntity> UserRoles { get; set; }
+        public DbSet<PairRuleEntity> PairRules { get; set; }
         public DbSet<CustomerEntity> Customers { get; set; }
         public DbSet<SupplierEntity> Suppliers { get; set; }
         public DbSet<ProductEntity> Products { get; set; }
@@ -98,6 +102,37 @@ namespace Inventory.Domain
 
             modelBuilder.Entity<VariantEntity>()
                         .HasIndex(v => new { v.ProductEntityId, v.VariantId })
+                        .IsUnique();
+
+            // Role names are unique ignoring case; the migration recreates this index with COLLATE NOCASE (same pattern as the IDs above).
+            modelBuilder.Entity<RoleEntity>()
+                        .HasIndex(r => r.Name)
+                        .IsUnique();
+
+            modelBuilder.Entity<RolePermissionEntity>()
+                        .HasKey(p => new { p.RoleId, p.Permission });
+
+            modelBuilder.Entity<RoleEntity>()
+                        .HasMany(r => r.Permissions)
+                        .WithOne()
+                        .HasForeignKey(p => p.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserRoleEntity>()
+                        .HasKey(u => new { u.UserId, u.RoleId });
+
+            modelBuilder.Entity<UserRoleEntity>()
+                        .HasOne<UserEntity>().WithMany()
+                        .HasForeignKey(u => u.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserRoleEntity>()
+                        .HasOne<RoleEntity>().WithMany()
+                        .HasForeignKey(u => u.RoleId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PairRuleEntity>()
+                        .HasIndex(p => new { p.PermissionA, p.PermissionB })
                         .IsUnique();
 
             modelBuilder.Entity<PurchaseOrderEntity>()

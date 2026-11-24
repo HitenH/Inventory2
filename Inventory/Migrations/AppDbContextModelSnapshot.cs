@@ -15,7 +15,7 @@ namespace Inventory.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
             modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
                 {
@@ -116,6 +116,28 @@ namespace Inventory.Migrations
                     b.ToTable("Mobiles");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.PairRuleEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PermissionA")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PermissionB")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionA", "PermissionB")
+                        .IsUnique();
+
+                    b.ToTable("PairRules");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -156,8 +178,9 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("Discount")
-                        .HasColumnType("TEXT");
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Discount");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("TEXT");
@@ -231,8 +254,9 @@ namespace Inventory.Migrations
                     b.Property<decimal?>("AmountAfterDiscount")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Discount")
-                        .HasColumnType("INTEGER");
+                    b.Property<int?>("DiscountPercent")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Discount");
 
                     b.Property<Guid>("ProductEntityId")
                         .HasColumnType("TEXT");
@@ -263,6 +287,40 @@ namespace Inventory.Migrations
                     b.ToTable("PurchaseVariant");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.RoleEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.RolePermissionEntity", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Permission")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RoleId", "Permission");
+
+                    b.ToTable("RolePermissions");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.SalesEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -275,8 +333,9 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Discount")
-                        .HasColumnType("TEXT");
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Discount");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("TEXT");
@@ -309,8 +368,9 @@ namespace Inventory.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("Discount")
-                        .HasColumnType("TEXT");
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Discount");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("TEXT");
@@ -343,8 +403,9 @@ namespace Inventory.Migrations
                     b.Property<decimal?>("AmountAfterDiscount")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Discount")
-                        .HasColumnType("INTEGER");
+                    b.Property<int?>("DiscountPercent")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Discount");
 
                     b.Property<Guid>("ProductEntityId")
                         .HasColumnType("TEXT");
@@ -390,8 +451,9 @@ namespace Inventory.Migrations
                     b.Property<decimal>("AmountAfterDiscount")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Discount")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("DiscountPercent")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Discount");
 
                     b.Property<Guid>("ProductEntityId")
                         .HasColumnType("TEXT");
@@ -490,6 +552,9 @@ namespace Inventory.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -501,6 +566,24 @@ namespace Inventory.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.UserRoleEntity", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
@@ -603,6 +686,15 @@ namespace Inventory.Migrations
                     b.Navigation("Purchase");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.RolePermissionEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.RoleEntity", null)
+                        .WithMany("Permissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.SalesEntity", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.CustomerEntity", "Customer")
@@ -690,6 +782,21 @@ namespace Inventory.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.UserRoleEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.RoleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.VariantEntity", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
@@ -728,6 +835,11 @@ namespace Inventory.Migrations
             modelBuilder.Entity("Inventory.Domain.Entities.PurchaseEntity", b =>
                 {
                     b.Navigation("PurchaseVariants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.RoleEntity", b =>
+                {
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SalesEntity", b =>

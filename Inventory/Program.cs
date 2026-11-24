@@ -121,6 +121,8 @@ using (var scope = app.Services.CreateScope())
         scope.ServiceProvider.GetRequiredService<PasswordService>(),
         startupLogger,
         dataPaths.DataFolder);
+
+    await RoleBootstrap.RunAsync(db, startupLogger);
 }
 
 // Configure the HTTP request pipeline.

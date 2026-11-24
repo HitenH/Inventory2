@@ -130,6 +130,7 @@ These exist once on purpose. Fix or change them in one place; never copy them in
 - **Import column list**: `Service/Import/ImportTemplates.cs`. The reader, the checks, the sample files and the screen all read it.
 - **Line maths**: `Service/LineAmounts.cs` (amount = rate x quantity; amount after discount; all rounded to 2 decimals).
 - **Line rules**: `Service/LineRules.cs` (version 3.0, batch 1a-1) - the one place that says what a valid voucher line is: a real product and variant, quantity a whole number that is not zero (negative allowed for now, for returns and damage), discount 0 to 100. Purchase, Sale, Sales Order and Bulk Entry all ask it. A new screen or device must ask it too, never carry its own copy.
+- **Access rules**: `Service/Access.cs` with the switch list in `Service/Permissions.cs` (version 3.0, batch 1b-1) - "may this person do this?" and the pair rule. Roles, user-role links (optional end date for temporary cover) and pair rules are in the database; `Authentication/RoleBootstrap.cs` gives every existing user an Admin role the first time. Not enforced on screens yet (batch 1b-4).
 - **Bulk Entry rules**: `Service/BulkEntry.cs` (kinds PurchaseOrder, Purchase, SalesOrder).
 - **Paging and report periods**: `Service/ListPaging.cs` (100 rows per page by default; 10/20/50/100/200 offered), `Service/ReportPeriods.cs`.
 

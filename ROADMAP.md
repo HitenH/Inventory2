@@ -40,7 +40,15 @@ Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run
 
 ## Stage 1b, 1c, 1d
 
-As written in section 4 (stage 1). Batches will be listed here when 1a is finished and Hiten has answered the stage 1 questions below.
+As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
+
+| Batch | What | Visible? |
+|---|---|---|
+| 1b-1 **built 24 Nov 2026** | Data and rule book only: permission switches for today's screens (`Service/Permissions.cs`), roles, user-role links with an optional end date (temporary cover), pair rules, `Users.IsDisabled`; "may this person do this?" in `Service/Access.cs`. At start-up every existing user gets an Admin role (every switch, including future ones), so nobody loses access. Migration `UsersAndRoles` only adds tables; tried on a copy of real data (users, products, purchases and sales unchanged). 326 tests pass, 329 warnings. | No |
+| 1b-2 | Users screen: add, disable, reset password, assign roles (mock-up first). The last active Admin cannot be disabled or lose the Admin role. | Yes |
+| 1b-3 | Roles screen: switches per role, pair rule, temporary access (mock-up first). | Yes |
+| 1b-4 | Menus and screens follow the role; checked in the rule book. Disabled users cannot log in. | Yes |
+| 1b-5 | Purchase / sales split and rate hiding both ways. | Yes |
 
 **Stage 1 open questions, asked 24 Nov 2026 (section 9, Q10 and Q12):**
 - **Q10 (needed for 1b): answered 24 Nov 2026** – the roles and tasks are in section 2.1.
