@@ -26,6 +26,9 @@ public partial class Purchase
 
 {
 
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
+
     [Parameter] public string PurchaseId { get; set; }
 
     [Inject] private IPurchaseRepository PurchaseRepository { get; set; }

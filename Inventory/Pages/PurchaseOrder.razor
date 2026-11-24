@@ -71,10 +71,13 @@
             <label for="duedate" class="form-label">Due Date</label>
             <DateBox TValue="DateOnly?" @bind-Value="purchaseOrderModel.DueDate" />
         </div>
+        @if (Access?.SeesPurchaseRates == true)
+        {
         <div class="m-1 col-2 text-center">
             <label for="productrate" class="form-label">Rate</label>
             <InputNumber @bind-Value="purchaseOrderModel.ProductRate" id="productrate" class="form-control text-center" />
         </div>
+        }
         <div class="m-1 col-1 text-center">
             <label for="productid" class="form-label">Order Status</label>
             <InputSelect @bind-Value="purchaseOrderModel.OrderStatus" class="form-control text-center" id="orderstatus">
@@ -172,11 +175,14 @@
                     Due Date
                 </MudTableSortLabel>
             </MudTh>
+            @if (Access?.SeesPurchaseRates == true)
+            {
             <MudTh Style="width:64px">
                 <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.ProductRate)">
                     Rate
                 </MudTableSortLabel>
             </MudTh>
+            }
             <MudTh Style="width:96px">
                 <MudTableSortLabel SortBy="new Func<PurchaseOrderModel, object>(x => x.OrderStatus)">
                     Order Status
@@ -197,7 +203,10 @@
             <MudTd>@context.VariantId</MudTd>
             <MudTd>@context.Quantity</MudTd>
             <MudTd>@context.DueDate</MudTd>
+            @if (Access?.SeesPurchaseRates == true)
+            {
             <MudTd>@context.ProductRate</MudTd>
+            }
             <MudTd>@context.OrderStatus</MudTd>
             <MudTd>@context.Remarks</MudTd>
         </RowTemplate>
@@ -225,9 +234,12 @@
 
                 <DateBox TValue="DateOnly?" @bind-Value="context.DueDate" />
             </MudTd>
+            @if (Access?.SeesPurchaseRates == true)
+            {
             <MudTd>
                 <MudNumericField @bind-Value="context.ProductRate" />
             </MudTd>
+            }
             <MudTd>
                 <MudSelect @bind-Value="context.OrderStatus"
                            Variant="MudBlazor.Variant.Filled"

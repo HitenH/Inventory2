@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Inventory.Authentication;
 
 /// <summary>
-/// Runs at startup right after <see cref="UserBootstrap"/>. If no roles exist yet, creates the "Admin" role
+/// Runs at startup right after <see cref="UserBootstrap"/>. If no Admin role exists yet, creates the "Admin" role
 /// (every permission, now and in future) and gives it permanently to every existing user, so everyone keeps
-/// exactly the access they have today. If any role exists it does nothing, so it is safe to run on every start.
+/// exactly the access they have today. If an Admin role exists it does nothing, so it is safe to run on every start.
 /// </summary>
 public static class RoleBootstrap
 {
@@ -15,7 +15,9 @@ public static class RoleBootstrap
 
     public static async Task RunAsync(AppDbContext db, ILogger logger)
     {
-        if (await db.Roles.AnyAsync())
+        // Checks for an Admin role, not for any role: the StarterRoles upgrade adds roles before this runs on an
+        // upgraded database, and nobody must be left without Admin.
+        if (await db.Roles.AnyAsync(r => r.IsAdmin))
         {
             return;
         }

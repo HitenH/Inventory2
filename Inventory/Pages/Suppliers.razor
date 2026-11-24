@@ -45,18 +45,24 @@ else
                         Area
                     </MudTableSortLabel>
                 </MudTh>
+                @if (Access?.SeesPurchaseRates == true)
+                {
                 <MudTh Class="num" Style="width:130px">
                     <MudTableSortLabel SortBy="new Func<SuppliersDisplayModel, object>(f => f.TotalAmount)">
                         Amount
                     </MudTableSortLabel>
                 </MudTh>
+                }
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.SupplierId</MudTd>
                 <MudTd>@context.Name</MudTd>
                 <MudTd>@(context.Mobiles?.Count > 0 ? context.Mobiles.First().Phone : "-")</MudTd>
                 <MudTd>@context.Area</MudTd>
+                @if (Access?.SeesPurchaseRates == true)
+                {
                 <MudTd Class="num">@context.TotalAmount</MudTd>
+                }
             </RowTemplate>
             <NoRecordsContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Not Found!</MudText>

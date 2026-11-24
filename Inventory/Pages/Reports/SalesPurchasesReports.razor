@@ -10,6 +10,8 @@
     </MudSelect>
     <MudText Typo="Typo.body2">@periodText</MudText>
     <MudGrid Spacing="10">
+        @if (Access?.SeesSaleRates == true)
+        {
         <MudItem xs="6">
 
             <MudCard>
@@ -20,6 +22,9 @@
             </MudCard>
 
         </MudItem>
+        }
+        @if (Access?.SeesPurchaseRates == true)
+        {
         <MudItem xs="6">
             <MudCard>
                 <MudCardContent>
@@ -28,10 +33,17 @@
                 </MudCardContent>
             </MudCard>
         </MudItem>
+        }
+        @if (Access?.SeesSaleRates != true && Access?.SeesPurchaseRates != true)
+        {
+            <MudItem xs="12"><MudText id="report-no-rates">You do not have access to sales or purchase figures.</MudText></MudItem>
+        }
     </MudGrid>
 </MudStack>
 
 @code {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
 
     [Inject] private ISaleRepository SaleRepository { get; set; }
     [Inject] private IPurchaseRepository PurchaseRepository { get; set; }

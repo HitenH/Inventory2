@@ -1,5 +1,6 @@
 using Inventory.Authentication;
 using Inventory.Domain.Entities;
+using Inventory.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -65,20 +66,77 @@ public class RoleBootstrapTests
     }
 
     [Fact]
-    public async Task Existing_roles_are_left_untouched()
+    public async Task An_existing_Admin_role_means_nothing_changes()
     {
         using var test = new TestDatabase();
         await using (var db = test.Open())
         {
             db.Users.Add(new UserEntity { Name = "One", Password = "x" });
+            db.Roles.Add(new RoleEntity { Name = "Boss", IsAdmin = true });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            await RoleBootstrap.RunAsync(db, NullLogger.Instance);
+        }
+
+        await using var check = test.Open();
+        Assert.Equal("Boss", (await check.Roles.SingleAsync(TestContext.Current.CancellationToken)).Name);
+        Assert.Empty(await check.UserRoles.ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task The_upgrade_adds_three_starter_roles_with_all_their_switches()
+    {
+        using var test = new TestDatabase(keepStarterRoles: true);
+        await using var db = test.Open();
+        var roles = await db.Roles.Include(r => r.Permissions).OrderBy(r => r.Name).ToListAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(new[] { "Purchase", "Reports", "Sales" }, roles.Select(r => r.Name));
+        Assert.All(roles, r => Assert.False(r.IsAdmin));
+        var purchase = roles[0].Permissions.Select(p => p.Permission).Order().ToList();
+        Assert.Equal(new[] { Permissions.RatesPurchaseSee, Permissions.ScreenDashboard, Permissions.ScreenProducts,
+            Permissions.ScreenPurchaseOrders, Permissions.ScreenPurchases, Permissions.ScreenSuppliers }.Order(), purchase);
+        Assert.DoesNotContain(Permissions.RatesSaleSee, purchase);
+        var sales = roles[2].Permissions.Select(p => p.Permission).ToList();
+        Assert.Contains(Permissions.RatesSaleSee, sales);
+        Assert.DoesNotContain(Permissions.RatesPurchaseSee, sales);
+        Assert.Equal(2, roles[1].Permissions.Count);
+        Assert.All(roles.SelectMany(r => r.Permissions), p => Assert.Contains(p.Permission, Permissions.All.Select(a => a.Key)));
+    }
+
+    [Fact]
+    public async Task After_the_upgrade_existing_users_still_become_Admin()
+    {
+        // The real order on the counter PC: upgrades (starter roles) first, then the start-up step.
+        using var test = new TestDatabase(keepStarterRoles: true);
+        await using (var db = test.Open())
+        {
+            db.Users.Add(new UserEntity { Name = "Hiten", Password = "x" });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            await RoleBootstrap.RunAsync(db, NullLogger.Instance);
+        }
+
+        await using var check = test.Open();
+        var grant = await check.UserRoles.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.True((await check.Roles.SingleAsync(r => r.Id == grant.RoleId, TestContext.Current.CancellationToken)).IsAdmin);
+    }
+
+    [Fact]
+    public async Task Starter_roles_without_an_Admin_role_still_make_everyone_Admin()
+    {
+        // The counter PC upgrading from version 2.0: the StarterRoles upgrade has added Purchase, Sales and Reports,
+        // but no Admin role exists yet. Everyone must still end up as Admin, or nobody could open anything.
+        using var test = new TestDatabase();
+        await using (var db = test.Open())
+        {
+            db.Users.Add(new UserEntity { Name = "Hiten", Password = "x" });
             db.Roles.Add(new RoleEntity { Name = "Counter" });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
             await RoleBootstrap.RunAsync(db, NullLogger.Instance);
         }
 
         await using var check = test.Open();
-        Assert.Equal("Counter", (await check.Roles.SingleAsync(TestContext.Current.CancellationToken)).Name);
-        Assert.Empty(await check.UserRoles.ToListAsync(TestContext.Current.CancellationToken));
+        var admin = await check.Roles.SingleAsync(r => r.IsAdmin, TestContext.Current.CancellationToken);
+        var grant = await check.UserRoles.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(admin.Id, grant.RoleId);
     }
 
     [Fact]

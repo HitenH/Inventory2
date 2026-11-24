@@ -14,6 +14,9 @@ namespace Inventory.Pages;
 [Authorize]
 public partial class SalesSummary
 {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+    private bool ShowRates => Access?.SeesSaleRates == true;
+
     [Parameter] public string SalesId { get; set; }
     [Inject] public ISaleRepository SaleRepository { get; set; }
     [Inject] private NavigationManager navManager { get; set; }

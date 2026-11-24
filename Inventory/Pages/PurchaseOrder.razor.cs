@@ -12,6 +12,8 @@ namespace Inventory.Pages;
 [Authorize]
 public partial class PurchaseOrder
 {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
     [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }
     [Inject] private ILogger<PurchaseOrder> Logger { get; set; }
     [Inject] IDialogService DialogService { get; set; }
@@ -185,7 +187,7 @@ public partial class PurchaseOrder
                                            || n.ProductName.ToLower().Contains(search)
                                            || n.Quantity.ToString().Contains(search)
                                            || n.OrderStatus.ToString().ToLower().Contains(search)
-                                           || n.ProductRate.ToString().Contains(search)).ToList();
+                                           || (Access?.SeesPurchaseRates == true && n.ProductRate.ToString().Contains(search))).ToList();
     }
 
     public async Task DeleteSelectedOrders()

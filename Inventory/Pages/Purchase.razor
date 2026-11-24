@@ -87,6 +87,8 @@
                 <label for="totalquantity" class="form-label">Total Quantity</label>
                 <InputNumber @bind-Value="PurchaseTotalData.TotalQuantity" id="totalquantity" class="form-control text-center" disabled />
             </div>
+            @if (Access?.SeesPurchaseRates == true)
+            {
             <div class="field totals-field">
                 <label for="discount" class="form-label">Discount</label>
                 <MudNumericField T="decimal" Value="PurchaseTotalData.DiscountAmount" ValueChanged="(value)=>DiscountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
@@ -95,6 +97,7 @@
                 <label for="totalamount" class="form-label">Total Amount</label>
                 <InputNumber @bind-Value="PurchaseTotalData.TotalAmount" id="totalamount" class="form-control text-center" disabled />
             </div>
+            }
         </div>
     </EditForm>
 }

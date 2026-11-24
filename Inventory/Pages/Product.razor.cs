@@ -13,6 +13,8 @@ namespace Inventory.Pages
 {
     public partial class Product
     {
+        [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
         [Parameter] public string ProductId { get; set; }
 
         [Inject] private IProductRepository ProductRepository { get; set; }

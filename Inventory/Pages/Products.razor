@@ -31,9 +31,12 @@ else
                 <MudTh>
                     <MudTableSortLabel InitialDirection="MudBlazor.SortDirection.Ascending" SortBy="new Func<ProductModel, object>(x => x.Name)">Name</MudTableSortLabel>
                 </MudTh>
+                @if (Access?.SeesSaleRates == true)
+                {
                 <MudTh Class="num" Style="width:120px">
                     <MudTableSortLabel SortBy="new Func<ProductModel, object>(x => x.Rate)">Rate</MudTableSortLabel>
                 </MudTh>
+                }
                 <MudTh Style="width:110px">
                     Actions
                 </MudTh>
@@ -41,7 +44,10 @@ else
             <RowTemplate>
                 <MudTd>@context.ProductId</MudTd>
                 <MudTd>@context.Name</MudTd>
+                @if (Access?.SeesSaleRates == true)
+                {
                 <MudTd Class="num">@context.Rate</MudTd>
+                }
                 <MudTd>
                     <MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Secondary" Href="@($"product/{context.Id}")">Info</MudButton>
                 </MudTd>

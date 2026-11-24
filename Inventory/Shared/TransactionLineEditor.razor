@@ -72,6 +72,8 @@
             <label for="quantity" class="form-label" title="Quantity">Qty</label>
             <MudNumericField T="int?" Value="line.Quantity" ValueChanged="(value)=>QuantityChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
         </div>
+        @if (ShowRates)
+        {
         <div class="field field-num">
             <label for="rate" class="form-label">Rate</label>
             <MudNumericField T="decimal?" Value="line.ProductRate" ValueChanged="(value)=>RateChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
@@ -88,6 +90,7 @@
             <label for="amountafterdiscount" class="form-label">Amount</label>
             <InputNumber @bind-Value="line.AmountAfterDiscount" id="amountafterdiscount" class="form-control text-center" disabled />
         </div>
+        }
         @if (Lines.HasRemarks)
         {
             <div class="field field-rem">
@@ -110,10 +113,13 @@
             <th class="c-name column-item" @onclick="@(()=>SortItem("ProductName"))">Product Name</th>
             <th class="c-vid column-item" @onclick="@(()=>SortItem("VariantId"))">Variant ID</th>
             <th class="c-qty num column-item" @onclick="@(()=>SortItem("Quantity"))">Qty</th>
+            @if (ShowRates)
+            {
             <th class="c-rate num column-item" @onclick="@(()=>SortItem("ProductRate"))">Rate</th>
             <th class="c-amt num column-item" @onclick="@(()=>SortItem("Amount"))">Amount</th>
             <th class="c-disc num column-item" @onclick="@(()=>SortItem("DiscountPercent"))">Disc %</th>
             <th class="c-amt2 num column-item" @onclick="@(()=>SortItem("AmmountAfterDiscount"))">Amount</th>
+            }
             @if (Lines.HasRemarks)
             {
                 <th class="c-rem column-item" @onclick="@(()=>SortItem("Remarks"))">Remarks</th>
@@ -141,10 +147,13 @@
                     <td class="c-name" title="@variant.ProductName">@variant.ProductName</td>
                     <td class="c-vid">@variant.ProductVariantId</td>
                     <td class="c-qty num">@variant.Quantity</td>
+                    @if (ShowRates)
+                    {
                     <td class="c-rate num">@variant.ProductRate</td>
                     <td class="c-amt num">@variant.Amount</td>
                     <td class="c-disc num">@variant.DiscountPercent</td>
                     <td class="c-amt2 num">@variant.AmountAfterDiscount</td>
+                    }
                     @if (Lines.HasRemarks)
                     {
                         <td class="c-rem">@variant.Remarks</td>

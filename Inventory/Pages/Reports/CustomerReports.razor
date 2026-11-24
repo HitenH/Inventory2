@@ -18,7 +18,10 @@
                 <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
                 <PropertyColumn Property="x => x.Mobiles != null && x.Mobiles.Count > 0 ? x.Mobiles[0].Phone : string.Empty" Title="Mobiles" />
                 <PropertyColumn Property="x => x.Area" Title="Area" />
+                @if (Access?.SeesSaleRates == true)
+                {
                 <PropertyColumn Property="x => totalAmount[x.Id]" Title="Amount" />
+                }
             </Columns>
             <PagerContent>
                 <MudDataGridPager T="CustomerModel" />
@@ -29,6 +32,8 @@
 
 
 @code {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
 
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] private ISaleRepository SaleRepository { get; set; }

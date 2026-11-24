@@ -11,6 +11,8 @@
 else
 {
 <CascadingValue Value="_themeState" IsFixed="true">
+@* Batch 1b-5: every screen and pop-up can ask what this person may see (rates are left out of the page when not allowed). *@
+<CascadingValue Value="_access">
     <MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
     @* "app-dark" switches the Bootstrap tables, text boxes, panels and icons to dark colours (site.css);
        the pop-ups are inside it so their contents follow too. *@
@@ -87,6 +89,7 @@ else
         </MudMainContent>
     </MudLayout>
     </div>
+</CascadingValue>
 </CascadingValue>
 }
 

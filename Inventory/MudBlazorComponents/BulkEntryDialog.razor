@@ -57,11 +57,14 @@
                     <label class="form-label" for="bulk-quantity">Quantity</label>
                     <input id="bulk-quantity" type="number" class="form-control text-center" style="width:100px;" @bind="quantity" autocomplete="off" />
                 </div>
+                @if (ShowRates)
+                {
                 <div>
                     <label class="form-label" for="bulk-rate">Rate</label>
                     <input id="bulk-rate" type="number" step="any" class="form-control text-center" style="width:110px;" @bind="rate" autocomplete="off" />
                 </div>
-                @if (HasDiscount)
+                }
+                @if (ShowDiscount)
                 {
                     <div>
                         <label class="form-label" for="bulk-discount">Discount (%)</label>
@@ -90,8 +93,11 @@
                         <th class="c-name">Product Name</th>
                         <th class="c-vid">Variant</th>
                         <th class="c-qty num">Qty</th>
-                        <th class="c-rate num">Rate</th>
-                        @if (HasDiscount)
+                        @if (ShowRates)
+                        {
+                            <th class="c-rate num">Rate</th>
+                        }
+                        @if (ShowDiscount)
                         {
                             <th class="c-disc num">Disc %</th>
                             <th class="c-amt2 num">Amount</th>
@@ -117,8 +123,11 @@
                             <td class="c-name" title="@row.ProductName">@row.ProductName</td>
                             <td class="c-vid">@row.VariantId</td>
                             <td class="c-qty num">@row.Quantity</td>
-                            <td class="c-rate num">@row.Rate</td>
-                            @if (HasDiscount)
+                            @if (ShowRates)
+                            {
+                                <td class="c-rate num">@row.Rate</td>
+                            }
+                            @if (ShowDiscount)
                             {
                                 <td class="c-disc num">@row.DiscountPercent</td>
                                 <td class="c-amt2 num">@row.AmountAfterDiscount</td>
@@ -161,6 +170,10 @@
     [Inject] private ILogger<BulkEntryDialog> Logger { get; set; } = default!;
 
     private bool HasDiscount => Kind != BulkEntryKind.PurchaseOrder;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    // Batch 1b-5: rate, discount and amount are left out for someone without this kind of rates.
+    private bool ShowRates => Access?.SeesRates(Kind) == true;
+    private bool ShowDiscount => HasDiscount && ShowRates;
     private bool HasRemarks => Kind != BulkEntryKind.Purchase;
 
     private BulkOrderHeader header = new();

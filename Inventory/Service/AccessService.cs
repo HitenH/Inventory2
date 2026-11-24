@@ -17,6 +17,12 @@ public sealed class UserAccess(string? name, bool signedIn, bool found, bool isD
 
     public bool Allows(string permission) => Found && Access.Has(IsDisabled, grants, permission, now);
 
+    public bool SeesPurchaseRates => Allows(Permissions.RatesPurchaseSee);
+    public bool SeesSaleRates => Allows(Permissions.RatesSaleSee);
+
+    /// <summary>Rates and amounts of this kind of voucher: purchases and purchase orders are purchase rates, sales orders sale rates.</summary>
+    public bool SeesRates(BulkEntryKind kind) => kind == BulkEntryKind.SalesOrder ? SeesSaleRates : SeesPurchaseRates;
+
     /// <summary>True when the address may be opened (null = open to everyone who is logged in).</summary>
     public bool AllowsPath(string path) => Permissions.ForPath(path) is not { } needed || Allows(needed);
 }

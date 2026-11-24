@@ -18,7 +18,10 @@
                     <MudStack Spacing="2">
                         <MudTextField Label="Name" @bind-Value="productModel.Name" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="product-name" />
                         <MudTextField Label="Product ID" @bind-Value="productModel.ProductId" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
-                        <MudTextField Label="Rate" @bind-Value="productModel.Rate" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
+                        @if (Access?.SeesSaleRates == true)
+                        {
+                            <MudTextField Label="Rate" @bind-Value="productModel.Rate" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
+                        }
                         <MudTextField Label="Description" @bind-Value="productModel.Description" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" />
                         <MudSelect T="Guid" Label="Category" @bind-Value="categoryId" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense">
                             <MudSelectItem Value="@(Guid.Empty)">-</MudSelectItem>

@@ -12,6 +12,8 @@ namespace Inventory.Pages;
 [Authorize]
 public partial class SalesOrder
 {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
     [Parameter] public string SalesOrderId { get; set; }
     [Inject] private ISalesOrderRepository SalesOrderRepository { get; set; }
     [Inject] private ICustomerRepository CustomerRepository { get; set; }

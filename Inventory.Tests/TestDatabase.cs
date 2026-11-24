@@ -15,7 +15,8 @@ public sealed class TestDatabase : IDisposable
     public string DatabasePath { get; }
     public IDbContextFactory<AppDbContext> Factory { get; }
 
-    public TestDatabase()
+    /// <param name="keepStarterRoles">The StarterRoles upgrade adds Purchase, Sales and Reports; most tests want an empty roles table.</param>
+    public TestDatabase(bool keepStarterRoles = false)
     {
         Folder = Path.Combine(Path.GetTempPath(), "InventoryTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Folder);
@@ -26,6 +27,11 @@ public sealed class TestDatabase : IDisposable
         Factory = new ContextFactory(options);
         using var context = Factory.CreateDbContext();
         context.Database.Migrate();
+        if (!keepStarterRoles)
+        {
+            context.Roles.RemoveRange(context.Roles.ToList());
+            context.SaveChanges();
+        }
     }
 
     public AppDbContext Open() => Factory.CreateDbContext();

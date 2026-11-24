@@ -16,6 +16,9 @@ namespace Inventory.Shared
     {
         [Parameter, EditorRequired] public TransactionLines Lines { get; set; } = default!;
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
+        [CascadingParameter] private UserAccess? Access { get; set; }
+
+        private bool ShowRates => Access?.SeesRates(Lines.BulkKind) == true;
         [Inject] private IProductRepository ProductRepository { get; set; } = default!;
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
         [Inject] private ILogger<TransactionLineEditor> Logger { get; set; } = default!;

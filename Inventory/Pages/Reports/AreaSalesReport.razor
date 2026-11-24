@@ -9,7 +9,10 @@
     <Columns>
         <SelectColumn T="SalesByAreaModel" />
         <PropertyColumn Property="x => x.Area" Title="Area" SortBy="@_sortBy" />
+        @if (Access?.SeesSaleRates == true)
+        {
         <PropertyColumn Property="x => x.TotalSales" Title="Total Sales"/>
+        }
     </Columns>
     <PagerContent>
         <MudDataGridPager T="SalesByAreaModel" />
@@ -17,6 +20,8 @@
 </MudDataGrid>
 
 @code {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
 
     [Inject] private ICustomerRepository CustomerRepository { get; set; }
     [Inject] private ILogger<AreaSalesReport> Logger { get; set; } = default!;

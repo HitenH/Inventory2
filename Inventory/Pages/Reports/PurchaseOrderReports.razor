@@ -17,7 +17,10 @@
         <PropertyColumn Property="x => x.VariantId" Title="Variant ID" />
         <PropertyColumn Property="x => x.Quantity" Title="Quantity" />
         <PropertyColumn Property="x => x.DueDate" Title="Due Date" />
+        @if (Access?.SeesPurchaseRates == true)
+        {
         <PropertyColumn Property="x => x.ProductRate" Title="Rate" />
+        }
         <PropertyColumn Property="x => x.OrderStatus" Title="Order Status" />
         <PropertyColumn Property="x => x.Remarks" Title="Remarks" />
     </Columns>
@@ -27,6 +30,8 @@
 </MudDataGrid>
 
 @code {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
 
     [Inject] private IPurchaseOrderRepository PurchaseOrderRepository { get; set; }
     [Inject] private ILogger<PurchaseOrder> Logger { get; set; }
@@ -85,7 +90,7 @@
                                            || n.ProductName.ToLower().Contains(search)
                                            || n.Quantity.ToString().Contains(search)
                                            || n.OrderStatus.ToString().ToLower().Contains(search)
-                                           || n.ProductRate.ToString().Contains(search)).ToList();
+                                           || (Access?.SeesPurchaseRates == true && n.ProductRate.ToString().Contains(search))).ToList();
     }
 
     private Func<PurchaseOrderModel, object> _sortBy => x =>
@@ -103,7 +108,7 @@
                                       || x.ProductName.ToLower().Contains(_searchString)
                                       || x.Quantity.ToString().Contains(_searchString)
                                       || x.OrderStatus.ToString().ToLower().Contains(_searchString)
-                                      || x.ProductRate.ToString().Contains(_searchString))
+                                      || (Access?.SeesPurchaseRates == true && x.ProductRate.ToString().Contains(_searchString)))
         {
             return true;
         }

@@ -9,6 +9,8 @@ namespace Inventory.Pages
 {
     public partial class Customers
     {
+        [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
         [Inject] private ICustomerRepository CustomerRepository { get; set; }
         [Inject] private ILogger<Customers> Logger { get; set; }
         [Inject] private NavigationManager navManager { get; set; }

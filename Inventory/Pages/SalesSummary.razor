@@ -34,10 +34,13 @@
                         <th class="column-item c-pid">Product ID</th>
                         <th class="column-item c-name">Product Name</th>
                         <th class="column-item c-qty num">Qty</th>
+                        @if (ShowRates)
+                        {
                         <th class="column-item c-in num">Rate</th>
                         <th class="column-item c-in num">Amount</th>
                         <th class="column-item c-disc num">Disc %</th>
                         <th class="column-item c-in num" title="Amount After Discount">After Disc.</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -50,6 +53,8 @@
                                 <td class="c-pid">@item.ProductId</td>
                                 <td class="c-name" title="@item.ProductName">@item.ProductName</td>
                                 <td class="c-qty num">@item.Quantity</td>
+                                @if (ShowRates)
+                                {
                                 <td class="c-in num">
                                     <input @key="(item.ProductEntityId, inputVersion, 1)" type="number" class="text-center" value="@item.ProductRate" @onchange="(e)=>RateChanged(e,item.ProductEntityId)" />
                                 </td>
@@ -62,6 +67,7 @@
                                 <td class="c-in num">
                                     <input type="number" class="text-center" @bind-value="item.AmountAfterDiscount" disabled />
                                 </td>
+                                }
                             </tr>
                         }
                     }
@@ -86,10 +92,13 @@
 
     <MudPaper Class="p-1 position-fixed bottom-0 mb-5 d-flex flex-column align-items-center" Style="left:35%!important" Elevation="3">
         <div class="d-flex justify-content-around">
-            <div class="d-flex col-3">
+            @* Alone (rates hidden) it takes its own width; one third of this small bar cut its label off. *@
+            <div class="@(ShowRates ? "d-flex col-3" : "d-flex align-items-end")">
                 <label for="totalquantity" class="form-label d-flex align-items-end me-2">Total Quantity</label>
-                <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="form-control text-center d-flex w-50" disabled />
+                <InputNumber @bind-Value="SalesTotalData.TotalQuantity" id="totalquantity" class="@(ShowRates ? "form-control text-center d-flex w-50" : "form-control text-center d-flex")" style="@(ShowRates ? null : "width:150px;")" disabled />
             </div>
+            @if (ShowRates)
+            {
             <div class="text-center d-flex col-3">
                 <label for="discount" class="form-label d-flex align-items-end me-2">Discount</label>
                 <MudNumericField T="decimal" Value="SalesTotalData.DiscountAmount" ValueChanged="(value)=>DiscountForTotalAmountChanged(value)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Class="box-center" />
@@ -98,6 +107,7 @@
                 <label for="totalamount" class="form-label d-flex align-items-end me-2">Total Amount</label>
                 <InputNumber @bind-Value="SalesTotalData.TotalAmount" id="totalamount" class="form-control text-center w-50" disabled />
             </div>
+            }
         </div>
 
         <div class="text-center d-flex mt-1 justify-content-center">

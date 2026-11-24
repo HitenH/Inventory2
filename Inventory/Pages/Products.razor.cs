@@ -9,6 +9,8 @@ namespace Inventory.Pages;
 
 public partial class Products
 {
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
+
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private ILogger<Products> Logger { get; set; }
     [Inject] private IDialogService DialogService { get; set; } = default!;
@@ -70,7 +72,7 @@ public partial class Products
         productsAfterSearch = products.Where(n =>
             (n.ProductId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
             || (n.Name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
-            || (n.Rate.HasValue && n.Rate.Value.ToString("G").Contains(search, StringComparison.OrdinalIgnoreCase)))
+            || (Access?.SeesSaleRates == true && n.Rate.HasValue && n.Rate.Value.ToString("G").Contains(search, StringComparison.OrdinalIgnoreCase)))
             .ToList();
     }
 }
