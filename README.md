@@ -129,6 +129,7 @@ These exist once on purpose. Fix or change them in one place; never copy them in
 - **Shortcuts list**: `Service/Shortcuts.cs`, used by the key handler, the menu hints and the Dashboard table, so they cannot disagree.
 - **Import column list**: `Service/Import/ImportTemplates.cs`. The reader, the checks, the sample files and the screen all read it.
 - **Line maths**: `Service/LineAmounts.cs` (amount = rate x quantity; amount after discount; all rounded to 2 decimals).
+- **Line rules**: `Service/LineRules.cs` (version 3.0, batch 1a-1) - the one place that says what a valid voucher line is: a real product and variant, quantity a whole number of 1 or more, discount 0 to 100. Purchase, Sale, Sales Order and Bulk Entry all ask it. A new screen or device must ask it too, never carry its own copy.
 - **Bulk Entry rules**: `Service/BulkEntry.cs` (kinds PurchaseOrder, Purchase, SalesOrder).
 - **Paging and report periods**: `Service/ListPaging.cs` (100 rows per page by default; 10/20/50/100/200 offered), `Service/ReportPeriods.cs`.
 
@@ -261,7 +262,7 @@ These are easy to break. All handling is in `wwwroot/shortcuts.js`, with the scr
 - classes: `enter-moves-on`, `lookup-box`, anything starting `focus-` (for example `focus-line-product`), `sale-line-variant`, `box-center`;
 - `@ref`, `@onclick`, `@bind`, `OnValidSubmit` and any C# in a `.razor.cs` file.
 
-**Always check** a keyboard or cursor change with `tools/ui-check` on a test copy before the owner sees it (section 8). Blind attempts failed four times. The scripts: `check-keyboard-only`, `check-entry-flows`, `check-popups-and-sale`, `check-save-and-focus`, `check-bulk-entry`, `check-alt-b`, `check-import`, and `check-look` (every screen at 1366 and 1920 px, light and dark; fails on sideways scroll, a wrapped product name, or a control sticking out). `check-save-and-focus` prints "saved row visible in list = false": the list is paged and the test record sorts onto a later page; the row is saved, this is not a failure.
+**Always check** a keyboard or cursor change with `tools/ui-check` on a test copy before the owner sees it (section 8). Blind attempts failed four times. The scripts: `check-keyboard-only`, `check-entry-flows`, `check-popups-and-sale`, `check-save-and-focus`, `check-bulk-entry`, `check-alt-b`, `check-import`, `check-line-rules` (the line rules of version 3.0 batch 1a-1: a refused quantity or discount on every screen that makes a line), and `check-look` (every screen at 1366 and 1920 px, light and dark; fails on sideways scroll, a wrapped product name, or a control sticking out). `check-save-and-focus` prints "saved row visible in list = false": the list is paged and the test record sorts onto a later page; the row is saved, this is not a failure.
 
 ---
 
@@ -288,7 +289,7 @@ These are easy to break. All handling is in `wwwroot/shortcuts.js`, with the scr
 - **Port clash.** An old 2023 .NET 7 copy at `C:\Users\Hiten\source\repos\Inventory` also uses port 5259. If login "fails" or the page looks wrong, check `netstat` first.
 - **Test copy for browser checks (port 5299).** Copy the DB to a scratch folder, set Admin's password to `UiTest#2026` (the app hashes plain text at start-up), start a second copy on port 5299 with `ASPNETCORE_ENVIRONMENT=Development`, `DataFolder` and `BackupFolder` pointing at the scratch folder, then run scripts in `tools/ui-check` with `SCRATCH` set (steps and commands are in `tools/ui-check/README.md`; needs Node 22+ and Chrome). Stop that copy by its process id. These scripts create purchases, sales, orders and a test customer: never aim them at real data. They use names from the May data (supplier BALAJI / CAPITAL, customer AAI MATHA, product LAZER/CUTTING).
 - **Migrations.** Stop the app, build, then `dotnet ef migrations add <Name> --no-build`, then check that `Up()` is not empty. Check `dotnet ef migrations has-pending-model-changes` after a rename. If the migration rebuilds Products, Customers, Suppliers or Variants, re-create the NOCASE unique indexes. An older build cannot log in on a database a newer build has migrated.
-- **Tests.** 289 automatic tests (xUnit v3; all passing when version 2.0 was concluded). Each test builds a fresh database with the real migrations (`Inventory.Tests/TestDatabase.cs`). The build baseline is 0 errors and 333 warnings.
+- **Tests.** 294 automatic tests (xUnit v3; all passing, re-checked 24 Nov 2026 at the start of version 3.0 stage 1). Each test builds a fresh database with the real migrations (`Inventory.Tests/TestDatabase.cs`). The build baseline is 0 errors and 333 warnings.
 - **Baseline of the daily PC.** The 1.0 build installed on the counter PC still runs; nothing from 2.0 is installed until section 10.
 
 ---
@@ -376,7 +377,8 @@ Known, accepted, nothing due. Do not "fix" any of these without asking the owner
 - Some error messages show technical text: delete errors on Supplier and Customer ("GetSupplier error: ...", "Show Full") and some raw database error text in snackbars.
 - A failed save or delete on the Purchase Orders and Sales Orders lists is only written to the log; nothing is shown on screen.
 - Sale: Summarize with no items silently goes back to the list. Scan Mass Products silently drops codes that are not found and its "Scanned:" message is always blank.
-- Line forms (Sale, Purchase, Sales Order) accept quantity 0 or negative and a discount over 100 (Bulk Entry refuses them). Clearing the product box keeps the old product behind it. A very fast double Enter could add a line twice.
+- Clearing the product box keeps the old product behind it. A very fast double Enter could add a line twice (version 3.0 batch 1a-2).
+- *Fixed 24 Nov 2026 (version 3.0, batch 1a-1):* the line forms on Sale, Purchase and Sales Order accepted quantity 0 or negative, and **no screen checked the discount at all** - not the line forms and not Bulk Entry, contrary to what this document said before. A discount over 100 makes the line amount negative and quietly lowers the voucher, supplier and report totals. All of these are now refused in one place (`Service/LineRules.cs`), including a quantity typed straight into the Sale lines table.
 - A voucher with a discount but no lines is saved with a total of minus the discount, which lowers supplier and report totals.
 - A sale that is never summarised reduces stock but its stored total stays 0, so customer and period totals miss it.
 - Report searches (Customers, Sales Orders, Purchase Orders, reorder level, variants) are case-sensitive. The Customers report search matches almost everything because it searches the Mobiles list text. Sorting by Image or Stock In Hand on the product page does not work, and Image may error.

@@ -10,6 +10,39 @@
 
 ---
 
+# CURRENT STAGE: Stage 1 – Foundation (opened 24 Nov 2026)
+
+Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten opened stage 1 on 24 Nov 2026 and asked that it be done **in the order written**: 1a, then 1b, 1c, 1d.
+
+**Baseline taken before any stage 1 code was written (24 Nov 2026):** build 0 errors / 333 warnings; 294 tests pass. Any later failure is stage 1's, not inherited.
+
+**Rollback:** the live counter PC runs the code tagged `live-16-nov-2026`. Before any stage 1 build is installed there, a copy of the live database is taken first (README section 10, "Going back"). Hiten confirmed on 24 Nov 2026 that he also keeps his own database backups in two physical places away from the running drive.
+
+## Stage 1a – Move the rules into one place (nothing new on screen)
+
+**Why this comes first.** Today the rule "a line must have a sensible quantity" is written inside the Purchase and Sale screens, and Bulk Entry holds its own separate copy of it. With one PC that is survivable. Hiten has said the shop will later run "a lot of devices" – checker's tablet, picker's phone, salesman's screen. Every one of those would otherwise need its own copy of every rule, and the first copy anybody forgets writes bad stock into the data from a device nobody is watching. So the rules move into one place before any new screen is added.
+
+| Batch | What | Changes what the operator sees? |
+|---|---|---|
+| 1a-1 **DONE 24 Nov 2026** | One rule book for voucher lines (`Service/LineRules.cs`): a real product and variant, quantity a whole number of 1 or more, discount 0–100. Sale, Purchase, Sales Order and Bulk Entry all ask it. Also closed two holes found while building it: **no screen checked the discount at all** (not even Bulk Entry, contrary to the README), and the quantity box in the Sale lines table wrote any number straight onto an already-added line. | **Yes** – quantity 0, a negative quantity or a discount outside 0–100 are now refused with a plain message. Hiten agreed 24 Nov 2026. |
+| 1a-2 | Double-Enter guard: a very fast second Enter can add the same line twice today. The second one is ignored. | No (removes an accident) |
+| 1a-3 | Totals that cannot go odd: a voucher with a discount but no lines currently stores a **negative** total, which quietly lowers supplier and report figures; a sale that is never summarised keeps a stored total of 0 although its stock has gone. | No |
+| 1a-4 | Honest "not found" and plain messages: four repositories return a blank record instead of saying "not found" (which is how a blank screen appears instead of a message), and technical error text like "GetSupplier error: …" is replaced with ordinary words. | Only better messages |
+
+Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run on a test copy before Hiten sees it. Keyboard and scanner behaviour does not change.
+
+**1a-1 as built and checked (24 Nov 2026):** 312 tests pass (18 new for the rule book); build 0 errors and **330** warnings, three fewer than the 333 baseline because the null guards added here also cleared three old ones. A new browser check, `tools/ui-check/check-line-rules.mjs`, proves in Chrome that each bad value is refused on Purchase, Sales Order, Sale, the Sale lines table and Bulk Entry, and that a good line still saves. All eight existing `tools/ui-check` scripts still pass, `check-look` included. Not yet tested by Hiten.
+
+## Stage 1b, 1c, 1d
+
+As written in section 4 (stage 1). Batches will be listed here when 1a is finished and Hiten has answered the stage 1 questions below.
+
+**Stage 1 open questions, asked 24 Nov 2026 (section 9, Q10 and Q12):**
+- **Q10 (needed for 1b):** a first list of job titles and who is in them, so a first set of roles can be proposed.
+- **Q12 (needed for 1b/1c):** who stands in when an approver is away? May one person ever do two steps of the same entry (for example count the goods and also approve the count)?
+
+---
+
 ## 1. Where we are going
 
 One app, one database, many people. Each person logs in and sees only the screens their job needs, on a PC, a tablet or a phone.

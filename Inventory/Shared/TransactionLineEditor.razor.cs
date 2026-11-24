@@ -47,9 +47,22 @@ namespace Inventory.Shared
 
         public async Task AddLine()
         {
-            if (Lines.HeaderId == Guid.Empty || product?.Id == Guid.Empty || line?.VariantEntityId is null)
+            if (Lines.HeaderId == Guid.Empty || line is null || product is null)
             {
                 Snackbar.Add("Select a product and variant before adding a line.", Severity.Warning);
+                return;
+            }
+
+            // Stage 1a: one rule book decides what a valid line is (see Service/LineRules.cs).
+            // Before this, the screen only checked that a product and variant were picked, so a
+            // quantity of 0 or a discount over 100 could be saved - and a discount over 100 makes
+            // the line amount negative, which lowers the voucher, supplier and report totals.
+            // The cursor is left where it is on purpose, so the operator can correct the number
+            // without hunting for the box again.
+            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent);
+            if (wrong != null)
+            {
+                Snackbar.Add(wrong, Severity.Warning);
                 return;
             }
 
@@ -108,9 +121,17 @@ namespace Inventory.Shared
 
         public async Task EditLine()
         {
-            if (line?.Id == Guid.Empty || product?.Id == Guid.Empty || line.VariantEntityId is null)
+            if (line is null || product is null || line.Id == Guid.Empty)
             {
                 Snackbar.Add("Select a product and variant before saving.", Severity.Warning);
+                return;
+            }
+
+            // Stage 1a: an edited line must pass the same rules as a new one (Service/LineRules.cs).
+            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent);
+            if (wrong != null)
+            {
+                Snackbar.Add(wrong, Severity.Warning);
                 return;
             }
 

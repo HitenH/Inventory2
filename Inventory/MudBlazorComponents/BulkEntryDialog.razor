@@ -246,11 +246,17 @@
     private async Task AddRowAsync()
     {
         Guid? variantId = Guid.TryParse(variantKey, out var v) ? v : null;
-        var missing = BulkEntry.WhatIsMissing(product.Id, variantId, quantity);
+        // Stage 1a: the discount is checked too now (0-100). Its box accepted any number before,
+        // and a discount over 100 makes the line amount negative.
+        var missing = BulkEntry.WhatIsMissing(product.Id, variantId, quantity, HasDiscount ? discount : null);
         if (missing != null)
         {
             Snackbar.Add(missing, Severity.Warning);
-            await JS.FocusBoxAsync(product.Id == Guid.Empty ? ".focus-bulk-product" : variantId is null ? "#bulk-variant" : "#bulk-quantity");
+            var box = product.Id == Guid.Empty ? ".focus-bulk-product"
+                : variantId is null ? "#bulk-variant"
+                : quantity is null or < LineRules.MinimumQuantity ? "#bulk-quantity"
+                : "#bulk-discount";   // stage 1a: the discount is the only thing left it can be
+            await JS.FocusBoxAsync(box);
             return;
         }
         var variant = product.Variants.First(x => x.Id == variantId);

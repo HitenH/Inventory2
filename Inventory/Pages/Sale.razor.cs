@@ -207,10 +207,46 @@ public partial class Sale
         }
     }
 
+    /// <summary>
+    /// Stage 1a: the quantity box in the lines table wrote straight onto the line, so an
+    /// already-added sale line could be set to 0 or a negative quantity - stock would then move
+    /// the wrong way when the sale was summarised. The rule book decides (Service/LineRules.cs);
+    /// a refused value is put back as it was so the table never shows a quantity that cannot be saved.
+    /// </summary>
+    /// <summary>
+    /// Goes up each time a typed quantity is refused, so the box is drawn again and shows the
+    /// quantity the line really has (see the @key on it in Sale.razor).
+    /// </summary>
+    private int qtyBoxRedraws;
+
+    public void LineQuantityEdited(SalesVariantModel item, string? typed)
+    {
+        var parsed = int.TryParse(typed, out var value) ? value : (int?)null;
+
+        if (parsed is null || parsed < LineRules.MinimumQuantity)
+        {
+            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            qtyBoxRedraws++;     // puts the box back to the quantity the line still has
+            StateHasChanged();
+            return;
+        }
+
+        item.Quantity = parsed;
+    }
+
     /// <param name="fromScan">True for the barcode scan boxes (cursor returns there for the next scan);
     /// false for the line form below them (cursor returns to its Product ID search box).</param>
     public async Task AddVariant(bool fromScan = false)
     {
+        // Stage 1a: one rule book for every line (Service/LineRules.cs). A sale line has no rate or
+        // discount yet - those are set on Sales Summary - so the quantity is what there is to check.
+        // The scan boxes always send 1, so this only ever stops a bad quantity typed into the line form.
+        if (salesVariantModel.Quantity is null || salesVariantModel.Quantity < LineRules.MinimumQuantity)
+        {
+            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            return;
+        }
+
         if (salesVariantModel.ProductId != null && (salesVariantModel.VariantId != null || salesVariantModel.VariantEntityId != null))
         {
             var productDb = await ProductRepository.GetByProductId(salesVariantModel.ProductId);
@@ -271,6 +307,14 @@ public partial class Sale
 
     public async Task EditVariant()
     {
+        // Stage 1a: an edited line must pass the same quantity rule as a new one.
+        if (salesVariantModel != null
+            && (salesVariantModel.Quantity is null || salesVariantModel.Quantity < LineRules.MinimumQuantity))
+        {
+            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            return;
+        }
+
         if (salesVariantModel != null)
         {
             int indexElement = -1;

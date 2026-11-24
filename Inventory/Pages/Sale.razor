@@ -180,7 +180,14 @@
                                 <td class="c-name" title="@item.ProductName">@item.ProductName</td>
                                 <td class="c-vname" title="@item.VariantName">@item.VariantName</td>
                                 <td class="c-qty num">
-                                    <input type="number" class="qty-box" @bind-value="item.Quantity" />
+                                    @* Stage 1a: typing straight into this box used to set any quantity,
+                                       including 0 or a negative, on an already-added sale line.
+                                       The @key carries a counter that goes up whenever a value is refused:
+                                       without it the box would keep showing the refused number, because the
+                                       line's real quantity never changed and so Blazor would not redraw the box. *@
+                                    <input type="number" class="qty-box" @key="(item.InnerId, qtyBoxRedraws)"
+                                           value="@item.Quantity"
+                                           @onchange="(e) => LineQuantityEdited(item, e.Value?.ToString())" />
                                 </td>
                             </tr>
                         }

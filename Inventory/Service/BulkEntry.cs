@@ -53,17 +53,15 @@ public sealed class BulkEntryResult
 /// <summary>The rules and conversions of the Bulk Entry pop-up (kept out of the screen so they can be tested).</summary>
 public static class BulkEntry
 {
-    /// <summary>Why a row cannot be added yet, or null when it is complete.</summary>
-    public static string? WhatIsMissing(Guid productEntityId, Guid? variantEntityId, int? quantity)
-    {
-        if (productEntityId == Guid.Empty)
-            return "Please select a product.";
-        if (variantEntityId is null || variantEntityId == Guid.Empty)
-            return "Please select a variant.";
-        if (quantity is null or <= 0)
-            return "Please enter a quantity.";
-        return null;
-    }
+    /// <summary>
+    /// Why a row cannot be added yet, or null when it is complete.
+    /// Stage 1a: the rules themselves now live in <see cref="LineRules"/>, the one place every screen asks,
+    /// so Bulk Entry and the line editor can no longer drift apart. This kept its name because the
+    /// pop-up and its tests already call it.
+    /// </summary>
+    /// <param name="discountPercent">Null on Purchase Orders, which have no discount column.</param>
+    public static string? WhatIsMissing(Guid productEntityId, Guid? variantEntityId, int? quantity, int? discountPercent = null)
+        => LineRules.WhatIsWrong(productEntityId, variantEntityId, quantity, discountPercent);
 
     /// <summary>Why the whole list cannot be saved yet, or null when it can.</summary>
     public static string? WhatIsMissingToSave(BulkEntryKind kind, BulkOrderHeader header, IReadOnlyCollection<BulkEntryRow> rows)
