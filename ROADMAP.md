@@ -135,10 +135,11 @@ Today some rules still sit in the screens. **Before stage 1 adds new screens, th
 
 **Size guide:** Large = comparable to several of the earlier batches together. Medium = one or two. The whole roadmap is more work than everything done on the app so far.
 
-### Stage 0 – Go live with today's version (Hiten)
+### Stage 0 – Go live with today's version (Hiten) – **DONE**
 - Version 2.0 is checked, pushed and tagged `v2.0` (14 Nov 2026).
-- Rollout to the counter PC as described in `README.md` (installing / rolling out).
-- **Done when:** the counter PC runs the current version for a week without problems.
+- **Installed on the counter PC on 16 Nov 2026** (version 2.0 with the backup-folder addition). In daily use since, working as Hiten wants (confirmed 24 Nov 2026).
+- The exact code now running is tagged `live-16-nov-2026`. **Before installing any stage of this plan on the counter PC: copy the live database first.** An older build cannot open a database a newer build has upgraded, so the tag alone is not a way back - see `README.md` section 10, "Going back".
+- **Done when:** the counter PC runs the current version for a week without problems. *(Met.)*
 
 ### Stage 1 – Foundation: users, permissions, shop network (Large)
 - **1a. Tidy-up (nothing visible):** move the remaining rules from screens into the rule book, and fix the known weak spots that sit in the same code on the way (details in `README.md`, known issues):

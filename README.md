@@ -52,6 +52,7 @@ Import reads a CSV or Excel file, shows a preview with every problem listed, and
 - **1.0** - the May 2026 build, installed on the counter PC and still running there.
 - **2.0** - this version, concluded 14 Nov 2026 (git tag `v2.0`), the November 2026 improvement work: security (hashed passwords, login on every page), data safety (database rules, one-transaction saves, safe daily backups), upgrade to .NET 10, automatic tests, clean-up of duplicated code, speed, keyboard entry, a new look with themes, and Import.
 - **2.0 addition, 16 Nov 2026** - the backup folder can be chosen in the app: Settings → Change folder… (folder browser, saved in `backup-folder.txt` beside the database). Warnings for backups on the same disk as the data or an unreachable folder; a failed daily backup is retried every hour.
+- **Rolled out to the counter PC on 16 Nov 2026.** Version 2.0, with the backup-folder addition, has been in daily use at the counter since then and works as the owner wants. The exact code it is running is tagged `live-16-nov-2026` in git; section 10 says how to go back to it.
 - **3.0** - planned, not started: see [ROADMAP.md](ROADMAP.md). Several decisions in section 12 are scheduled there.
 
 ---
@@ -180,7 +181,7 @@ All in `Service/BackupService.cs` and `BackupScheduler.cs`. Every backup uses SQ
 
 - **Daily schedule**: 30 seconds after the app starts, a daily backup is made if none exists for today (the counter PC is often off at night, so this is the one that usually runs); and every day at `BackupDailyAt` (default 02:00) while the app is running.
 - **Restore** (Settings, with a confirmation): checks the chosen backup is healthy, saves the live database as `before-restore_*.db`, writes the backup into the live database, then says "restart the app". The scheduler makes no backups until the restart. Only files inside the backup folder can be restored or deleted.
-- **Choosing the backup folder** (Settings → Change folder…, `MudBlazorComponents/FolderPickerDialog.razor`): lists this PC's drives (USB drives labelled) and folders, can make a new folder or take a pasted path. The app first checks it can write there; a folder holding `Inventory.db` is refused (the database would show up as a backup). It offers to copy the existing backups (the originals stay). The choice is saved in `<DataFolder>ackup-folder.txt` and wins over `BackupFolder` in `appsettings.json`, so it survives program updates; "Use the standard folder" deletes that file. If the folder cannot be reached (USB unplugged), the app still starts, Settings shows a red warning, and the daily backup is retried every hour.
+- **Choosing the backup folder** (Settings → Change folder…, `MudBlazorComponents/FolderPickerDialog.razor`): lists this PC's drives (USB drives labelled) and folders, can make a new folder or take a pasted path. The app first checks it can write there; a folder holding `Inventory.db` is refused (the database would show up as a backup). It offers to copy the existing backups (the originals stay). The choice is saved in `<DataFolder>\backup-folder.txt` and wins over `BackupFolder` in `appsettings.json`, so it survives program updates; "Use the standard folder" deletes that file. If the folder cannot be reached (USB unplugged), the app still starts, Settings shows a red warning, and the daily backup is retried every hour.
 - **Before-import copy**: a purchases import makes a `before-import_*` copy first and is refused if that copy fails.
 - Backups made before the safe-backup work (1.0 build) were plain file copies in WAL mode and may be incomplete. Keep them, do not rely on them.
 
@@ -319,16 +320,16 @@ These are easy to break. All handling is in `wwwroot/shortcuts.js`, with the scr
 
 ---
 
-## 10. Installing / rolling out to the counter PC
+## 10. Installing the app, and how to go back
 
-This is the next thing that will happen, and only when the owner says "ready".
+**Done: version 2.0 was installed on the counter PC on 16 Nov 2026** and has run there since. What follows is kept as the record of how it was installed, and - at the end - how to go back to it if a later version goes wrong.
 
 **Installed layout.** A self-contained program that starts a web server on `http://localhost:5000` and opens the browser (`Program.cs` does this outside Development). Defaults when `DataFolder` and `BackupFolder` in the installed `appsettings.json` are empty:
 
 - data: `%ProgramData%\InventoryApp\Inventory.db`
 - backups: `%ProgramData%\InventoryApp\Backups`
 - logs: `%ProgramData%\InventoryApp\logs`
-- `DataFolder` = where the database lives (and logs and `initial-admin-password.txt`); `BackupFolder` = where backups go unless one is chosen on Settings (saved in `<DataFolder>ackup-folder.txt`, which wins). Relative paths count from the program folder; `%VARIABLES%` are expanded. Other settings: `BackupDailyAt` (default `02:00`), `BackupKeepDaily` (30), `FileMaxSize`, `CustomerNumberMobile`, `SupplierNumberMobile`.
+- `DataFolder` = where the database lives (and logs and `initial-admin-password.txt`); `BackupFolder` = where backups go unless one is chosen on Settings (saved in `<DataFolder>\backup-folder.txt`, which wins). Relative paths count from the program folder; `%VARIABLES%` are expanded. Other settings: `BackupDailyAt` (default `02:00`), `BackupKeepDaily` (30), `FileMaxSize`, `CustomerNumberMobile`, `SupplierNumberMobile`.
 - On the first start of the new version, if the data folder has no database and the program folder has one, the database is **copied** (with SQLite's online backup, checked) to the data folder, and old `.db` backups are copied to the new backup folder. The old file is left untouched, and `Inventory.db-HAS-MOVED.txt` is written beside it.
 
 **Steps**
@@ -340,6 +341,15 @@ This is the next thing that will happen, and only when the owner says "ready".
    - After the first start, check the log: the database was copied to `%ProgramData%\InventoryApp\` and `Inventory.db-HAS-MOVED.txt` is beside the old file.
    - Log in as Hiten and as Admin with the old passwords (they are hashed on first start), then change both on **Change Password**. Keep passwords out of Git.
    - Old backups made before the safe-backup work may be incomplete (WAL mode). Keep them; do not rely on them.
+
+
+**Going back to the version that is running now (16 Nov 2026)**
+
+Two things have to go back together: the **program** and the **database**. Going back on only one of them does not work.
+
+1. **The program.** The code the counter PC runs is tagged `live-16-nov-2026`. To build that exact version again: `git checkout live-16-nov-2026`, then publish as in section 10's step 1. Nothing done after that tag can affect it.
+2. **The database.** A newer version may have upgraded the database file (a migration). **An older build cannot open a database a newer build has upgraded** - it will refuse to start or the login will fail. So before installing any new version on the counter PC, take a copy of `%ProgramData%\InventoryApp\Inventory.db` and keep it off that PC. That copy, together with the tagged build, is the way back.
+3. **Rule for every future upgrade:** copy the database first, keep the previous program folder, and do not delete either until the new version has run well for a few weeks.
 
 ---
 
