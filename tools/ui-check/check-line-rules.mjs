@@ -64,13 +64,13 @@ try {
   await typeInBox('Qty', 0);
   const before = await lineCount();
   await b.click('.btn-order-add'); await sleep(1500);
-  expect('quantity 0 is refused', (await b.snack()).includes('Quantity must be at least 1.'), true);
+  expect('quantity 0 is refused', (await b.snack()).includes('Quantity cannot be zero.'), true);
   expect('quantity 0 added no line', await lineCount(), before);
 
+  // Negative quantities are allowed on purpose (returns and damage are recorded that way for now).
   await typeInBox('Qty', -5);
-  await b.click('.btn-order-add'); await sleep(1500);
-  expect('a negative quantity is refused', (await b.snack()).includes('Quantity must be at least 1.'), true);
-  expect('negative quantity added no line', await lineCount(), before);
+  await b.click('.btn-order-add'); await sleep(2000);
+  expect('a negative quantity line is saved', await lineCount(), before + 1);
 
   // A discount over 100 is the one that costs money: it makes the line amount negative.
   await typeInBox('Qty', 2);
@@ -78,13 +78,13 @@ try {
   await typeInBox('Disc %', 500);
   await b.click('.btn-order-add'); await sleep(1500);
   expect('discount 500 is refused', (await b.snack()).includes('Discount must be between 0 and 100 percent.'), true);
-  expect('discount 500 added no line', await lineCount(), before);
+  expect('discount 500 added no line', await lineCount(), before + 1);
 
   // ... and a sensible line still saves, so the rules have not blocked normal work.
   await typeInBox('Disc %', 10);
   await b.click('.btn-order-add'); await sleep(2500);
-  expect('a good line still saves', await lineCount(), before + 1);
-  const saved = await b.eval(`[...document.querySelectorAll('table.table tbody tr')].map(r => r.innerText.replace(/\\s+/g, ' ').trim()).join(' || ')`);
+  expect('a good line still saves', await lineCount(), before + 2);
+  const saved = await b.eval(`(() => { const r = [...document.querySelectorAll('table.table tbody tr')].filter(r => !r.innerText.includes('Not Found')); return r.length ? r[r.length - 1].innerText.replace(/\\s+/g, ' ').trim() : ''; })()`);
   log('     saved line =', saved);
   expect('its amount is not negative', saved.includes('-'), false);
 
@@ -96,7 +96,7 @@ try {
   await chooseFirstVariant();
   await typeInBox('Qty', 0);
   await b.click('.btn-order-add'); await sleep(1500);
-  expect('quantity 0 is refused', (await b.snack()).includes('Quantity must be at least 1.'), true);
+  expect('quantity 0 is refused', (await b.snack()).includes('Quantity cannot be zero.'), true);
   await typeInBox('Qty', 1);
   await typeInBox('Disc %', 200);
   await b.click('.btn-order-add'); await sleep(1500);
@@ -114,7 +114,7 @@ try {
   await b.eval(`(() => { const q = document.querySelector('#quantity'); q.value = '0'; q.dispatchEvent(new Event('change', { bubbles: true })); })()`);
   await sleep(400);
   await b.key('Enter'); await sleep(1500);
-  expect('sale quantity 0 is refused', (await b.snack()).includes('Quantity must be at least 1.'), true);
+  expect('sale quantity 0 is refused', (await b.snack()).includes('Quantity cannot be zero.'), true);
 
   // Now add a good line, then try to ruin it by typing into the table's own quantity box.
   // The box must be focused again: the refusal above left the cursor elsewhere, and Enter goes
@@ -129,7 +129,7 @@ try {
 
   await b.eval(`(() => { const q = document.querySelector('.qty-box'); q.value = '0'; q.dispatchEvent(new Event('change', { bubbles: true })); })()`);
   await sleep(1500);
-  expect('0 typed into the lines table is refused', (await b.snack()).includes('Quantity must be at least 1.'), true);
+  expect('0 typed into the lines table is refused', (await b.snack()).includes('Quantity cannot be zero.'), true);
   expect('the line kept its real quantity', await b.eval(`document.querySelector('.qty-box').value`), '2');
 
   // ----------------------------------------------------------- Bulk Entry

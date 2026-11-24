@@ -223,9 +223,10 @@ public partial class Sale
     {
         var parsed = int.TryParse(typed, out var value) ? value : (int?)null;
 
-        if (parsed is null || parsed < LineRules.MinimumQuantity)
+        var problem = LineRules.QuantityProblem(parsed);
+        if (problem != null)
         {
-            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            Snackbar.Add(problem, Severity.Warning);
             qtyBoxRedraws++;     // puts the box back to the quantity the line still has
             StateHasChanged();
             return;
@@ -261,9 +262,10 @@ public partial class Sale
         // Stage 1a: one rule book for every line (Service/LineRules.cs). A sale line has no rate or
         // discount yet - those are set on Sales Summary - so the quantity is what there is to check.
         // The scan boxes always send 1, so this only ever stops a bad quantity typed into the line form.
-        if (salesVariantModel.Quantity is null || salesVariantModel.Quantity < LineRules.MinimumQuantity)
+        var problem = LineRules.QuantityProblem(salesVariantModel.Quantity);
+        if (problem != null)
         {
-            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            Snackbar.Add(problem, Severity.Warning);
             return;
         }
 
@@ -328,10 +330,10 @@ public partial class Sale
     public async Task EditVariant()
     {
         // Stage 1a: an edited line must pass the same quantity rule as a new one.
-        if (salesVariantModel != null
-            && (salesVariantModel.Quantity is null || salesVariantModel.Quantity < LineRules.MinimumQuantity))
+        var problem = salesVariantModel != null ? LineRules.QuantityProblem(salesVariantModel.Quantity) : null;
+        if (problem != null)
         {
-            Snackbar.Add($"Quantity must be at least {LineRules.MinimumQuantity}.", Severity.Warning);
+            Snackbar.Add(problem, Severity.Warning);
             return;
         }
 

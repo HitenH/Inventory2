@@ -45,16 +45,20 @@ public class LineRulesTests
         Assert.Equal("Please enter a quantity.", LineRules.WhatIsWrong(AProduct, AVariant, quantity: null));
     }
 
+    [Fact]
+    public void A_quantity_of_zero_is_refused()
+    {
+        Assert.Equal(LineRules.ZeroQuantityMessage, LineRules.WhatIsWrong(AProduct, AVariant, quantity: 0));
+        Assert.False(LineRules.IsAllowed(AProduct, AVariant, quantity: 0));
+    }
+
     [Theory]
-    [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-250)]
-    public void Quantity_of_nothing_or_less_is_refused(int quantity)
+    public void Negative_quantities_are_allowed_for_returns_and_damage(int quantity)
     {
-        // The counter screens accepted these before stage 1a; Bulk Entry already refused them.
-        var message = LineRules.WhatIsWrong(AProduct, AVariant, quantity);
-        Assert.Equal("Quantity must be at least 1.", message);
-        Assert.False(LineRules.IsAllowed(AProduct, AVariant, quantity));
+        Assert.Null(LineRules.WhatIsWrong(AProduct, AVariant, quantity));
+        Assert.True(LineRules.IsAllowed(AProduct, AVariant, quantity));
     }
 
     [Theory]

@@ -15,8 +15,11 @@ namespace Inventory.Service;
 /// </summary>
 public static class LineRules
 {
-    /// <summary>The smallest quantity a line may carry. A line of nothing is not a line.</summary>
-    public const int MinimumQuantity = 1;
+    /// <summary>
+    /// Negative quantities are allowed on purpose: returns and damage are recorded as negative lines for now.
+    /// Only zero is refused, because a line of nothing does nothing.
+    /// </summary>
+    public const string ZeroQuantityMessage = "Quantity cannot be zero.";
 
     /// <summary>A discount is a whole percentage of the line's own amount.</summary>
     public const int MinimumDiscountPercent = 0;
@@ -43,19 +46,31 @@ public static class LineRules
             return "Please select a variant.";
         }
 
-        if (quantity is null)
+        var quantityProblem = QuantityProblem(quantity);
+        if (quantityProblem != null)
         {
-            return "Please enter a quantity.";
-        }
-
-        if (quantity < MinimumQuantity)
-        {
-            return $"Quantity must be at least {MinimumQuantity}.";
+            return quantityProblem;
         }
 
         if (discountPercent is not null && (discountPercent < MinimumDiscountPercent || discountPercent > MaximumDiscountPercent))
         {
             return $"Discount must be between {MinimumDiscountPercent} and {MaximumDiscountPercent} percent.";
+        }
+
+        return null;
+    }
+
+    /// <summary>Why this quantity may not be saved, or null when it is fine.</summary>
+    public static string? QuantityProblem(int? quantity)
+    {
+        if (quantity is null)
+        {
+            return "Please enter a quantity.";
+        }
+
+        if (quantity == 0)
+        {
+            return ZeroQuantityMessage;
         }
 
         return null;

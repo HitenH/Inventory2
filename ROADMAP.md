@@ -24,7 +24,7 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 
 | Batch | What | Changes what the operator sees? |
 |---|---|---|
-| 1a-1 **DONE 24 Nov 2026** | One rule book for voucher lines (`Service/LineRules.cs`): a real product and variant, quantity a whole number of 1 or more, discount 0–100. Sale, Purchase, Sales Order and Bulk Entry all ask it. Also closed two holes found while building it: **no screen checked the discount at all** (not even Bulk Entry, contrary to the README), and the quantity box in the Sale lines table wrote any number straight onto an already-added line. | **Yes** – quantity 0, a negative quantity or a discount outside 0–100 are now refused with a plain message. Hiten agreed 24 Nov 2026. |
+| 1a-1 **DONE 24 Nov 2026** | One rule book for voucher lines (`Service/LineRules.cs`): a real product and variant, quantity a whole number that is not zero, discount 0–100. Sale, Purchase, Sales Order and Bulk Entry all ask it. Also closed two holes found while building it: **no screen checked the discount at all** (not even Bulk Entry, contrary to the README), and the quantity box in the Sale lines table wrote any number straight onto an already-added line. | **Yes** – quantity 0 or a discount outside 0–100 are refused with a plain message. Negative quantities were refused too at first; Hiten reversed that the same day because returns and damage are recorded as negative lines for now. |
 | 1a-2 | Double-Enter guard: a very fast second Enter can add the same line twice today. The second one is ignored. | No (removes an accident) |
 | 1a-3 | Totals that cannot go odd: a voucher with a discount but no lines currently stores a **negative** total, which quietly lowers supplier and report figures; a sale that is never summarised keeps a stored total of 0 although its stock has gone. | No |
 | 1a-4 | Honest "not found" and plain messages: four repositories return a blank record instead of saying "not found" (which is how a blank screen appears instead of a message), and technical error text like "GetSupplier error: …" is replaced with ordinary words. | Only better messages |
@@ -32,6 +32,11 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run on a test copy before Hiten sees it. Keyboard and scanner behaviour does not change.
 
 **1a-1 as built and checked (24 Nov 2026):** 312 tests pass (18 new for the rule book); build 0 errors and **330** warnings, three fewer than the 333 baseline because the null guards added here also cleared three old ones. A new browser check, `tools/ui-check/check-line-rules.mjs`, proves in Chrome that each bad value is refused on Purchase, Sales Order, Sale, the Sale lines table and Bulk Entry, and that a good line still saves. All eight existing `tools/ui-check` scripts still pass, `check-look` included. Not yet tested by Hiten.
+
+**Parked until the end of stage 1 (Hiten, 24 Nov 2026):**
+- **Amounts:** Hiten does not use the amount columns; this is an inventory tool for now. Negative voucher totals are allowed (a return can legitimately be negative), so the total clamp from batch 1a-3 was rolled back. Still open from 1a-3: a sale whose Sales Summary is never saved keeps a total of 0. Come back to the amounts at the end.
+- **Damage and returns:** they are recorded as negative quantity lines for now, which Hiten says is not the right workflow. The proper record belongs with stock movements (version 3.0). Revisit then.
+- **CSV imports** still refuse a quantity of 0 or below (import checker). Not changed in batch 1a-1; decide with the rest.
 
 ## Stage 1b, 1c, 1d
 

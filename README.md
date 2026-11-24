@@ -129,7 +129,7 @@ These exist once on purpose. Fix or change them in one place; never copy them in
 - **Shortcuts list**: `Service/Shortcuts.cs`, used by the key handler, the menu hints and the Dashboard table, so they cannot disagree.
 - **Import column list**: `Service/Import/ImportTemplates.cs`. The reader, the checks, the sample files and the screen all read it.
 - **Line maths**: `Service/LineAmounts.cs` (amount = rate x quantity; amount after discount; all rounded to 2 decimals).
-- **Line rules**: `Service/LineRules.cs` (version 3.0, batch 1a-1) - the one place that says what a valid voucher line is: a real product and variant, quantity a whole number of 1 or more, discount 0 to 100. Purchase, Sale, Sales Order and Bulk Entry all ask it. A new screen or device must ask it too, never carry its own copy.
+- **Line rules**: `Service/LineRules.cs` (version 3.0, batch 1a-1) - the one place that says what a valid voucher line is: a real product and variant, quantity a whole number that is not zero (negative allowed for now, for returns and damage), discount 0 to 100. Purchase, Sale, Sales Order and Bulk Entry all ask it. A new screen or device must ask it too, never carry its own copy.
 - **Bulk Entry rules**: `Service/BulkEntry.cs` (kinds PurchaseOrder, Purchase, SalesOrder).
 - **Paging and report periods**: `Service/ListPaging.cs` (100 rows per page by default; 10/20/50/100/200 offered), `Service/ReportPeriods.cs`.
 
@@ -206,7 +206,7 @@ Serilog writes one file per day, `inventory-<date>.log`, in `<DataFolder>\logs`,
 
 **Purchase order.** One table of rows. Enter a supplier, product, variant, quantity, dates (status defaults to Open), press Enter to add. Edit a row in place (Cancel returns the old values). Tick rows to set their status together, or to delete completed orders. Supplier names show in the list. Bulk Entry (Alt+B) adds many rows, with the supplier chosen once.
 
-**Bulk Entry.** A pop-up on Purchase Orders, Purchases and Sales Orders. The product stays after each row and the cursor goes back to Product. A row is only part of the batch once added with Enter; a row not added is not saved (decided, keep it). Quantity must be a whole number above 0, discount 0 to 100. Esc asks first when rows exist. Save all (Ctrl+S) saves every row in one transaction.
+**Bulk Entry.** A pop-up on Purchase Orders, Purchases and Sales Orders. The product stays after each row and the cursor goes back to Product. A row is only part of the batch once added with Enter; a row not added is not saved (decided, keep it). Quantity must be a whole number and not zero, discount 0 to 100. Esc asks first when rows exist. Save all (Ctrl+S) saves every row in one transaction.
 
 **Scan Mass Products (Sale).** Pop-up listing scanned Product ID and Variant ID pairs; Submit adds them as sale lines. Codes that are not found are dropped without a message (known, section 11).
 
@@ -378,7 +378,7 @@ Known, accepted, nothing due. Do not "fix" any of these without asking the owner
 - A failed save or delete on the Purchase Orders and Sales Orders lists is only written to the log; nothing is shown on screen.
 - Sale: Summarize with no items silently goes back to the list. Scan Mass Products silently drops codes that are not found and its "Scanned:" message is always blank.
 - Clearing the product box keeps the old product behind it. A very fast double Enter could add a line twice (version 3.0 batch 1a-2).
-- *Fixed 24 Nov 2026 (version 3.0, batch 1a-1):* the line forms on Sale, Purchase and Sales Order accepted quantity 0 or negative, and **no screen checked the discount at all** - not the line forms and not Bulk Entry, contrary to what this document said before. A discount over 100 makes the line amount negative and quietly lowers the voucher, supplier and report totals. All of these are now refused in one place (`Service/LineRules.cs`), including a quantity typed straight into the Sale lines table.
+- *Fixed 24 Nov 2026 (version 3.0, batch 1a-1):* the line forms on Sale, Purchase and Sales Order accepted quantity 0 or negative, and **no screen checked the discount at all** - not the line forms and not Bulk Entry, contrary to what this document said before. A discount over 100 makes the line amount negative and quietly lowers the voucher, supplier and report totals. All of these are now refused in one place (`Service/LineRules.cs`), including a quantity typed straight into the Sale lines table. Negative quantities are allowed again (returns and damage are recorded that way for now); only zero is refused.
 - A voucher with a discount but no lines is saved with a total of minus the discount, which lowers supplier and report totals.
 - A sale that is never summarised reduces stock but its stored total stays 0, so customer and period totals miss it.
 - Report searches (Customers, Sales Orders, Purchase Orders, reorder level, variants) are case-sensitive. The Customers report search matches almost everything because it searches the Mobiles list text. Sorting by Image or Stock In Hand on the product page does not work, and Image may error.

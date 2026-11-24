@@ -55,7 +55,7 @@
                 </div>
                 <div>
                     <label class="form-label" for="bulk-quantity">Quantity</label>
-                    <input id="bulk-quantity" type="number" min="1" class="form-control text-center" style="width:100px;" @bind="quantity" autocomplete="off" />
+                    <input id="bulk-quantity" type="number" class="form-control text-center" style="width:100px;" @bind="quantity" autocomplete="off" />
                 </div>
                 <div>
                     <label class="form-label" for="bulk-rate">Rate</label>
@@ -254,7 +254,7 @@
             Snackbar.Add(missing, Severity.Warning);
             var box = product.Id == Guid.Empty ? ".focus-bulk-product"
                 : variantId is null ? "#bulk-variant"
-                : quantity is null or < LineRules.MinimumQuantity ? "#bulk-quantity"
+                : quantity is null or 0 ? "#bulk-quantity"
                 : "#bulk-discount";   // stage 1a: the discount is the only thing left it can be
             await JS.FocusBoxAsync(box);
             return;

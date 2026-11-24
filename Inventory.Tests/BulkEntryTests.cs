@@ -20,10 +20,9 @@ public class BulkEntryTests
     [InlineData(false, true, 1, "Please select a product.")]
     [InlineData(true, false, 1, "Please select a variant.")]
     [InlineData(true, true, null, "Please enter a quantity.")]
-    // Stage 1a: a typed 0 (or a negative) now says what is wrong instead of "please enter a quantity",
-    // which read oddly when a number had in fact been entered. Still refused, as before.
-    [InlineData(true, true, 0, "Quantity must be at least 1.")]
-    [InlineData(true, true, -4, "Quantity must be at least 1.")]
+    // Zero is refused; negative quantities are allowed for returns and damage.
+    [InlineData(true, true, 0, "Quantity cannot be zero.")]
+    [InlineData(true, true, -4, null)]
     [InlineData(true, true, 3, null)]
     public void A_row_needs_product_variant_and_quantity(bool hasProduct, bool hasVariant, int? qty, string? expected)
     {
