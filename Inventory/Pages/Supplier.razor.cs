@@ -170,7 +170,7 @@ namespace Inventory.Pages
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add("GetSupplier error: " + ex.Message, Severity.Error);
+                    Snackbar.Add("Could not open this supplier: " + ex.Message, Severity.Error);
                 }
             }
 

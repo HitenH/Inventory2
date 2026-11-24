@@ -70,7 +70,7 @@ public partial class SalesOrder
         }
         if (salesOrderEntity.Id == Guid.Empty)
         {
-            return;
+            Snackbar.Add("This sales order was not found.", Severity.Warning); navManager.NavigateTo("/salesorders"); return;
         }
 
         salesOrderModel.VoucherId = salesOrderEntity.VoucherId;
@@ -121,7 +121,7 @@ public partial class SalesOrder
         catch (Exception ex)
         {
             Logger.LogError(ex, "Create sales order failed");
-            Snackbar.Add($"Saving error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Could not save the sales order: {ex.Message}", Severity.Error);
         }
     }
 
@@ -163,7 +163,7 @@ public partial class SalesOrder
         catch (Exception ex)
         {
             Logger.LogError(ex, "Update sales order failed");
-            Snackbar.Add($"Update error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Could not update the sales order: {ex.Message}", Severity.Error);
         }
     }
 

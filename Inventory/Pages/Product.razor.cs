@@ -42,8 +42,12 @@ namespace Inventory.Pages
                 if (ProductId != null)
                 {
                     productEntity = await ProductRepository.GetById(Guid.Parse(ProductId));
-                    if (productEntity == null)
+                    if (productEntity.Id == Guid.Empty)
+                    {
+                        Snackbar.Add("This product was not found.", Severity.Warning);
                         navManager.NavigateTo("/products");
+                        return;
+                    }
                     if (productEntity.Category != null)
                         categoryId = productEntity.Category.Id;
                     productModel = productEntity.ToModel();

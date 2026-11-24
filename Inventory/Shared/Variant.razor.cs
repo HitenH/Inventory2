@@ -186,7 +186,7 @@ public partial class Variant
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Delete variant error: " + ex.Message, Severity.Error);
+            Snackbar.Add("Could not delete the variant: " + ex.Message, Severity.Error);
         }
     }
 
@@ -207,7 +207,7 @@ public partial class Variant
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Upload file error: {ex.Message}");
+            Snackbar.Add($"Could not upload the file: {ex.Message}");
         }
     }
 
@@ -239,7 +239,7 @@ public partial class Variant
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Delete file error: {ex.Message}");
+                Snackbar.Add($"Could not delete the file: {ex.Message}");
             }
         }
     }

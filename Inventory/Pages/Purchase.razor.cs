@@ -129,7 +129,7 @@ public partial class Purchase
 
         {
 
-            return;
+            Snackbar.Add("This purchase was not found.", Severity.Warning); navManager.NavigateTo("/purchases"); return;
 
         }
 
@@ -225,7 +225,7 @@ public partial class Purchase
 
             Logger.LogError(ex, "Create purchase failed");
 
-            Snackbar.Add($"Saving error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Could not save the purchase: {ex.Message}", Severity.Error);
 
         }
 
@@ -301,7 +301,7 @@ public partial class Purchase
 
             Logger.LogError(ex, "Update purchase failed");
 
-            Snackbar.Add($"Update error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Could not update the purchase: {ex.Message}", Severity.Error);
 
         }
 

@@ -38,7 +38,13 @@ public partial class SalesSummary
             {
                 Logger.LogError(ex, "Sales summary error");
             }
-            if (salesEntity.Id != Guid.Empty && salesEntity.SalesVariants is { Count: > 0 })
+            if (salesEntity.Id == Guid.Empty)
+            {
+                Snackbar.Add("This sale could not be opened.", Severity.Warning);
+                navManager.NavigateTo("/sales");
+                return;
+            }
+            if (salesEntity.SalesVariants is { Count: > 0 })
             {
                 var summaryDict = salesEntity.SalesSummaries?.ToDictionary(s => s.ProductEntityId)
                     ?? new Dictionary<Guid, SalesSummaryEntity>();

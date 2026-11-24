@@ -49,6 +49,12 @@ public partial class Sale
             if (SaleId != null)
             {
                 salesEntity = await SaleRepository.GetById(Guid.Parse(SaleId));
+                if (salesEntity.Id == Guid.Empty)
+                {
+                    Snackbar.Add("This sale was not found.", Severity.Warning);
+                    navManager.NavigateTo("/sales");
+                    return;
+                }
                 if (salesEntity.Id != Guid.Empty)
                 {
                     salesModel.VoucherId = salesEntity.VoucherId;

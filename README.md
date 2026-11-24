@@ -373,7 +373,7 @@ Known, accepted, nothing due. Do not "fix" any of these without asking the owner
 
 **Small issues**
 - Purchase Orders store free-text supplier, product and variant IDs: no links to the real records and no pickers.
-- "Not found" in the Product, Purchase, Sale and Sales Order repositories returns an empty record instead of nothing.
+- "Not found" in the Product, Purchase, Sale and Sales Order repositories still returns an empty record instead of nothing. The edit screens now catch it and say "not found" (version 3.0, batch 1a-4), so a blank form no longer appears.
 - Some error messages show technical text: delete errors on Supplier and Customer ("GetSupplier error: ...", "Show Full") and some raw database error text in snackbars.
 - A failed save or delete on the Purchase Orders and Sales Orders lists is only written to the log; nothing is shown on screen.
 - Sale: Summarize with no items silently goes back to the list. Scan Mass Products silently drops codes that are not found and its "Scanned:" message is always blank.
