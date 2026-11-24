@@ -1,0 +1,83 @@
+@* Add or change a role: its name and one tick box per switch, grouped as Screens / Admin / Rates. *@
+@inject RoleAdmin Roles
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="name" Label="Role name" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense"
+                      AutoFocus="true" Immediate="true" id="role-name" />
+        @foreach (var group in Permissions.All.GroupBy(p => p.Group))
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-3">@group.Key</MudText>
+            <div class="d-flex flex-wrap">
+                @foreach (var permission in group)
+                {
+                    <MudCheckBox T="bool" Value="chosen.Contains(permission.Key)" ValueChanged="on => Toggle(permission.Key, on)"
+                                 Label="@permission.Label" Style="min-width:260px;" />
+                }
+            </div>
+        }
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" id="role-dialog-error">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton id="role-save" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="busy" data-shortcut="save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    /// <summary>Null when adding a new role.</summary>
+    [Parameter] public RoleRow? Role { get; set; }
+
+    private string? name;
+    private HashSet<string> chosen = new();
+    private string? error;
+    private bool busy;
+
+    protected override void OnInitialized()
+    {
+        name = Role?.Name;
+        chosen = Role?.Permissions.ToHashSet() ?? new HashSet<string>();
+    }
+
+    private void Toggle(string key, bool on)
+    {
+        if (on)
+        {
+            chosen.Add(key);
+        }
+        else
+        {
+            chosen.Remove(key);
+        }
+    }
+
+    private async Task Save()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var result = Role is null
+                ? await Roles.AddAsync(name, chosen)
+                : await Roles.UpdateAsync(Role.Id, name, chosen);
+            if (result.Ok)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

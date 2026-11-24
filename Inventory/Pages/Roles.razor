@@ -1,0 +1,44 @@
+@page "/roles"
+<PageTitle>Roles</PageTitle>
+
+<Inventory.MudBlazorComponents.PagesHeader Title="Roles" SubTitle="What each role may do" />
+
+<MudContainer>
+    @if (!loaded)
+    {
+        <Inventory.MudBlazorComponents.LoadingComponent />
+    }
+    else if (!mayManage)
+    {
+        <MudAlert Severity="Severity.Warning" id="roles-no-access">You do not have access to this screen.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="rows" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <ToolBarContent>
+                <MudButton id="role-add-open" Class="ma-1" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddRole">+ Add role</MudButton>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Role</MudTh>
+                <MudTh>Users</MudTh>
+                <MudTh>Can do</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Role">@context.Name</MudTd>
+                <MudTd DataLabel="Users">@context.UserCount</MudTd>
+                <MudTd DataLabel="Can do">@CanDoText(context)</MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (!context.IsAdmin)
+                    {
+                        <MudButton Class="role-edit" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Size="MudBlazor.Size.Small" OnClick="() => EditRole(context)">Edit</MudButton>
+                        <MudButton Class="role-delete" Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="MudBlazor.Size.Small" OnClick="() => DeleteRole(context)">Delete</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="text-center">Not Found!</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    }
+</MudContainer>

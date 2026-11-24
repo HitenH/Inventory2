@@ -24,6 +24,7 @@ const SCREENS = {
   salesorders: '/salesorders',
   settings: '/settings',
   users: '/users',
+  roles: '/roles',
   reports: '/reports',
 };
 const WIDTHS = [1366, 1920];
