@@ -265,3 +265,40 @@ a, .btn-link {
 .activity-log-icon { display: inline-block; vertical-align: middle; }
 .activity-show-lines { padding: 0 0 0 12px; font-size: 0.85rem; }
 .activity-details { padding-left: 12px; font-size: 0.9rem; }
+/* Version 3.0, batch 1c-5: the Activity log screen. Hiten chose option C (25 Nov 2026): a thin stripe for the kind of record
+   and a pale name pill per person, both subtle; no red (red means Delete). Each has a light and a dark version.
+   The stripe was replaced the same day by coloured record names (below). */
+.activity-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 8px; }
+.activity-filter-date { width: 160px; }
+.activity-filter-select { width: 190px; flex: 0 0 auto; }
+.activity-filter-search { flex: 1 1 260px; min-width: 220px; }
+.activity-table td { vertical-align: top; overflow-wrap: anywhere; }
+.activity-line-plain { line-height: 1.35; }
+.act-when { white-space: nowrap; color: var(--mud-palette-text-secondary); }
+.act-record-link { text-decoration: none; }
+.act-record-link:hover { text-decoration: underline; }
+/* Hiten, 25 Nov 2026: the kind of record shows as the colour of its name (Sale, Purchase, Customer ...), not as a stripe.
+   Hiten 25 Nov 2026: clearly different families. Light mode has no blue or teal (they clash with the teal theme on white):
+   sale green, sales order olive, purchase orange, purchase order gold, customer/supplier purple, product magenta,
+   users/roles warm grey. Dark mode (Hiten: "perfect"): sale blue, sales order purple, purchase orange, purchase order gold,
+   customer/supplier teal, product green, users/roles plum. */
+.act-rec-purchase { color: hsl(28 85% 32%); }
+.act-rec-purchase-order { color: hsl(45 85% 25%); }
+.act-rec-sale { color: hsl(145 65% 24%); }
+.act-rec-sales-order { color: hsl(75 60% 24%); }
+.act-rec-party { color: hsl(275 50% 38%); }
+.act-rec-product { color: hsl(330 55% 35%); }
+.act-rec-people { color: hsl(30 12% 30%); }
+.act-rec-system { color: var(--mud-palette-text-secondary); }
+.app-dark .act-rec-purchase { color: hsl(28 85% 65%); }
+.app-dark .act-rec-purchase-order { color: hsl(45 75% 60%); }
+.app-dark .act-rec-sale { color: hsl(215 75% 72%); }
+.app-dark .act-rec-sales-order { color: hsl(275 55% 78%); }
+.app-dark .act-rec-party { color: hsl(180 50% 62%); }
+.app-dark .act-rec-product { color: hsl(130 45% 64%); }
+.app-dark .act-rec-people { color: hsl(320 50% 76%); }
+.act-person { display: inline-block; padding: 0 8px; border-radius: 10px; font-size: 0.85rem; white-space: nowrap;
+              background: hsl(var(--act-h) 50% 92%); color: hsl(var(--act-h) 35% 28%); }
+.app-dark .act-person { background: hsl(var(--act-h) 22% 26%); color: hsl(var(--act-h) 45% 85%); }
+.act-person[data-plain] { background: hsl(0 0% 92%); color: hsl(0 0% 35%); }
+.app-dark .act-person[data-plain] { background: hsl(0 0% 25%); color: hsl(0 0% 80%); }

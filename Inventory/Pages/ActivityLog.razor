@@ -1,0 +1,206 @@
+@page "/activity"
+@* Version 3.0, batch 1c-5: the whole activity log (mock-up agreed with Hiten, 25 Nov 2026). Opens on the last 7 days,
+   newest first; one row per sitting, folded and rate-hidden as in the record panel (Service/ActivityLogService.SearchAsync).
+   Colours: the record name is written in a soft colour for its kind (Hiten, 25 Nov 2026, instead of the stripe first tried),
+   and a pale name pill per person. Nothing red: red means Delete.
+   "Erase whole log" is for the Admin role only. The address needs the "See activity log" switch (Permissions.ForPath). *@
+@inject ActivityLogService Activity
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<ActivityLog> Logger
+
+<MudPaper Class="pa-3 mb-2">
+    <div class="d-flex flex-wrap align-center gap-3">
+        <MudText Typo="Typo.h6" Class="me-auto">Activity log</MudText>
+        @if (Access?.HasAdminRole == true)
+        {
+            <MudButton id="activity-erase" Variant="MudBlazor.Variant.Filled" Color="Color.Error" OnClick="EraseAsync" Disabled="busy">Erase whole log</MudButton>
+        }
+    </div>
+    <div class="activity-filters">
+        <div class="activity-filter-date"><MudText Typo="Typo.caption">From</MudText><DateBox TValue="DateOnly" Value="from" ValueChanged="d => SetAsync(() => from = d)" /></div>
+        <div class="activity-filter-date"><MudText Typo="Typo.caption">To</MudText><DateBox TValue="DateOnly" Value="to" ValueChanged="d => SetAsync(() => to = d)" /></div>
+        <MudSelect T="string" Label="Person" Value="person" ValueChanged="p => SetAsync(() => person = p)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="activity-filter-select" id="activity-person">
+            <MudSelectItem T="string" Value="@Everyone">Everyone</MudSelectItem>
+            @foreach (var name in people)
+            {
+                <MudSelectItem T="string" Value="@name">@name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="ActivityKind" Label="Kind" Value="kind" ValueChanged="k => SetAsync(() => kind = k)" Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="activity-filter-select" id="activity-kind">
+            @foreach (var k in Enum.GetValues<ActivityKind>())
+            {
+                <MudSelectItem T="ActivityKind" Value="@k">@KindLabel(k)</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField T="string" Label="Search" Value="search" ValueChanged="s => SetAsync(() => search = s)" Immediate="true" DebounceInterval="400"
+                      Variant="MudBlazor.Variant.Outlined" Margin="Margin.Dense" Class="activity-filter-search" id="activity-search"
+                      Placeholder="e.g. BALAJI, AJ0120101, Discount" />
+    </div>
+</MudPaper>
+
+@if (rows is null)
+{
+    <Inventory.MudBlazorComponents.LoadingComponent />
+}
+else
+{
+    <MudTable Items="rows" RowsPerPage="ListPaging.DefaultRowsPerPage" Dense="true" Hover="true" Bordered="true" id="activity-table"
+              RowClassFunc="@((row, _) => $"act-row act-kind-{row.Kind}")" Class="activity-table">
+        <HeaderContent>
+            <MudTh Style="width:215px">When</MudTh>
+            <MudTh Style="width:120px">Who</MudTh>
+            <MudTh Style="width:30%">Record</MudTh>
+            <MudTh>What happened</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="When" Class="act-when">@context.Group.When</MudTd>
+            <MudTd DataLabel="Who">
+                <span class="act-person" style="--act-h:@HueOf(context.Group.By)" data-plain="@(context.Group.By is null ? "1" : null)">@(context.Group.By ?? "the app")</span>
+            </MudTd>
+            <MudTd DataLabel="Record">
+                @if (context.Link is not null)
+                {
+                    <a href="@context.Link" class="act-record-link act-rec act-rec-@context.Kind" title="Open">@context.RecordLabel ↗</a>
+                }
+                else
+                {
+                    <span class="act-rec act-rec-@context.Kind">@(context.RecordLabel ?? "—")</span>
+                }
+            </MudTd>
+            <MudTd DataLabel="What happened">
+                @foreach (var line in context.Group.Lines)
+                {
+                    <div class="activity-line-plain">@line</div>
+                }
+                @if (context.Group.Details.Count > 0)
+                {
+                    <button type="button" class="btn btn-link btn-sm activity-show-lines" @onclick="() => Toggle(context)">@(open.Contains(context) ? "hide lines" : "show lines")</button>
+                    @if (open.Contains(context))
+                    {
+                        <div class="activity-details">
+                            @foreach (var line in context.Group.Details)
+                            {
+                                <div class="activity-line-plain">@line</div>
+                            }
+                        </div>
+                    }
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="text-center" id="activity-none">Nothing recorded for this choice.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <ListPager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private const string Everyone = "";
+
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    private DateOnly from = DateOnly.FromDateTime(DateTime.Today.AddDays(-6));   // the last 7 days, today included
+    private DateOnly to = DateOnly.FromDateTime(DateTime.Today);
+    private string person = Everyone;
+    private ActivityKind kind = ActivityKind.Everything;
+    private string? search;
+    private List<string> people = [];
+    private List<ActivityRow>? rows;
+    private readonly HashSet<ActivityRow> open = new(ReferenceEqualityComparer.Instance);
+    private bool busy;
+    private Dictionary<string, int> hues = new(StringComparer.OrdinalIgnoreCase);
+
+    private int HueOf(string? name) => name is not null && hues.TryGetValue(name, out var hue) ? hue : ActivityLogService.PersonHue(name);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (rows is null)
+        {
+            people = await Activity.PeopleAsync();
+            hues = await Activity.PersonHuesAsync();
+            await LoadAsync();
+        }
+    }
+
+    private async Task SetAsync(Action change)
+    {
+        change();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Access is null)
+        {
+            return;
+        }
+
+        try
+        {
+            open.Clear();
+            var start = from <= to ? from : to;
+            var end = from <= to ? to : from;
+            rows = await Activity.SearchAsync(new ActivityFilter(start, end, person == Everyone ? null : person, kind, search), Access);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not read the activity log");
+            Snackbar.Add("The activity log could not be read. The details were written to the log file.", Severity.Error);
+            rows ??= [];
+        }
+    }
+
+    private void Toggle(ActivityRow row)
+    {
+        if (!open.Remove(row))
+        {
+            open.Add(row);
+        }
+    }
+
+    private async Task EraseAsync()
+    {
+        if (Access is null)
+        {
+            return;
+        }
+
+        var count = await Activity.CountAsync();
+        var confirmed = await DialogService.ConfirmAsync("Erase whole log",
+            $"Erase the whole activity log? All {count} entr{(count == 1 ? "y" : "ies")} will be removed. This cannot be undone.",
+            "Erase", Color.Error);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var erased = await Activity.EraseAllAsync(Access);
+            Snackbar.Add($"The activity log was erased ({erased} entries).", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erasing the activity log failed");
+            Snackbar.Add("The activity log could not be erased. Nothing was removed.", Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string KindLabel(ActivityKind kind) => kind switch
+    {
+        ActivityKind.Everything => "Everything",
+        ActivityKind.PurchaseOrders => "Purchase orders",
+        ActivityKind.SalesOrders => "Sales orders",
+        ActivityKind.UsersAndRoles => "Users and roles",
+        _ => kind.ToString(),
+    };
+}

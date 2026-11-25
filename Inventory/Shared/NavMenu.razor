@@ -20,6 +20,11 @@
             {
                 <MudNavLink Icon="@Icons.Material.Filled.Report" Href="/reports"><NavText Text="Reports" Url="/reports" /></MudNavLink>
             }
+            @if (access.SignedIn && access.Allows(Permissions.ActivitySee))
+            {
+                @* Batch 1c-5 (Hiten, 25 Nov 2026): a menu item, so someone with the switch but not Settings can reach it. *@
+                <MudNavLink Href="/activity" Icon="@Icons.Material.Filled.History">Activity log</MudNavLink>
+            }
             @if (May(Permissions.AdminSettings))
             {
                 <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings"><NavText Text="Settings" Url="/settings" /></MudNavLink>

@@ -17,6 +17,9 @@ public sealed class UserAccess(string? name, bool signedIn, bool found, bool isD
 
     public bool Allows(string permission) => Found && Access.Has(IsDisabled, grants, permission, now);
 
+    /// <summary>Batch 1c-5: holds an Admin role that has not expired (only the Admin role may erase the activity log).</summary>
+    public bool HasAdminRole => Found && !IsDisabled && grants.Any(g => g.IsAdmin && (g.ExpiresAt is null || g.ExpiresAt > now));
+
     public bool SeesPurchaseRates => Allows(Permissions.RatesPurchaseSee);
     public bool SeesSaleRates => Allows(Permissions.RatesSaleSee);
 

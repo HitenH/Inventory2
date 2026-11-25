@@ -50,6 +50,7 @@ public static class Permissions
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
+        ["activity"] = ActivitySee,
     };
 
     /// <summary>Screens every logged-in user may open, whatever their roles.</summary>

@@ -18,6 +18,15 @@ public sealed record ActivityGroup(DateTime At, string? By, IReadOnlyList<string
         : At.ToString("dd-MM-yyyy HH:mm");
 }
 
+/// <summary>Batch 1c-5: the kinds offered by the Kind filter of the Activity log screen.</summary>
+public enum ActivityKind { Everything, Customers, Suppliers, Products, PurchaseOrders, Purchases, SalesOrders, Sales, UsersAndRoles, Logins, Backups, Imports }
+
+/// <summary>What the Activity log screen asks for. Person null = everyone.</summary>
+public sealed record ActivityFilter(DateOnly From, DateOnly To, string? Person, ActivityKind Kind, string? Search);
+
+/// <summary>One row of the Activity log screen: a sitting (or a record's creation), its record, its shade, and a link if the record still exists.</summary>
+public sealed record ActivityRow(ActivityGroup Group, string? RecordType, string? RecordId, string? RecordLabel, string Kind, string? Link);
+
 /// <summary>A record's history as one person may see it.</summary>
 public sealed record RecordHistory(IReadOnlyList<ActivityGroup> Groups, bool EarlierNotRecorded, string? Label = null);
 
@@ -110,6 +119,197 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         var pieces = added.Sum(r => (long)r.Pieces!.Value);
         lines.Add($"{added.Count} line{(added.Count == 1 ? "" : "s")} added{(fold ? " while creating" : "")}, {pieces} piece{(pieces == 1 ? "" : "s")}");
         return new ActivityGroup(rows[0].At, rows[0].By, lines, details.Select(r => r.Text).ToList(), rows[^1].At);
+    }
+
+    // ---- Version 3.0, batch 1c-5: the Activity log screen (mock-up agreed with Hiten, 25 Nov 2026). ----
+
+    /// <summary>
+    /// The whole log for a period, as this person may see it: one row per sitting (or per record's creation),
+    /// folded and rate-hidden exactly as in the record panel, newest first. Search looks only at what the person may see.
+    /// </summary>
+    public async Task<List<ActivityRow>> SearchAsync(ActivityFilter filter, UserAccess access)
+    {
+        if (!access.Allows(Permissions.ActivitySee))
+        {
+            return [];
+        }
+
+        await using var db = await factory.CreateDbContextAsync();
+        var from = filter.From.ToDateTime(TimeOnly.MinValue);
+        var to = filter.To.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        var query = db.ActivityLog.AsNoTracking().Where(a => a.At >= from && a.At < to);
+        if (!string.IsNullOrWhiteSpace(filter.Person))
+        {
+            var person = filter.Person.Trim().ToLower();
+            query = query.Where(a => a.By != null && a.By.ToLower() == person);
+        }
+
+        query = filter.Kind switch
+        {
+            ActivityKind.Everything => query,
+            ActivityKind.Logins => query.Where(a => a.Action == Login || a.Action == LoginRefused),
+            ActivityKind.Backups => query.Where(a => a.Action == Backup),
+            ActivityKind.Imports => query.Where(a => a.Action == "Import"),
+            _ => query.Where(a => a.RecordType != null && RecordTypesOf(filter.Kind).Contains(a.RecordType)),
+        };
+
+        var rows = (await query.OrderBy(a => a.Id).ToListAsync()).Where(r => MaySee(r, access)).ToList();
+        var result = rows
+            .GroupBy(r => r.Action == "Created" && r.RecordId != null ? $"created|{r.RecordType}|{r.RecordId}" : r.SaveId.ToString())
+            .Select(g =>
+            {
+                var list = g.OrderBy(r => r.Id).ToList();
+                var first = list[0];
+                return new ActivityRow(Group(list, fold: first.Action == "Created"), first.RecordType, first.RecordId, first.RecordLabel, KindOf(first), null);
+            })
+            .Where(r => Matches(r, filter.Search))
+            .OrderByDescending(r => r.Group.At)
+            .ToList();
+
+        return await WithLinksAsync(db, result, access);
+    }
+
+    /// <summary>The people who appear in the log or have a login, for the Person filter.</summary>
+    public async Task<List<string>> PeopleAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var users = await db.Users.AsNoTracking().Select(u => u.Name).ToListAsync();
+        var inLog = await db.ActivityLog.AsNoTracking().Where(a => a.By != null).Select(a => a.By!).Distinct().ToListAsync();
+        return users.Concat(inLog).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public async Task<int> CountAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.ActivityLog.CountAsync();
+    }
+
+    /// <summary>
+    /// Erases the whole log (Hiten, 25 Nov 2026: Admin role only, everything at once, no trace left; single entries
+    /// cannot be removed). Done straight in the database, so not even the erase itself is written. Returns how many went.
+    /// </summary>
+    public async Task<int> EraseAllAsync(UserAccess access)
+    {
+        if (!access.HasAdminRole)
+        {
+            throw new UnauthorizedAccessException("Only the Admin role may erase the activity log.");
+        }
+
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.ActivityLog.ExecuteDeleteAsync();
+    }
+
+    private static bool Matches(ActivityRow row, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return true;
+        }
+
+        var s = search.Trim();
+        bool Has(string? text) => text is not null && text.Contains(s, StringComparison.OrdinalIgnoreCase);
+        return Has(row.RecordLabel) || Has(row.Group.By) || row.Group.Lines.Any(Has) || row.Group.Details.Any(Has);
+    }
+
+    private static string[] RecordTypesOf(ActivityKind kind) => kind switch
+    {
+        ActivityKind.Customers => [nameof(CustomerEntity)],
+        ActivityKind.Suppliers => [nameof(SupplierEntity)],
+        ActivityKind.Products => [nameof(ProductEntity), nameof(CategoryEntity)],
+        ActivityKind.PurchaseOrders => [nameof(PurchaseOrderEntity)],
+        ActivityKind.Purchases => [nameof(PurchaseEntity)],
+        ActivityKind.SalesOrders => [nameof(SalesOrderEntity)],
+        ActivityKind.Sales => [nameof(SalesEntity)],
+        ActivityKind.UsersAndRoles => [nameof(UserEntity), nameof(RoleEntity)],
+        _ => [],
+    };
+
+    /// <summary>The shade of the row's left stripe (site.css, act-kind-*).</summary>
+    public static string KindOf(ActivityEntry entry) => entry.RecordType switch
+    {
+        nameof(PurchaseEntity) => "purchase",
+        nameof(PurchaseOrderEntity) => "purchase-order",
+        nameof(SalesEntity) => "sale",
+        nameof(SalesOrderEntity) => "sales-order",
+        nameof(CustomerEntity) or nameof(SupplierEntity) => "party",
+        nameof(ProductEntity) or nameof(CategoryEntity) => "product",
+        nameof(UserEntity) or nameof(RoleEntity) => "people",
+        _ => "system",
+    };
+
+    /// <summary>Pale tints, none red, ordered so that neighbours differ clearly (blue, amber, green, violet, teal ...).</summary>
+    private static readonly int[] Hues = [210, 35, 150, 280, 185, 320, 95, 245, 55, 165];
+
+    /// <summary>
+    /// Each user's tint, given in the order users were added, so the first ten people always look clearly different
+    /// (Hiten saw Admin and Hiten in nearly the same gold when tints came from the name alone, 25 Nov 2026).
+    /// </summary>
+    public async Task<Dictionary<string, int>> PersonHuesAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var names = await db.Users.AsNoTracking().OrderBy(u => u.Id).Select(u => u.Name).ToListAsync();
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < names.Count; i++)
+        {
+            map.TryAdd(names[i], Hues[i % Hues.Length]);
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// The tint of a name that is not a user (any more): always the same for the same name (own hash, not .NET's, which changes
+    /// between runs), picked from hues that are not red (red means Delete in this app).
+    /// </summary>
+    public static int PersonHue(string? name)
+    {
+        int[] hues = Hues;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return 0;   // the app itself: shown grey
+        }
+
+        var hash = 17;
+        foreach (var ch in name.Trim().ToLowerInvariant())
+        {
+            hash = unchecked(hash * 31 + ch);
+        }
+
+        return hues[(hash & int.MaxValue) % hues.Length];
+    }
+
+    /// <summary>A link to the record when it still exists and the person may open its screen.</summary>
+    private static async Task<List<ActivityRow>> WithLinksAsync(AppDbContext db, List<ActivityRow> rows, UserAccess access)
+    {
+        var guids = rows.Where(r => r.RecordId is not null).Select(r => Guid.TryParse(r.RecordId, out var g) ? g : Guid.Empty).Where(g => g != Guid.Empty).Distinct().ToList();
+        var existing = new HashSet<Guid>();
+        existing.UnionWith(await db.Customers.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.Suppliers.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.Products.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.Purchases.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.SalesOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.Sales.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        existing.UnionWith(await db.PurchaseOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+
+        return rows.Select(r =>
+        {
+            string? path = r.RecordType switch
+            {
+                nameof(CustomerEntity) => $"/customer/{r.RecordId}",
+                nameof(SupplierEntity) => $"/supplier/{r.RecordId}",
+                nameof(ProductEntity) => $"/product/{r.RecordId}",
+                nameof(PurchaseEntity) => $"/purchase/{r.RecordId}",
+                nameof(SalesOrderEntity) => $"/salesorder/{r.RecordId}",
+                nameof(SalesEntity) => $"/sale/{r.RecordId}",
+                nameof(PurchaseOrderEntity) => "/purchaseorder",
+                nameof(UserEntity) => "/users",
+                nameof(RoleEntity) => "/roles",
+                _ => null,
+            };
+            var exists = r.RecordType is nameof(UserEntity) or nameof(RoleEntity)
+                || (Guid.TryParse(r.RecordId, out var g) && existing.Contains(g));
+            return path is not null && exists && access.AllowsPath(path) ? r with { Link = path } : r;
+        }).ToList();
     }
 
     /// <summary>A line with a rate is shown only to people who may see that side's rates.</summary>

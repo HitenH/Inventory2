@@ -416,4 +416,107 @@ public class ActivityLogTests
 
         Assert.Equal(["Remarks: (blank) → checked"], (await LogAsync(test)).Select(l => l.Text));
     }
+
+    // ---- Batch 1c-5: the Activity log screen. ----
+
+    private static ActivityFilter Week(string? person = null, ActivityKind kind = ActivityKind.Everything, string? search = null) =>
+        new(DateOnly.FromDateTime(DateTime.Today.AddDays(-6)), DateOnly.FromDateTime(DateTime.Today), person, kind, search);
+
+    private static UserAccess AdminAccess() =>
+        new("Admin", true, true, false, [new RoleGrant(true, new HashSet<string>(), null)], DateTime.Now);
+
+    [Fact]
+    public async Task The_screen_lists_sittings_newest_first_with_filters_for_person_kind_and_words()
+    {
+        using var test = new TestDatabase();
+        var seed = await test.SeedAsync();
+        await ClearLogAsync(test);
+        test.CurrentUser.Name = "Hiten";
+        await new CustomerRepositoryEF(test.Factory).Update(new CustomerEntity { Id = seed.CustomerId, CustomerId = "C1", Name = "Customer One", Area = "JP Nagar" });
+        test.CurrentUser.Name = "Admin";
+        var purchaseId = await new PurchaseRepositoryEF(test.Factory).Create(new PurchaseEntity { Date = Day, SupplierEntityId = seed.SupplierId, VoucherId = 14 });
+        var service = new ActivityLogService(test.Factory, new CurrentUser { Name = "Admin" });
+        await service.WriteAsync(ActivityLogService.Login, "Logged in", "Hiten");
+
+        var all = await service.SearchAsync(Week(), AdminAccess());
+        Assert.Equal(["Logged in", "Created: supplier Supplier One", "Area: (blank) → JP Nagar"], all.Select(r => r.Group.Lines[0]));
+        Assert.Equal(["system", "purchase", "party"], all.Select(r => r.Kind));
+        Assert.Equal($"/purchase/{purchaseId}", all[1].Link);
+
+        Assert.Equal(2, (await service.SearchAsync(Week(person: "hiten"), AdminAccess())).Count);
+        Assert.Single(await service.SearchAsync(Week(kind: ActivityKind.Logins), AdminAccess()));
+        Assert.Single(await service.SearchAsync(Week(kind: ActivityKind.Purchases), AdminAccess()));
+        Assert.Equal("Customer Customer One (C1)", Assert.Single(await service.SearchAsync(Week(search: "jp nag"), AdminAccess())).RecordLabel);
+        Assert.Empty(await service.SearchAsync(new ActivityFilter(Day.AddYears(-1), Day.AddYears(-1), null, ActivityKind.Everything, null), AdminAccess()));
+    }
+
+    [Fact]
+    public async Task The_screen_hides_rates_and_cannot_find_them_by_searching()
+    {
+        using var test = new TestDatabase();
+        await PurchaseWithLineAsync(test);
+        var service = new ActivityLogService(test.Factory, new CurrentUser());
+
+        var noRates = await service.SearchAsync(Week(search: "Rate 40"), Access(Permissions.ActivitySee));
+        var withRates = await service.SearchAsync(Week(search: "Rate 40"), Access(Permissions.ActivitySee, Permissions.RatesPurchaseSee));
+
+        Assert.Empty(noRates);
+        Assert.Single(withRates);
+        Assert.Empty(await service.SearchAsync(Week(), Access(Permissions.ScreenPurchases)));   // no "See activity log" switch
+    }
+
+    [Fact]
+    public async Task A_deleted_record_keeps_its_name_but_has_no_link()
+    {
+        using var test = new TestDatabase();
+        var (purchaseId, _) = await PurchaseWithLineAsync(test);
+        await new PurchaseRepositoryEF(test.Factory).Delete(new PurchaseEntity { Id = purchaseId });
+
+        var rows = await new ActivityLogService(test.Factory, new CurrentUser()).SearchAsync(Week(), AdminAccess());
+
+        Assert.All(rows, r => Assert.Null(r.Link));
+        Assert.All(rows, r => Assert.Equal("Purchase 14 of 25-11-2026", r.RecordLabel));
+    }
+
+    [Fact]
+    public async Task Only_the_Admin_role_may_erase_and_the_erase_leaves_no_trace()
+    {
+        using var test = new TestDatabase();
+        await PurchaseWithLineAsync(test);
+        var service = new ActivityLogService(test.Factory, new CurrentUser { Name = "Admin" });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.EraseAllAsync(Access(Permissions.ActivitySee)));
+        Assert.Equal(3, await service.CountAsync());
+
+        Assert.Equal(3, await service.EraseAllAsync(AdminAccess()));
+        Assert.Equal(0, await service.CountAsync());
+    }
+
+    [Fact]
+    public void Each_person_keeps_one_tint_and_none_is_red()
+    {
+        Assert.Equal(ActivityLogService.PersonHue("Hiten"), ActivityLogService.PersonHue(" hiten "));
+        foreach (var name in new[] { "Hiten", "Admin", "Clerk", "UiLogViewer", "Ravi", "Sita", "Counter 2" })
+        {
+            var hue = ActivityLogService.PersonHue(name);
+            Assert.InRange(hue, 30, 330);   // red sits around 0 / 360
+        }
+    }
+
+    [Fact]
+    public async Task The_first_ten_users_all_get_different_tints_in_the_order_they_were_added()
+    {
+        using var test = new TestDatabase();
+        await using (var db = test.Open())
+        {
+            db.Users.AddRange(Enumerable.Range(1, 10).Select(i => new UserEntity { Name = $"User{i}", Password = "x" }));
+            await db.SaveChangesAsync(Token);
+        }
+
+        var hues = await new ActivityLogService(test.Factory, new CurrentUser()).PersonHuesAsync();
+
+        Assert.Equal(10, hues.Values.Distinct().Count());
+        Assert.Equal(hues["User1"], hues["user1"]);
+        Assert.All(hues.Values, h => Assert.InRange(h, 30, 330));
+    }
 }
