@@ -208,7 +208,7 @@
             <MudTd>@context.ProductRate</MudTd>
             }
             <MudTd>@context.OrderStatus</MudTd>
-            <MudTd>@context.Remarks</MudTd>
+            <MudTd>@context.Remarks <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.PurchaseOrderEntity)" RecordId="@context.Id.ToString()" Title="Purchase order" Icon="true" /></MudTd>
         </RowTemplate>
         <RowEditingTemplate>
             <MudTd>

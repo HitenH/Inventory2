@@ -44,6 +44,7 @@
                     @if (ProductId != null)
                     {
                         <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" OnClick="DeleteProduct">Delete</MudButton>
+                        <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.ProductEntity)" RecordId="@ProductId" Title="Product" />
                     }
                     </div>
                 </EditForm>

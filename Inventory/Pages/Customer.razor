@@ -61,6 +61,7 @@
                 @if (CustomerId != null)
                 {
                     <button type="button" class="btn btn-danger ms-3" @onclick="DeleteCustomer">Delete</button>
+                    <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.CustomerEntity)" RecordId="@CustomerId" Title="Customer" Class="ms-3" />
                 }
                 <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
             </MudPaper>

@@ -5,6 +5,8 @@
 @inject ISnackbar snackbar
 @inject IDialogService DialogService
 @inject Microsoft.JSInterop.IJSRuntime JS
+@inject ActivityLogService Activity
+@inject ILogger<Settings> Logger
 
 <PagesHeader Title="Settings" SubTitle="Reports, backups, overview" />
 
@@ -210,6 +212,7 @@
         try
         {
             var copied = await backupService.ChangeBackupFolderAsync(folder, copyExisting);
+            await Activity.TryWriteAsync(ActivityLogService.Backup, $"Backup folder changed: {oldFolder} → {folder}", null, Logger);
             snackbar.Add(copyExisting
                 ? $"Backups now go to {folder}. {copied} backup(s) copied there."
                 : $"Backups now go to {folder}. Earlier backups are still in {oldFolder}.",
@@ -243,6 +246,8 @@
         try
         {
             await backupService.RestoreDatabaseAsync(backup.Path);
+            // Written into the restored data, so the restore itself is on record there.
+            await Activity.TryWriteAsync(ActivityLogService.Backup, $"Backup restored: {System.IO.Path.GetFileName(backup.Path)} (made {backup.CreatedAt:dd-MM-yyyy HH:mm})", null, Logger);
             snackbar.Add("Backup restored. Close the app and start it again now.", Severity.Warning,
                 o => o.RequireInteraction = true);
         }
@@ -269,6 +274,7 @@
             if (confirmed)
             {
                 backupService.DeleteBackup(backup.Path);
+                await Activity.TryWriteAsync(ActivityLogService.Backup, $"Backup deleted: {System.IO.Path.GetFileName(backup.Path)} (made {backup.CreatedAt:dd-MM-yyyy HH:mm})", null, Logger);
                 snackbar.Add("Deleted the backup", Severity.Success);
             }
         }

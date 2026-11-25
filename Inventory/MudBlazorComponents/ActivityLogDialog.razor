@@ -1,0 +1,93 @@
+@* Version 3.0, batch 1c-4: one record's history, newest first, as a panel on the right (mock-up agreed 25 Nov 2026).
+   Lines with rates the person may not see are never loaded (Service/ActivityLogService.ForRecordAsync). Esc or X closes it. *@
+@inject ActivityLogService Activity
+@inject ILogger<ActivityLogDialog> Logger
+
+<MudDialog Class="activity-panel" id="activity-panel">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="activity-title">Activity – @heading</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (failed)
+        {
+            <MudAlert Severity="Severity.Error">The activity log could not be read. The details were written to the log file.</MudAlert>
+        }
+        else if (history is null)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+        }
+        else
+        {
+            @if (history.Groups.Count == 0 && !history.EarlierNotRecorded)
+            {
+                <MudText Class="activity-empty">Nothing recorded yet.</MudText>
+            }
+            @foreach (var group in history.Groups)
+            {
+                <div class="activity-group">
+                    <div class="activity-when">@group.When &nbsp; <b>@(group.By ?? "the app")</b></div>
+                    @foreach (var line in group.Lines)
+                    {
+                        <div class="activity-line">@line</div>
+                    }
+                    @if (group.Details.Count > 0)
+                    {
+                        @* Folded line-by-line details (owner, 25 Nov 2026): a click shows or hides them. *@
+                        <button type="button" class="btn btn-link btn-sm activity-show-lines" @onclick="() => Toggle(group)">
+                            @(open.Contains(group) ? "hide lines" : "show lines")
+                        </button>
+                        @if (open.Contains(group))
+                        {
+                            <div class="activity-details">
+                                @foreach (var line in group.Details)
+                                {
+                                    <div class="activity-line">@line</div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            @if (history.EarlierNotRecorded)
+            {
+                <MudText Class="activity-earlier" id="activity-earlier">Older history: not recorded (before version 3.0).</MudText>
+            }
+        }
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter] public string RecordType { get; set; } = string.Empty;
+    [Parameter] public string RecordId { get; set; } = string.Empty;
+    [Parameter] public string Fallback { get; set; } = "Activity";
+    [Parameter] public UserAccess Access { get; set; } = UserAccess.Nobody;
+
+    private RecordHistory? history;
+    private string heading = "";
+    private bool failed;
+    private readonly HashSet<ActivityGroup> open = new(ReferenceEqualityComparer.Instance);
+
+    private void Toggle(ActivityGroup group)
+    {
+        if (!open.Remove(group))
+        {
+            open.Add(group);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        heading = Fallback;
+        try
+        {
+            history = await Activity.ForRecordAsync(RecordType, RecordId, Access);
+            heading = history.Label ?? Fallback;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not read the activity log for {Type} {Id}", RecordType, RecordId);
+            failed = true;
+        }
+    }
+}

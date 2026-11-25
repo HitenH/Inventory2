@@ -1,0 +1,60 @@
+@* Version 3.0, batch 1c-4: the "See activity log" button (or a small history icon in a table row).
+   Shown only to people with the "See activity log" switch, and only for a record that has been saved.
+   Opens MudBlazorComponents/ActivityLogDialog as a side panel; the screen behind stays as it is. *@
+@inject IDialogService DialogService
+
+@if (Access?.Allows(Permissions.ActivitySee) == true && !string.IsNullOrWhiteSpace(RecordId))
+{
+    @if (Icon)
+    {
+        <span class="activity-log-icon" @onclick:stopPropagation="true">
+            <MudIconButton Icon="@Icons.Material.Filled.History" Size="Size.Small" title="See activity log" aria-label="See activity log"
+                           Class="activity-log-open" OnClick="OpenAsync" />
+        </span>
+    }
+    else
+    {
+        <button type="button" id="activity-log-open" class="btn btn-secondary activity-log-open @Class" @onclick="OpenAsync">See activity log</button>
+    }
+}
+
+@code {
+    [CascadingParameter] public UserAccess? Access { get; set; }
+
+    /// <summary>The record's entity name, e.g. nameof(PurchaseEntity).</summary>
+    [Parameter, EditorRequired] public string RecordType { get; set; } = string.Empty;
+
+    /// <summary>The record's key; no button while it is empty (a new, unsaved record).</summary>
+    [Parameter] public string? RecordId { get; set; }
+
+    /// <summary>Panel heading when the log has no name for the record yet, e.g. "Purchase".</summary>
+    [Parameter] public string Title { get; set; } = "Activity";
+
+    [Parameter] public bool Icon { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private async Task OpenAsync()
+    {
+        if (Access is null || string.IsNullOrWhiteSpace(RecordId) || Guid.TryParse(RecordId, out var g) && g == Guid.Empty)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<ActivityLogDialog>
+        {
+            { x => x.RecordType, RecordType },
+            { x => x.RecordId, RecordId },
+            { x => x.Fallback, Title },
+            { x => x.Access, Access },
+        };
+        var options = new DialogOptions
+        {
+            Position = DialogPosition.CenterRight,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+        };
+        await DialogService.ShowAsync<ActivityLogDialog>(Title, parameters, options);
+    }
+}

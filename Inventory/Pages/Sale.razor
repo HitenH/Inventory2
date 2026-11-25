@@ -138,6 +138,7 @@
             }
             <NavLink type="button" @onclick="OpenScanMassDialogAsync" data-shortcut="bulk" title="Alt+B" id="button-close" class="btn btn-primary ms-2">Scan Mass Products</NavLink>
             <NavLink type="button" href="/sales" id="button-close" class="btn btn-info ms-2">Close</NavLink>
+            <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.SalesEntity)" RecordId="@SaleId" Title="Sale" Class="ms-2" />
             @if (salesModel != null)
             {
                 <button type="button" class="btn btn-danger ms-3" @onclick="ClearProductchoice">Clear Scan Area</button>

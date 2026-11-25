@@ -30,6 +30,10 @@ namespace Inventory.Domain
         public DbSet<SalesEntity> Sales { get; set; }
         public DbSet<SalesVariantEntity> SalesVariants { get; set; }
         public DbSet<SalesSummaryEntity> SalesSummary { get; set; }
+        public DbSet<ActivityEntry> ActivityLog { get; set; }
+
+        /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
+        public string? ActivityNote { get; set; }
 
         /// <summary>
         /// If a save fails (for example a duplicate ID refused by the database), undo the pending changes in memory.
@@ -134,6 +138,11 @@ namespace Inventory.Domain
             modelBuilder.Entity<PairRuleEntity>()
                         .HasIndex(p => new { p.PermissionA, p.PermissionB })
                         .IsUnique();
+
+            // Batch 1c-3: the activity log is read per record (the panel) and by date (the log screen).
+            modelBuilder.Entity<ActivityEntry>().ToTable("ActivityLog");
+            modelBuilder.Entity<ActivityEntry>().HasIndex(a => new { a.RecordType, a.RecordId });
+            modelBuilder.Entity<ActivityEntry>().HasIndex(a => a.At);
 
             modelBuilder.Entity<PurchaseOrderEntity>()
                         .Property(p => p.Date)

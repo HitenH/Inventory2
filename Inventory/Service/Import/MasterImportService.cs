@@ -140,6 +140,10 @@ public class MasterImportService(IDbContextFactory<AppDbContext> factory, ILogge
         try
         {
             var count = await AddAsync(context, preview.Kind, payload);
+            // Batch 1c-3: one activity-log line for the whole import, not one per record.
+            context.ActivityNote = preview.Kind == ImportKind.Purchases
+                ? $"Imported {count} {ImportTemplates.Noun(preview.Kind, count)} with {preview.LineCount} lines from {preview.FileName}"
+                : $"Imported {count} {ImportTemplates.Noun(preview.Kind, count)}" + (preview.Kind == ImportKind.Products ? $" with {preview.VariantCount} variants" : "") + $" from {preview.FileName}";
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
             if (preview.Kind == ImportKind.Purchases)

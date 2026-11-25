@@ -37,7 +37,44 @@ public sealed class SeenVersions
 
     public void Forget(string key)
     {
-        lock (gate) { seen.Remove(key); }
+        lock (gate) { seen.Remove(key); creating.Remove(key); }
+    }
+
+    // Batch 1c-4 (owner, 25 Nov 2026): lines added to a new record before leaving its screen count as creating it,
+    // so the activity log folds them into the record's "Created" entry instead of listing them one by one.
+    private readonly HashSet<string> creating = new();
+
+    /// <summary>This tab has just created the record: until the next screen change, additions to it are part of creating it.</summary>
+    public void MarkCreating(string key)
+    {
+        lock (gate) { creating.Add(key); }
+    }
+
+    public bool IsCreating(string key)
+    {
+        lock (gate) { return creating.Contains(key); }
+    }
+
+    /// <summary>Another screen was opened: whatever was being created here is now created, and every sitting ends.</summary>
+    public void EndCreating()
+    {
+        lock (gate) { creating.Clear(); sittings.Clear(); }
+    }
+
+    // Owner, 25 Nov 2026: changes one person makes to one record in one sitting (same screen, no pause longer than
+    // SittingPause) are one entry in the activity log, so lines added one by one fold like a Bulk Entry.
+    public static readonly TimeSpan SittingPause = TimeSpan.FromMinutes(30);
+    private readonly Dictionary<string, (Guid Id, DateTime Last)> sittings = new();
+
+    /// <summary>The activity-log group for a change to this record now: the current sitting's, or a new one.</summary>
+    public Guid SittingFor(string key, DateTime now)
+    {
+        lock (gate)
+        {
+            var id = sittings.TryGetValue(key, out var s) && now - s.Last <= SittingPause ? s.Id : Guid.NewGuid();
+            sittings[key] = (id, now);
+            return id;
+        }
     }
 
     internal void Raise(RecordChangedException clash) => Clash?.Invoke(clash);

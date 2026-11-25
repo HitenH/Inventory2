@@ -15,6 +15,7 @@ namespace Inventory.Pages
         [Inject] private AuthenticationStateProvider authStateProvider { get; set; }
         [Inject] private NavigationManager navManager { get; set; }
         [Inject] private PasswordService Passwords { get; set; } = default!;
+        [Inject] private Inventory.Service.ActivityLogService Activity { get; set; } = default!;
 
         /// <summary>The page the user tried to open before being sent to login (set by RedirectToLogin).</summary>
         [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
@@ -57,6 +58,9 @@ namespace Inventory.Pages
                 if (!ok)
                 {
                     // Same message for unknown user and wrong password, so names cannot be guessed.
+                    // Batch 1c-3: the activity log keeps the name that was typed (no password is ever written).
+                    await Activity.TryWriteAsync(Inventory.Service.ActivityLogService.LoginRefused,
+                        $"Login refused for '{loginModel.Name?.Trim()}': wrong name or password", null, Logger);
                     errorMessage = "Invalid user name or password.";
                     loginModel.Password = "";
                     return;
@@ -66,6 +70,7 @@ namespace Inventory.Pages
                 if (user!.IsDisabled)
                 {
                     errorMessage = "This user is disabled. Ask the Admin.";
+                    await Activity.TryWriteAsync(Inventory.Service.ActivityLogService.LoginRefused, "Login refused: this user is disabled", user.Name, Logger);
                     loginModel.Password = "";
                     return;
                 }
@@ -76,6 +81,7 @@ namespace Inventory.Pages
                     await UserRepository.Update(user);
                 }
 
+                await Activity.TryWriteAsync(Inventory.Service.ActivityLogService.Login, "Logged in", user!.Name, Logger);
                 var customAuthStateProvider = (CustomAuthenticationProvider)authStateProvider;
                 await customAuthStateProvider.UpdateAuthenticationState(new UserSession()
                 {

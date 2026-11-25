@@ -36,6 +36,10 @@ public sealed class TestDatabase : IDisposable
             context.Roles.RemoveRange(context.Roles.ToList());
             context.SaveChanges();
         }
+
+        // Batch 1c-3: start every test with an empty activity log (setting up writes to it too).
+        context.ActivityLog.RemoveRange(context.ActivityLog.ToList());
+        context.SaveChanges();
     }
 
     public AppDbContext Open() => Factory.CreateDbContext();

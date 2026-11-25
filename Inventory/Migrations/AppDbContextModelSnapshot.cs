@@ -17,6 +17,56 @@ namespace Inventory.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
+            modelBuilder.Entity("Inventory.Domain.Entities.ActivityEntry", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("By")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsLineDetail")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Pieces")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RateSide")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordLabel")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SaveId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("RecordType", "RecordId");
+
+                    b.ToTable("ActivityLog", (string)null);
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
                 {
                     b.Property<Guid>("Id")

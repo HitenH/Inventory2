@@ -23,6 +23,8 @@ public static class Permissions
     public const string AdminUsers = "admin.users";
     public const string AdminImport = "admin.import";
     public const string AdminSettings = "admin.settings";
+    /// <summary>Batch 1c-4: the "See activity log" button and (1c-5) the log screen. Rates in the log follow the rate switches.</summary>
+    public const string ActivitySee = "activity.see";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -83,7 +85,11 @@ public static class Permissions
         new(AdminUsers, "Manage users and roles", AdminGroup),
         new(AdminImport, "Import data", AdminGroup),
         new(AdminSettings, "Change settings and backups", AdminGroup),
+        new(ActivitySee, "See activity log", AdminGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();
+
+    /// <summary>The plain description of a switch (its key if unknown, e.g. one removed in a later version).</summary>
+    public static string Describe(string key) => All.FirstOrDefault(p => p.Key == key)?.Label ?? key;
 }

@@ -69,6 +69,7 @@
             @if (SalesOrderId != null)
             {
                 <button type="button" class="btn btn-danger" @onclick="DeleteOrder">Delete</button>
+                <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.SalesOrderEntity)" RecordId="@SalesOrderId" Title="Sales order" />
             }
             <NavLink class="btn btn-secondary" href="/">Home</NavLink>
         </div>

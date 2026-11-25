@@ -254,3 +254,14 @@ a, .btn-link {
 .box-center input.mud-input-slot {
     text-align: center;
 }
+
+/* Version 3.0, batch 1c-4: the activity log panel on the right (MudBlazorComponents/ActivityLogDialog). */
+.mud-dialog.activity-panel { height: 100vh; max-height: 100vh; margin: 0; border-radius: 0; }
+.mud-dialog.activity-panel .mud-dialog-content { overflow-y: auto; }
+.activity-group { padding: 8px 0; border-bottom: 1px solid var(--mud-palette-lines-default); }
+.activity-when { color: var(--mud-palette-text-secondary); font-size: 0.85rem; margin-bottom: 2px; }
+.activity-line { padding-left: 12px; overflow-wrap: anywhere; }
+.activity-earlier, .activity-empty { color: var(--mud-palette-text-secondary); font-style: italic; margin-top: 12px; }
+.activity-log-icon { display: inline-block; vertical-align: middle; }
+.activity-show-lines { padding: 0 0 0 12px; font-size: 0.85rem; }
+.activity-details { padding-left: 12px; font-size: 0.9rem; }

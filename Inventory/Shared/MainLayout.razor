@@ -185,6 +185,8 @@ else
     {
         _errorBoundary?.Recover();
         _clashMessage = null;
+        // Batch 1c-4: leaving a screen ends "creating" a new record (its later lines are ordinary changes).
+        Seen.EndCreating();
         _access = await AccessService.CurrentAsync();
     }
 

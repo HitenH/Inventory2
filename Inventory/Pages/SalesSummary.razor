@@ -115,6 +115,7 @@
             <button type="button" class="btn btn-warning ms-3" @onclick="BackToScanning">Back To Scanning Area</button>
             <a class="btn btn-secondary ms-3" href="/sales">Close</a>
             <button type="button" class="btn btn-danger ms-3" @onclick="DeleteSales">Delete</button>
+            <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.SalesEntity)" RecordId="@SalesId" Title="Sale" Class="ms-3" />
         </div>
     </MudPaper>
 

@@ -61,6 +61,7 @@
                 @if (supplierModel != null)
                 {
                     <button type="button" class="btn btn-danger ms-3" @onclick="DeleteSupplier">Delete</button>
+                    <ActivityLogButton RecordType="@nameof(Inventory.Domain.Entities.SupplierEntity)" RecordId="@SupplierId" Title="Supplier" Class="ms-3" />
                 }
                 <NavLink class="btn btn-secondary ms-3" href="/">Home</NavLink>
             </MudPaper>

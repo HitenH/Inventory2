@@ -154,7 +154,7 @@ public static class RecordStamps
         name is nameof(IStamped.CreatedAt) or nameof(IStamped.CreatedBy) or nameof(IStamped.ChangedAt) or nameof(IStamped.ChangedBy);
 
     /// <summary>The stamped record a part belongs to, or null (pair rules and unknown parts have none).</summary>
-    private static object? FindOwner(DbContext context, EntityEntry entry)
+    internal static object? FindOwner(DbContext context, EntityEntry entry)
     {
         object? Load<T>(object? key) where T : class => key is null ? null : context.Set<T>().Find(key);
 
@@ -204,7 +204,7 @@ public sealed class CurrentUser
 /// </summary>
 public sealed class RecordStampInterceptor(CurrentUser currentUser, SeenVersions? seen = null) : SaveChangesInterceptor
 {
-    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<DbContext, List<EntityEntry>> pending = new();
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<DbContext, Pending> pending = new();
 
     public SeenVersions? Seen { get; } = seen;
 
@@ -247,18 +247,29 @@ public sealed class RecordStampInterceptor(CurrentUser currentUser, SeenVersions
             return;
         }
 
-        var touched = RecordStamps.Apply(context, currentUser.Name, DateTime.Now, Seen);
-        pending.AddOrUpdate(context, touched);
+        var now = DateTime.Now;
+        var touched = RecordStamps.Apply(context, currentUser.Name, now, Seen);
+        // Batch 1c-3: the activity log lines go into the same save (all or nothing with the data).
+        context.AddRange(ActivityLogWriter.Describe(context, currentUser.Name, now, Seen));
+        pending.AddOrUpdate(context, new Pending(touched, touched.Where(e => e.State == EntityState.Added).ToList()));
     }
 
     private void After(DbContext? context)
     {
-        if (context is not null && pending.TryGetValue(context, out var touched))
+        if (context is not null && pending.TryGetValue(context, out var saved))
         {
             pending.Remove(context);
-            RecordStamps.AfterSave(touched, Seen);
+            RecordStamps.AfterSave(saved.Touched, Seen);
+            // Batch 1c-4: a record created from this tab is "being created" until the next screen change
+            // (its key is known only now, after the database gave it one).
+            foreach (var entry in saved.Created)
+            {
+                Seen?.MarkCreating(SeenVersions.KeyOf(entry));
+            }
         }
     }
+
+    private sealed record Pending(List<EntityEntry> Touched, List<EntityEntry> Created);
 
     private void Forget(DbContext? context)
     {
