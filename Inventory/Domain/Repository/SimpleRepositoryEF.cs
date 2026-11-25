@@ -55,10 +55,19 @@ namespace Inventory.Domain.Repository
             await context.SaveChangesAsync();
         }
 
+        /// <summary>Batch 1c-2: true when the list itself is edited in place (Purchase Orders), so its rows are remembered as opened.</summary>
+        protected virtual bool ListIsEditedInPlace => false;
+
         public async Task<List<T>> GetAll()
         {
             await using var context = await factory.CreateDbContextAsync();
-            return await context.Set<T>().AsNoTracking().ToListAsync();
+            var list = await context.Set<T>().AsNoTracking().ToListAsync();
+            if (ListIsEditedInPlace)
+            {
+                context.MarkSeen(list.OfType<Inventory.Domain.Entities.IStamped>());
+            }
+
+            return list;
         }
 
         public async Task<T> GetById(Guid id)
@@ -73,7 +82,10 @@ namespace Inventory.Domain.Repository
             await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Set<T>().FindAsync(idOf(item));
             if (existing is null)
+            {
+                context.ThrowIfGoneWhileOpen<T>(idOf(item));
                 return;
+            }
 
             context.Entry(existing).CurrentValues.SetValues(item);
             await context.SaveChangesAsync();

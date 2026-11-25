@@ -97,6 +97,7 @@ namespace Inventory.Domain.Repository
             var existing = await context.PurchaseVariant.FindAsync(variant.Id);
             if (existing is null)
             {
+                context.ThrowPartGone<PurchaseVariant>();   // batch 1c-2: deleted by someone else
                 return;
             }
 

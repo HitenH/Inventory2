@@ -175,13 +175,15 @@ namespace Inventory.Domain.Repository
             await using var context = await factory.CreateDbContextAsync();
             // WithIdentityResolution keeps the same object shape as the old tracked query
             // (each variant's Product points back to this product).
-            return await context.Products
+            var product = await context.Products
                 .AsNoTrackingWithIdentityResolution()
                 .AsSplitQuery()
                 .Include(p => p.Category)
                 .Include(p => p.Variants)
                 .ThenInclude(v => v.Image)
-                .FirstOrDefaultAsync(c => c.Id == id, default) ?? new ProductEntity();
+                .FirstOrDefaultAsync(c => c.Id == id, default);
+            context.MarkSeen(product);   // batch 1c-2: the version this screen opened
+            return product ?? new ProductEntity();
         }
 
         public async Task<ProductEntity> GetByProductId(string productId)
@@ -206,7 +208,10 @@ namespace Inventory.Domain.Repository
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == product.Id);
             if (existing is null)
+            {
+                context.ThrowIfGoneWhileOpen<ProductEntity>(product.Id);
                 return;
+            }
 
             existing.ProductId = product.ProductId;
             existing.Name = product.Name;

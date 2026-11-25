@@ -83,6 +83,8 @@ namespace Inventory.Domain.Repository
                 return new PurchaseEntity();
             }
 
+            context.MarkSeen(purchase);   // batch 1c-2: the version this screen opened
+
             await TransactionLineHydrator.HydratePurchaseAsync(context, purchase);
             return purchase;
         }
@@ -114,6 +116,7 @@ namespace Inventory.Domain.Repository
             var existing = await context.Purchases.FirstOrDefaultAsync(p => p.Id == purchase.Id);
             if (existing is null)
             {
+                context.ThrowIfGoneWhileOpen<PurchaseEntity>(purchase.Id);
                 return purchase.Id;
             }
 
@@ -140,6 +143,7 @@ namespace Inventory.Domain.Repository
             var existing = await context.Purchases.FirstOrDefaultAsync(p => p.Id == purchaseId);
             if (existing is null)
             {
+                context.ThrowIfGoneWhileOpen<PurchaseEntity>(purchaseId);
                 return;
             }
 

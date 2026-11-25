@@ -1,6 +1,6 @@
 # Plan for version 3.0 – from one counter PC to a multi-user, multi-location system
 
-**Status:** agreed direction, 14 Nov 2026 (session 10). **Nothing here is built.** Nothing is built until Hiten agrees the stage.
+**Status:** agreed direction, 14 Nov 2026 (session 10). **Built so far:** stage 0 (live 16 Nov 2026), stage 1a and stage 1b (25 Nov 2026), on `main` but **not installed** – the counter PC still runs version 2.0 until stage 1 is finished. **Now: stage 1c** (being built). See "Where we are" below.
 **Versions:** 1.0 = the May 2026 build. 2.0 = the current app, concluded 14 Nov 2026 and described in `README.md` (what it does, how it is built, how to run, test and install it, known limits). 3.0 = this plan.
 **How this fits:** `README.md` explains the app as it is. This file is the only plan. Nothing is due on version 2.0. When a stage starts, its open questions (section 9) are asked and its batches are written into a "Current stage" section added at the top of this file.
 **Written for:** Hiten (plain English) and any future session picking this up.
@@ -18,6 +18,16 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 
 **Rollback:** the live counter PC runs the code tagged `live-16-nov-2026`. Before any stage 1 build is installed there, a copy of the live database is taken first (README section 10, "Going back"). Hiten confirmed on 24 Nov 2026 that he also keeps his own database backups in two physical places away from the running drive.
 
+## Where we are (25 Nov 2026, end of session 11) – read this first
+
+- **Done and pushed:** 1a-1 line rules (`Service/LineRules.cs`; negative quantities allowed for returns/damage, zero refused), 1a-2 double-Enter guard, 1a-4 "not found" + plain messages (partly), and all of **1b**: roles and permissions data (`Service/Permissions.cs`, `Service/Access.cs`), Users screen, Roles screen, screens and menu follow the role (`Service/AccessService.cs`, `Shared/MainLayout.razor`, `Permissions.ForPath`), rate hiding both ways, three starter roles. Last commit: batch 1b-5.
+- **Parked by Hiten until the end of stage 1:** amounts/totals (1a-3), the proper damage/returns workflow, CSV imports refusing quantity ≤ 0. See "Parked" below.
+- **Now: stage 1c – who and when.** Describe step done 25 Nov 2026 (decisions and batches in "Stage 1c" below). 1c-1 and 1c-2 built and browser-checked (not yet pushed); next 1c-3 (activity log written), then 1c-4 (the "See activity log" panel).
+- **Then 1d – shop network**, which also settles the old duplicate voucher numbers. Stage 1 is only installed on the counter PC when 1d is done ("Done when" in section 4).
+- **Counts now:** build 0 errors / 329 warnings (baseline was 333); **399 tests** pass (after 1c-2).
+- **Install rule:** copy the live database before installing anything (README section 10). Stage 1 adds new tables and columns (`UsersAndRoles`, `StarterRoles`, `RecordStamps` upgrades): an older build cannot open the upgraded database. The upgrade was tried on a copy of real data: both users became Admin, nothing else changed.
+- **Working agreements with Hiten:** plain English, no jargon; he answers questions and says **"push"** to approve – nothing is committed or pushed before that. Show mock-ups (ASCII is fine) before building a new screen. Senior-developer role: delegate large batches to a cheaper agent with a precise brief and review its work, or do it directly when Hiten asks ("do it yourself" for 1b-3 to 1b-5). Stop any agent that loops.
+
 ## Stage 1a – Move the rules into one place (nothing new on screen)
 
 **Why this comes first.** Today the rule "a line must have a sensible quantity" is written inside the Purchase and Sale screens, and Bulk Entry holds its own separate copy of it. With one PC that is survivable. Hiten has said the shop will later run "a lot of devices" – checker's tablet, picker's phone, salesman's screen. Every one of those would otherwise need its own copy of every rule, and the first copy anybody forgets writes bad stock into the data from a device nobody is watching. So the rules move into one place before any new screen is added.
@@ -25,11 +35,11 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 | Batch | What | Changes what the operator sees? |
 |---|---|---|
 | 1a-1 **DONE 24 Nov 2026** | One rule book for voucher lines (`Service/LineRules.cs`): a real product and variant, quantity a whole number that is not zero, discount 0–100. Sale, Purchase, Sales Order and Bulk Entry all ask it. Also closed two holes found while building it: **no screen checked the discount at all** (not even Bulk Entry, contrary to the README), and the quantity box in the Sale lines table wrote any number straight onto an already-added line. | **Yes** – quantity 0 or a discount outside 0–100 are refused with a plain message. Negative quantities were refused too at first; Hiten reversed that the same day because returns and damage are recorded as negative lines for now. |
-| 1a-2 | Double-Enter guard: a very fast second Enter can add the same line twice today. The second one is ignored. | No (removes an accident) |
-| 1a-3 | Totals that cannot go odd: a voucher with a discount but no lines currently stores a **negative** total, which quietly lowers supplier and report figures; a sale that is never summarised keeps a stored total of 0 although its stock has gone. | No |
-| 1a-4 | Honest "not found" and plain messages: four repositories return a blank record instead of saying "not found" (which is how a blank screen appears instead of a message), and technical error text like "GetSupplier error: …" is replaced with ordinary words. **Done 24 Nov 2026 (partly):** the edit screens for Purchase, Sale, Sales Order, Sales Summary and Product now say "not found" (or "could not be opened") and go back to their list, instead of showing a blank form. Save and update messages read "Could not save the purchase: …" and similar. **Open:** the repositories still return a blank record; the wording sweep covers only the messages touched so far. | Only better messages |
+| 1a-2 **DONE 24 Nov 2026** | Double-Enter guard: a very fast second Enter can add the same line twice today. The second one is ignored. | No (removes an accident) |
+| 1a-3 **PARKED 24 Nov 2026** (amounts are not used yet; see "Parked" below) | Totals that cannot go odd: a voucher with a discount but no lines currently stores a **negative** total, which quietly lowers supplier and report figures; a sale that is never summarised keeps a stored total of 0 although its stock has gone. | No |
+| 1a-4 **DONE 24 Nov 2026 (partly)** | Honest "not found" and plain messages: four repositories return a blank record instead of saying "not found" (which is how a blank screen appears instead of a message), and technical error text like "GetSupplier error: …" is replaced with ordinary words. **Done 24 Nov 2026 (partly):** the edit screens for Purchase, Sale, Sales Order, Sales Summary and Product now say "not found" (or "could not be opened") and go back to their list, instead of showing a blank form. Save and update messages read "Could not save the purchase: …" and similar. **Open:** the repositories still return a blank record; the wording sweep covers only the messages touched so far. | Only better messages |
 
-Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run on a test copy before Hiten sees it. Keyboard and scanner behaviour does not change.
+**How each batch is checked (Hiten, 25 Nov 2026):** its own tests, build clean (no new warnings), all tests pass, and **its own new browser check** on a test copy. The **full** `tools/ui-check` suite (keyboard, entry flows, pop-ups, save and focus, Bulk Entry, Alt+B, line rules, access, rates, look) runs **once per stage** and always before anything is installed on the counter PC – not after every batch. The dev app on port 5259 is restarted only when Hiten wants to try something. Keyboard and scanner behaviour does not change.
 
 **1a-1 as built and checked (24 Nov 2026):** 312 tests pass (18 new for the rule book); build 0 errors and **330** warnings, three fewer than the 333 baseline because the null guards added here also cleared three old ones. A new browser check, `tools/ui-check/check-line-rules.mjs`, proves in Chrome that each bad value is refused on Purchase, Sales Order, Sale, the Sale lines table and Bulk Entry, and that a good line still saves. All eight existing `tools/ui-check` scripts still pass, `check-look` included. Not yet tested by Hiten.
 
@@ -38,7 +48,7 @@ Each batch: its own tests, build clean, all tests pass, and `tools/ui-check` run
 - **Damage and returns:** they are recorded as negative quantity lines for now, which Hiten says is not the right workflow. The proper record belongs with stock movements (version 3.0). Revisit then.
 - **CSV imports** still refuse a quantity of 0 or below (import checker). Not changed in batch 1a-1; decide with the rest.
 
-## Stage 1b, 1c, 1d
+## Stage 1b – Users and permissions – **DONE 25 Nov 2026**
 
 As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
 
@@ -53,6 +63,24 @@ As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
 **Stage 1 open questions, asked 24 Nov 2026 (section 9, Q10 and Q12):**
 - **Q10 (needed for 1b): answered 24 Nov 2026** – the roles and tasks are in section 2.1.
 - **Q12 (needed for 1b/1c): answered 24 Nov 2026** – one person may hold several roles, and the Admin decides per pair of tasks whether one person may do both on the same entry (section 2.1). Still open: who stands in when an approver is away.
+
+## Stage 1c – Who and when (opened 25 Nov 2026)
+
+**Decided with Hiten (Describe step, 25 Nov 2026):**
+- **Activity log – what goes in:** every change to a record (create, edit, delete) with **before → after** values, including rate and discount changes (Hiten will use amounts later); users and roles (added, disabled/enabled, password set, roles given/removed, temporary access, role switches); backups (restore, delete, folder change); imports (what and how many rows); logins, successful and failed.
+- **Who may read it:** a new switch, "See activity log" (Admin has it automatically). Rate hiding applies inside the log too: someone who cannot see purchase rates never sees a purchase-rate change in it, and the same for sale rates.
+- **Kept** until erased. Nobody can edit or delete single entries. **Only the Admin role** gets an "Erase whole log" button (one confirmation; erases everything, leaving no trace – Hiten's choice). No separate switch.
+- **Created by / changed by** is recorded on every record but **not shown on the forms** (Hiten: do not crowd the screen). Instead a **"See activity log" button** on Customer, Supplier, Product, Purchase, Sale, Sales Summary and Sales Order (a small history icon per row on Purchase Orders) opens a side panel with that record's full history. Records made before 3.0 show "Not recorded (before version 3.0)".
+- **Two people, same record:** the second save is refused with "<name> changed this <record> at <time> while you had it open. Reload to see their changes." One button reloads; what was typed is lost and re-entered. Two people working on *different* records are never affected.
+- **Checking pace (Hiten):** automatic tests every batch; one browser check per **pair** of batches; the full browser suite at the end of 1c.
+
+| Batch | What | Visible? | Browser check |
+|---|---|---|---|
+| 1c-1 **built 25 Nov 2026** | "Created by / changed by / when" on customers, suppliers, products, categories, purchase orders, purchases, sales orders, sales, users and roles, written at every save in one place (`Domain/RecordStamps.cs`); a change to a line, variant, photo, phone number, role switch or user's roles stamps the record it belongs to. Upgrade `RecordStamps` only adds 40 empty columns; tried on a copy of real data: record counts and stock totals unchanged, old records blank. 383 tests pass; 329 warnings. | No | with 1c-2 |
+| 1c-2 **built 25 Nov 2026** | "Someone else changed this, reload" on every edit screen, Purchase Orders table, Users and Roles (`Domain/EditClash.cs`, checked inside the save step). A line change counts as a change to its voucher. Saving a record or line someone else deleted now says so (it used to do nothing and look saved). No database change. 399 tests pass (16 new); 329 warnings. Browser check for the pair, `tools/ui-check/check-edit-clash.mjs` (two browsers, Admin and Hiten, on one customer and one purchase): all pass; the stamps land in the database (customer last changed by Hiten, purchase by Admin). Known small thing: the screen's own red "Could not save…" notice repeats the message next to the Reload bar. | Only on a clash | ✔ done (two browsers) |
+| 1c-3 | The activity log is written for every change, with before → after, plus the other actions above. | No | with 1c-4 |
+| 1c-4 | "See activity log" button and side panel on each record (mock-up agreed 25 Nov 2026). | Yes | ✔ |
+| 1c-5 | Activity log screen from Settings: filter by date, person and kind, search; "Erase whole log" for Admin. Mock-up first. | Yes | ✔ + full suite |
 
 ---
 

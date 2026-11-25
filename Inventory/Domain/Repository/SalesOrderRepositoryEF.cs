@@ -88,6 +88,8 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
             return new SalesOrderEntity();
         }
 
+        context.MarkSeen(order);   // batch 1c-2: the version this screen opened
+
         await TransactionLineHydrator.HydrateSalesOrderAsync(context, order);
         return order;
     }
@@ -119,6 +121,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
         var existing = await context.SalesOrders.FirstOrDefaultAsync(o => o.Id == order.Id);
         if (existing is null)
         {
+            context.ThrowIfGoneWhileOpen<SalesOrderEntity>(order.Id);
             return order.Id;
         }
 
@@ -146,6 +149,7 @@ public class SalesOrderRepositoryEF : ISalesOrderRepository
         var existing = await context.SalesOrders.FirstOrDefaultAsync(o => o.Id == salesOrderId);
         if (existing is null)
         {
+            context.ThrowIfGoneWhileOpen<SalesOrderEntity>(salesOrderId);
             return;
         }
 

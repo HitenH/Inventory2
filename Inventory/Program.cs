@@ -62,8 +62,14 @@ AppDomain.CurrentDomain.UnhandledException += (_, e) =>
 // Batch 6: a factory instead of one shared context per browser tab. Every repository method creates a
 // short-lived context, does its work and disposes it (Microsoft's guidance for Blazor Server). This removes
 // "a second operation was started on this context" errors and stale data between screens.
-builder.Services.AddDbContextFactory<AppDbContext>(options =>
-            options.UseSqlite($"Data Source={dbPath}"));
+// Version 3.0, batch 1c-1: one factory per browser tab (scoped), so every save can stamp the record with the
+// person logged in on that tab (CurrentUser, filled by AccessService) and this PC's clock (Domain/RecordStamps.cs).
+builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddScoped<SeenVersions>();   // batch 1c-2: versions this tab opened (Domain/EditClash.cs)
+builder.Services.AddDbContextFactory<AppDbContext>((services, options) =>
+            options.UseSqlite($"Data Source={dbPath}")
+                   .AddInterceptors(new RecordStampInterceptor(services.GetRequiredService<CurrentUser>(), services.GetRequiredService<SeenVersions>())),
+            ServiceLifetime.Scoped);
 
 builder.Services.AddScoped<IUserRepository, UserRepositoryEF>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepositoryEF>();

@@ -106,6 +106,8 @@ namespace Inventory.Domain.Repository
                 return new SalesEntity();
             }
 
+            context.MarkSeen(sale);   // batch 1c-2: the version this screen opened
+
             await HydrateSaleDetailsAsync(context, sale);
             return sale;
         }
@@ -120,6 +122,7 @@ namespace Inventory.Domain.Repository
 
             if (existing is null)
             {
+                context.ThrowIfGoneWhileOpen<SalesEntity>(sale.Id);
                 return;
             }
 

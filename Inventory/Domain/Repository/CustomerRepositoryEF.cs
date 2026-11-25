@@ -42,6 +42,10 @@ namespace Inventory.Domain.Repository
                     }
                 }  
             }
+            catch (RecordChangedException)
+            {
+                throw;   // batch 1c-2: keep the plain message
+            }
             catch (Exception ex)
             {
                 throw new Exception(ex.ToString());
@@ -92,7 +96,9 @@ namespace Inventory.Domain.Repository
         public async Task<CustomerEntity> GetById(Guid id)
         {
             await using var context = await factory.CreateDbContextAsync();
-            return await context.Customers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            var customer = await context.Customers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            context.MarkSeen(customer);   // batch 1c-2: the version this screen opened
+            return customer;
         }
 
         public async Task Update(CustomerEntity customer)
@@ -100,7 +106,10 @@ namespace Inventory.Domain.Repository
             await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Customers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == customer.Id);
             if (existing is null)
+            {
+                context.ThrowIfGoneWhileOpen<CustomerEntity>(customer.Id);
                 return;
+            }
 
             existing.CustomerId = customer.CustomerId;
             existing.Name = customer.Name;

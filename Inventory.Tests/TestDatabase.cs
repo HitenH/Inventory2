@@ -15,6 +15,9 @@ public sealed class TestDatabase : IDisposable
     public string DatabasePath { get; }
     public IDbContextFactory<AppDbContext> Factory { get; }
 
+    /// <summary>Who the saves are stamped with (batch 1c-1), like the logged-in person in the app. Null = the app itself.</summary>
+    public CurrentUser CurrentUser { get; } = new();
+
     /// <param name="keepStarterRoles">The StarterRoles upgrade adds Purchase, Sales and Reports; most tests want an empty roles table.</param>
     public TestDatabase(bool keepStarterRoles = false)
     {
@@ -23,6 +26,7 @@ public sealed class TestDatabase : IDisposable
         DatabasePath = Path.Combine(Folder, "Inventory.db");
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite($"Data Source={DatabasePath}")
+            .AddInterceptors(new RecordStampInterceptor(CurrentUser))
             .Options;
         Factory = new ContextFactory(options);
         using var context = Factory.CreateDbContext();
@@ -35,6 +39,23 @@ public sealed class TestDatabase : IDisposable
     }
 
     public AppDbContext Open() => Factory.CreateDbContext();
+
+    /// <summary>
+    /// Batch 1c-2: one browser tab of one person: its own "who is logged in" and its own memory of the
+    /// versions it opened, like a tab of the real app. Two tabs on the same database can clash.
+    /// </summary>
+    public Tab OpenTab(string? userName)
+    {
+        var user = new CurrentUser { Name = userName };
+        var seen = new SeenVersions();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={DatabasePath}")
+            .AddInterceptors(new RecordStampInterceptor(user, seen))
+            .Options;
+        return new Tab(new ContextFactory(options), user, seen);
+    }
+
+    public sealed record Tab(IDbContextFactory<AppDbContext> Factory, CurrentUser User, SeenVersions Seen);
 
     /// <summary>One supplier, one customer, one product "P1" with variants "V1" and "V2".</summary>
     public async Task<Seed> SeedAsync()

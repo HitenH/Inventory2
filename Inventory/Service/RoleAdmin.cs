@@ -16,6 +16,7 @@ public class RoleAdmin(IDbContextFactory<AppDbContext> factory)
     {
         await using var db = await factory.CreateDbContextAsync();
         var roles = await db.Roles.AsNoTracking().Include(r => r.Permissions).OrderBy(r => r.Name).ToListAsync();
+        db.MarkSeen(roles);   // batch 1c-2: the versions this screen shows
         var holders = await db.UserRoles.AsNoTracking().GroupBy(ur => ur.RoleId)
             .Select(g => new { RoleId = g.Key, Count = g.Count() }).ToListAsync();
         return roles.Select(r => new RoleRow(r.Id, r.Name, r.IsAdmin,
@@ -39,7 +40,10 @@ public class RoleAdmin(IDbContextFactory<AppDbContext> factory)
         }
 
         db.Roles.Add(role);
-        await db.SaveChangesAsync();
+        if (await UserAdmin.TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"Role {role.Name} added.");
     }
 
@@ -70,7 +74,10 @@ public class RoleAdmin(IDbContextFactory<AppDbContext> factory)
             role.Permissions.Add(new RolePermissionEntity { RoleId = role.Id, Permission = key });
         }
 
-        await db.SaveChangesAsync();
+        if (await UserAdmin.TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"Role {role.Name} saved.");
     }
 
@@ -99,7 +106,10 @@ public class RoleAdmin(IDbContextFactory<AppDbContext> factory)
         }
 
         db.Roles.Remove(role);
-        await db.SaveChangesAsync();
+        if (await UserAdmin.TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"Role {role.Name} deleted.");
     }
 

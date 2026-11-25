@@ -13,6 +13,9 @@ namespace Inventory.Domain.Repository
             this.factory = factory;
         }
 
+        /// <summary>Batch 1c-2: the Purchase Orders table is edited in place, so the rows it shows are the versions opened.</summary>
+        protected override bool ListIsEditedInPlace => true;
+
         public async Task<int> UpdateStatus(IReadOnlyCollection<Guid> ids, Inventory.Models.OrderStatus status)
         {
             if (ids.Count == 0)

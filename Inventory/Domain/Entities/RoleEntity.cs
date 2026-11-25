@@ -1,8 +1,13 @@
 namespace Inventory.Domain.Entities
 {
     /// <summary>A named set of permissions. An Admin role has every permission, including ones added in future.</summary>
-    public class RoleEntity
+    public class RoleEntity : IStamped
     {
+        // Version 3.0, batch 1c-1: who and when (filled in by Domain/RecordStamps.cs only).
+        public DateTime? CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        public DateTime? ChangedAt { get; set; }
+        public string? ChangedBy { get; set; }
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool IsAdmin { get; set; }

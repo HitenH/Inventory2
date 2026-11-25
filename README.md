@@ -39,21 +39,21 @@ The app is in daily use on the counter PC. The rule for all work is: improve it,
 - **Reports** (tabs): Customer (By Area, Customers), Supplier, Products (Reorder Level Table, Variant Report Table, Variants List Table), Purchases Orders, Sales Orders, Sales & Purchases (totals for a chosen period such as Today, Last 7 days, This month, This financial year starting April).
 - **Settings**: Appearance (theme colour and Light/Dark), backup list with Backup, Restore and Delete buttons, where the database is, and the backup folder with a **Change folder…** button (folder browser in the app; warns when backups are on the same disk as the data or the folder cannot be reached).
 - **Change Password**: every user changes their own password.
-- **Login**: every page except Login needs a login. There are two users, Hiten and Admin. The owner knows the passwords.
+- **Login**: every page except Login needs a login. Users are added and disabled on the Users screen (version 3.0, from Settings); each sees only what their roles allow. The owner knows the passwords.
 
 ### Import (customers, suppliers, products, purchases)
 
-Import reads a CSV or Excel file, shows a preview with every problem listed, and only then, if the file is clean, saves everything in one go. A sample file for each kind can be downloaded from the import window. Details and rules are in section 5. At the moment **every user can use Import** (there are no roles yet).
+Import reads a CSV or Excel file, shows a preview with every problem listed, and only then, if the file is clean, saves everything in one go. A sample file for each kind can be downloaded from the import window. Details and rules are in section 5. Since version 3.0 batch 1b-4 the Import buttons only appear for roles with the "Import data" switch (Admin has it).
 
 ---
 
 ## 2. Version history
 
-- **1.0** - the May 2026 build, installed on the counter PC and still running there.
+- **1.0** - the May 2026 build. It ran on the counter PC until 2.0 replaced it on 16 Nov 2026.
 - **2.0** - this version, concluded 14 Nov 2026 (git tag `v2.0`), the November 2026 improvement work: security (hashed passwords, login on every page), data safety (database rules, one-transaction saves, safe daily backups), upgrade to .NET 10, automatic tests, clean-up of duplicated code, speed, keyboard entry, a new look with themes, and Import.
 - **2.0 addition, 16 Nov 2026** - the backup folder can be chosen in the app: Settings → Change folder… (folder browser, saved in `backup-folder.txt` beside the database). Warnings for backups on the same disk as the data or an unreachable folder; a failed daily backup is retried every hour.
 - **Rolled out to the counter PC on 16 Nov 2026.** Version 2.0, with the backup-folder addition, has been in daily use at the counter since then and works as the owner wants. The exact code it is running is tagged `live-16-nov-2026` in git; section 10 says how to go back to it.
-- **3.0** - planned, not started: see [ROADMAP.md](ROADMAP.md). Several decisions in section 12 are scheduled there.
+- **3.0 in progress** (see [ROADMAP.md](ROADMAP.md), which also schedules several decisions of section 12): stage 1a (line rules, double-Enter guard, "not found" messages) and stage 1b (users, roles, permissions, rate hiding) are built and pushed as of 25 Nov 2026; stage 1c (who and when) is being built. None of it is **installed**: the counter PC stays on 2.0 until stage 1 is finished. ROADMAP.md "Where we are" says what is next.
 
 ---
 
@@ -104,7 +104,7 @@ Inventory/                    the app
   Service/                    helpers: Shortcuts, BulkEntry, LineAmounts, BackupService, BackupScheduler, DataPaths, DbErrors,
                               ReportPeriods, ListPaging, Photos, ColumnSorter, DateConversion, AppTheme, AppThemeState, MobileService
   Service/Import/             the import feature (section 5)
-  Migrations/                 database changes, oldest to newest; latest: 20261113120000_RemoveUserRole
+  Migrations/                 database changes, oldest to newest; latest: 20261125051849_RecordStamps
   wwwroot/shortcuts.js        all keyboard and cursor handling in the browser
   wwwroot/main.js             theme saving, floating-label helper
   wwwroot/css/                theme.css (colours, buttons), tables.css (tables, entry rows, labels), site.css
@@ -133,6 +133,8 @@ These exist once on purpose. Fix or change them in one place; never copy them in
 - **Access rules**: `Service/Access.cs` with the switch list in `Service/Permissions.cs` (version 3.0, batch 1b-1) - "may this person do this?" and the pair rule. Roles, user-role links (optional end date for temporary cover) and pair rules are in the database; `Authentication/RoleBootstrap.cs` gives every existing user an Admin role the first time. Enforced since batch 1b-4: `Shared/MainLayout.razor` checks every screen against `Permissions.ForPath` (the one list of which switch opens which address; an unlisted screen opens only for Admin, and `ScreenAccessTests` fails if a screen is missing), `Shared/NavMenu.razor` hides what the person cannot open, `MudBlazorComponents/ImportButton.razor` follows "Import data", and login refuses disabled users. `Service/AccessService.cs` reads the person's roles again on every screen change. A new screen must be added to `Permissions.ForPath`. Rates (batch 1b-5): `MainLayout` hands the person's `UserAccess` down to every screen and pop-up; a screen leaves out rates, amounts, discounts and totals unless `SeesPurchaseRates` / `SeesSaleRates` (or `SeesRates(kind)` for a voucher) allows them, and search boxes ignore them too. The Products rate counts as a sale rate. A new screen that shows money must ask the same. Starter roles Purchase, Sales and Reports come from the `StarterRoles` upgrade. Checked by `tools/ui-check/check-rates.mjs` (read-only; needs three test users, see the top of the script). Checked by `tools/ui-check/check-access.mjs` (needs a sales clerk and a disabled user in the test copy; see the top of the script).
 - **Users**: `Pages/Users.razor` (`/users`, button on Settings) with the rules in `Service/UserAdmin.cs` (version 3.0, batch 1b-2): add users, set passwords, assign roles with an optional end date, disable/enable. Users are never deleted. You cannot disable yourself, and the last active Admin cannot be disabled or lose the Admin role. `tools/ui-check/check-users.mjs` changes users, so run it only on a fresh test copy.
 - **Roles**: `Pages/Roles.razor` (`/roles`, button on Settings) with the rules in `Service/RoleAdmin.cs` (version 3.0, batch 1b-3): add, rename, change switches, delete. The Admin role cannot be changed or deleted; a role anyone holds cannot be deleted. Checked by `tools/ui-check/check-roles.mjs` (adds roles and a user: fresh test copy only).
+- **Who and when**: `Domain/RecordStamps.cs` (version 3.0, batch 1c-1) - every save stamps "created by / changed by / when" (`IStamped`: `CreatedAt`, `CreatedBy`, `ChangedAt`, `ChangedBy`) on customers, suppliers, products, categories, purchase orders, purchases, sales orders, sales, users and roles, from the person logged in on that browser tab (`CurrentUser`, filled by `AccessService` on every screen change) and this PC's clock. A change to a part (a line, a variant, a photo, a phone number, a role's switches, a user's roles) stamps the record it belongs to. Saving without a real change stamps nothing; the created stamp is never overwritten. Blank on records made before 3.0; a time without a name means the app itself (start-up steps). Screens never set these. The database factory is per browser tab (scoped) for this reason.
+- **Two people, same record**: `Domain/EditClash.cs` with the check inside `RecordStamps` (version 3.0, batch 1c-2). Each browser tab remembers the version ("changed at") of the records its screen opened (`SeenVersions`; the repositories mark them: `GetById` of customer, supplier, product, purchase, sale and sales order, the Purchase Orders table, the Users and Roles lists). At save, a record someone else saved in between refuses the whole save with `RecordChangedException` ("Admin changed this purchase at 15:07 while you had it open. Reload to see their changes."), and `MainLayout` shows that message with a **Reload** button above the screen (cleared by Reload, its X, or another screen). A change to a line counts as a change to its voucher, so a stale voucher screen cannot add lines either. Saving again from the same screen is not a clash (the tab keeps the version it wrote). Saving a record or line someone else deleted says so instead of pretending to save. Users and Roles return the message as a refusal. Checked by `tools/ui-check/check-edit-clash.mjs` (two browsers).
 - **Bulk Entry rules**: `Service/BulkEntry.cs` (kinds PurchaseOrder, Purchase, SalesOrder).
 - **Paging and report periods**: `Service/ListPaging.cs` (100 rows per page by default; 10/20/50/100/200 offered), `Service/ReportPeriods.cs`.
 
@@ -165,7 +167,7 @@ Voucher numbers: the next number for a date is the last number of that date plus
 - Users are rows in the `Users` table. Passwords are stored **hashed** with ASP.NET Core's PasswordHasher (PBKDF2 with a random salt; `Authentication/PasswordService.cs`). Minimum length 8.
 - At start-up (`Authentication/UserBootstrap.cs`): any old plain-text password is hashed in place (so old logins keep working on first start). If the Users table is empty, an `Admin` user is created with a random password, printed in the console, written to the log and to `initial-admin-password.txt` in the data folder.
 - The login is kept in the browser's session storage (ProtectedSessionStorage), per browser tab, and is checked inside the live connection (`AuthorizeRouteView` in `Routes.razor` sends you to `/login`). Because of that, `Program.cs` marks the Razor routes `AllowAnonymous` on purpose; do not "fix" that.
-- There are no roles yet. The old role column was removed (migration `RemoveUserRole`).
+- Roles and permissions arrived in version 3.0 stage 1b (see "Access rules" in section 4). The old single role column was removed earlier (migration `RemoveUserRole`).
 - `/photos/{id}` and `/import-sample/{kind}` do not need a login (local PC only; photo IDs are random). Revisit when roles come.
 
 ### Photos
@@ -265,7 +267,7 @@ These are easy to break. All handling is in `wwwroot/shortcuts.js`, with the scr
 - classes: `enter-moves-on`, `lookup-box`, anything starting `focus-` (for example `focus-line-product`), `sale-line-variant`, `box-center`;
 - `@ref`, `@onclick`, `@bind`, `OnValidSubmit` and any C# in a `.razor.cs` file.
 
-**Always check** a keyboard or cursor change with `tools/ui-check` on a test copy before the owner sees it (section 8). Blind attempts failed four times. The scripts: `check-keyboard-only`, `check-entry-flows`, `check-popups-and-sale`, `check-save-and-focus`, `check-bulk-entry`, `check-alt-b`, `check-import`, `check-line-rules` (the line rules of version 3.0 batch 1a-1: a refused quantity or discount on every screen that makes a line), and `check-look` (every screen at 1366 and 1920 px, light and dark; fails on sideways scroll, a wrapped product name, or a control sticking out). `check-save-and-focus` prints "saved row visible in list = false": the list is paged and the test record sorts onto a later page; the row is saved, this is not a failure.
+**Always check** a keyboard or cursor change with `tools/ui-check` on a test copy before the owner sees it (section 8). Blind attempts failed four times. The scripts: `check-keyboard-only`, `check-entry-flows`, `check-popups-and-sale`, `check-save-and-focus`, `check-bulk-entry`, `check-alt-b`, `check-import`, `check-line-rules` (the line rules of version 3.0 batch 1a-1: a refused quantity or discount on every screen that makes a line), `check-users`, `check-roles` (version 3.0 1b-2/1b-3; they change users and roles, so a fresh test copy each time), `check-access` (1b-4; screens and menu follow the role), `check-rates` (1b-5; read-only, rates hidden both ways, Bulk Entry included), `check-edit-clash` (1c-1/1c-2; two browsers on one customer and one purchase; setup at the top of the script), and `check-look` (every screen at 1366 and 1920 px, light and dark; fails on sideways scroll, a wrapped product name, or a control sticking out). `check-save-and-focus` prints "saved row visible in list = false": the list is paged and the test record sorts onto a later page; the row is saved, this is not a failure.
 
 ---
 
@@ -292,8 +294,8 @@ These are easy to break. All handling is in `wwwroot/shortcuts.js`, with the scr
 - **Port clash.** An old 2023 .NET 7 copy at `C:\Users\Hiten\source\repos\Inventory` also uses port 5259. If login "fails" or the page looks wrong, check `netstat` first.
 - **Test copy for browser checks (port 5299).** Copy the DB to a scratch folder, set Admin's password to `UiTest#2026` (the app hashes plain text at start-up), start a second copy on port 5299 with `ASPNETCORE_ENVIRONMENT=Development`, `DataFolder` and `BackupFolder` pointing at the scratch folder, then run scripts in `tools/ui-check` with `SCRATCH` set (steps and commands are in `tools/ui-check/README.md`; needs Node 22+ and Chrome). Stop that copy by its process id. These scripts create purchases, sales, orders and a test customer: never aim them at real data. They use names from the May data (supplier BALAJI / CAPITAL, customer AAI MATHA, product LAZER/CUTTING).
 - **Migrations.** Stop the app, build, then `dotnet ef migrations add <Name> --no-build`, then check that `Up()` is not empty. Check `dotnet ef migrations has-pending-model-changes` after a rename. If the migration rebuilds Products, Customers, Suppliers or Variants, re-create the NOCASE unique indexes. An older build cannot log in on a database a newer build has migrated.
-- **Tests.** 294 automatic tests (xUnit v3; all passing, re-checked 24 Nov 2026 at the start of version 3.0 stage 1). Each test builds a fresh database with the real migrations (`Inventory.Tests/TestDatabase.cs`). The build baseline is 0 errors and 333 warnings.
-- **Baseline of the daily PC.** The 1.0 build installed on the counter PC still runs; nothing from 2.0 is installed until section 10.
+- **Tests.** 399 automatic tests (xUnit v3; all passing 25 Nov 2026, version 3.0 batch 1c-2). `TestDatabase.OpenTab(name)` plays one person in one browser tab (for the clash tests). Test databases are built by running every upgrade; `TestDatabase` then removes the three starter roles unless a test asks to keep them (`new TestDatabase(keepStarterRoles: true)`). Each test builds a fresh database with the real migrations (`Inventory.Tests/TestDatabase.cs`). The build baseline is 0 errors and 333 warnings.
+- **Baseline of the daily PC.** The counter PC runs version 2.0 (tag `live-16-nov-2026`); nothing from version 3.0 is installed there yet (section 10).
 
 ---
 
@@ -368,9 +370,8 @@ Known, accepted, nothing due. Do not "fix" any of these without asking the owner
 - Stock is calculated, so there is no way to record a reason for a correction (stock adjustments, a "damaged" state) - see ROADMAP.md.
 - Variant photo: one JPEG per variant, stored in the database. `VariantModel.Image` still holds the photo record and the product page loads photo bytes on the server.
 - The `Mobile` lists on customer and supplier models are kept (phone sync relies on them).
-- Import is open to every user until roles exist.
 - The build shows 333 hint warnings (mostly nullable). Not a fault; add no new ones.
-- Two people editing the same record at the same moment is not detected (the last save wins). One person at one PC is the normal case.
+- Two people editing the same record: since version 3.0 batch 1c-2 the second save is refused with a Reload message (section 4). The screen's own red "Could not save…" notice appears as well, repeating the same words.
 - Some business rules are still in screens rather than the data layer (an optional clean-up).
 - Pickers may reload their lists more than needed (mostly fixed; not re-checked).
 
@@ -399,12 +400,12 @@ Known, accepted, nothing due. Do not "fix" any of these without asking the owner
 ## 12. Decisions on record
 
 **Pinned (do not touch until the owner raises them; each has its place in ROADMAP.md, which is the current word on them):**
-- **Users and roles.** There are no roles. Plan: a user-management screen (add, disable, reset another user's password, set role), decide what each role may do (starting idea: only Admin may restore or delete backups, delete masters and transactions, do bulk deletes and use Import), enforce it in the services and not only by hiding buttons, and decide whether `/photos/{id}` needs a login.
+- **Users and roles.** Done in version 3.0 stage 1b (Users and Roles screens, switches per role, rate hiding). Still open: whether `/photos/{id}` and `/import-sample/{kind}` need a login (stage 1d, when other PCs connect).
 - **Old duplicate voucher numbers.** 14 days in the May data have duplicate voucher numbers. Options: keep old numbers and exempt them from the unique rule (only new or edited vouchers checked), or renumber (breaks the match with paper bills). Until decided: no unique rule on voucher numbers, no retry, no re-check when only the date changes.
 - **Several photos and videos per variant.** Today: one JPEG per variant in the database. Suggested later: a small index table in the database, the files in a media folder next to the database, streaming for video, and the media folder included in backups. Limits to agree with the owner.
 - **Selling more than is in stock.** Options: A warn ("Only 3 in stock. Sell 5 anyway?"), B block, C show "In stock" next to Quantity, D nothing. Recommended: A plus C, on Sale only. The owner said "not now".
-- **Created / last-changed time stamps** on records. Options: A record only; B record and show a small grey line at the bottom of each form (recommended); C skip. Needs a migration. "Created by / changed by" waits for roles. Question still open.
-- **Two people editing the same record** ("someone else changed this, please reload"), and **stock adjustments with a reason** (a movement ledger and a screen: agree reasons, who may adjust, whether stock stays calculated). Both open for the owner's decision; stock movements are the core of ROADMAP.md.
+- **Created / last-changed time stamps** on records. Decided 25 Nov 2026 (version 3.0 stage 1c): recorded on every record with the person's name; **not** shown on the forms (the owner does not want them crowded) but through a "See activity log" button that opens a side panel.
+- **Two people editing the same record**: done in version 3.0 batch 1c-2 (refused with a Reload message). **Stock adjustments with a reason** (a movement ledger and a screen: agree reasons, who may adjust, whether stock stays calculated). Both open for the owner's decision; stock movements are the core of ROADMAP.md.
 - **Blank product / variant rows in old data:** ignore the old ones, block new ones (decided 12 Nov 2026).
 
 **Declined - do not offer again:**

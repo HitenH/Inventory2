@@ -8,9 +8,9 @@ export const BASE = 'http://localhost:5299';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export { sleep };
 
-export async function launch() {
+// port: a second browser (a second person) needs its own, e.g. launch(9334) (batch 1c-2, check-edit-clash).
+export async function launch(port = 9333) {
   const dir = mkdtempSync(join(process.env.SCRATCH || tmpdir(), 'chrome-'));
-  const port = 9333;
   const chrome = spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`,
     '--no-first-run', '--no-default-browser-check', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

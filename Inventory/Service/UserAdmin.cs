@@ -31,6 +31,7 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
     {
         await using var db = await factory.CreateDbContextAsync();
         var users = await db.Users.AsNoTracking().OrderBy(u => u.Name).ToListAsync();
+        db.MarkSeen(users);   // batch 1c-2: the versions this screen shows
         var grants = await (from ur in db.UserRoles.AsNoTracking()
                             join r in db.Roles.AsNoTracking() on ur.RoleId equals r.Id
                             select new { ur.UserId, ur.RoleId, r.Name, ur.ExpiresAt }).ToListAsync();
@@ -88,7 +89,7 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         var user = new UserEntity { Name = name, Password = string.Empty, IsDisabled = false };
         user.Password = passwords.Hash(user, password!);
         db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync();   // a new user: nobody else can have changed it
         db.UserRoles.AddRange(roles.Select(r => new UserRoleEntity { UserId = user.Id, RoleId = r.RoleId, ExpiresAt = r.ExpiresAt }));
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
@@ -124,7 +125,10 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         await using var transaction = await db.Database.BeginTransactionAsync();
         db.UserRoles.RemoveRange(await db.UserRoles.Where(ur => ur.UserId == userId).ToListAsync());
         db.UserRoles.AddRange(roles.Select(r => new UserRoleEntity { UserId = userId, RoleId = r.RoleId, ExpiresAt = r.ExpiresAt }));
-        await db.SaveChangesAsync();
+        if (await TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         await transaction.CommitAsync();
         return UserAdminResult.Success($"Roles saved for {user.Name}.");
     }
@@ -145,7 +149,10 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         }
 
         user.Password = passwords.Hash(user, newPassword!);
-        await db.SaveChangesAsync();
+        if (await TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"Password changed for {user.Name}.");
     }
 
@@ -171,7 +178,10 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         }
 
         user.IsDisabled = true;
-        await db.SaveChangesAsync();
+        if (await TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"{user.Name} is disabled.");
     }
 
@@ -185,7 +195,10 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         }
 
         user.IsDisabled = false;
-        await db.SaveChangesAsync();
+        if (await TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
         return UserAdminResult.Success($"{user.Name} is enabled.");
     }
 
@@ -231,5 +244,19 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         }
 
         return await query.Distinct().ToListAsync();
+    }
+
+    /// <summary>Batch 1c-2: someone else changed the same user or role meanwhile: refuse with the plain message, nothing saved.</summary>
+    internal static async Task<UserAdminResult?> TrySaveAsync(AppDbContext db)
+    {
+        try
+        {
+            await db.SaveChangesAsync();
+            return null;
+        }
+        catch (RecordChangedException clash)
+        {
+            return UserAdminResult.Refuse(clash.Message);
+        }
     }
 }

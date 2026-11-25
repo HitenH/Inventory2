@@ -81,7 +81,9 @@ namespace Inventory.Domain.Repository
         public async Task<SupplierEntity> GetById(Guid id)
         {
             await using var context = await factory.CreateDbContextAsync();
-           return await context.Suppliers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+           var supplier = await context.Suppliers.AsNoTracking().Include(n => n.Mobiles).FirstOrDefaultAsync(c => c.Id == id, default);
+            context.MarkSeen(supplier);   // batch 1c-2: the version this screen opened
+            return supplier;
         }
 
         public async Task Update(SupplierEntity supplier)
@@ -89,7 +91,10 @@ namespace Inventory.Domain.Repository
             await using var context = await factory.CreateDbContextAsync();
             var existing = await context.Suppliers.Include(x => x.Mobiles).FirstOrDefaultAsync(x => x.Id == supplier.Id);
             if (existing is null)
+            {
+                context.ThrowIfGoneWhileOpen<SupplierEntity>(supplier.Id);
                 return;
+            }
 
             existing.SupplierId = supplier.SupplierId;
             existing.Name = supplier.Name;

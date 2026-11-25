@@ -28,18 +28,22 @@ public sealed class UserAccess(string? name, bool signedIn, bool found, bool isD
 }
 
 /// <summary>Version 3.0, batch 1b-4: loads the logged-in person's roles so screens and the menu can ask <see cref="UserAccess.Allows"/>.</summary>
-public class AccessService(IDbContextFactory<AppDbContext> factory, AuthenticationStateProvider auth)
+public class AccessService(IDbContextFactory<AppDbContext> factory, AuthenticationStateProvider auth, CurrentUser currentUser)
 {
     public async Task<UserAccess> CurrentAsync()
     {
         var state = await auth.GetAuthenticationStateAsync();
         if (state.User.Identity?.IsAuthenticated != true)
         {
+            currentUser.Name = null;
             return UserAccess.Nobody;
         }
 
         await using var db = await factory.CreateDbContextAsync();
-        return await LoadAsync(db, state.User.Identity.Name, DateTime.Now);
+        var access = await LoadAsync(db, state.User.Identity.Name, DateTime.Now);
+        // Batch 1c-1: saves made from this tab are stamped with this name (Domain/RecordStamps.cs).
+        currentUser.Name = access.Found ? access.Name : null;
+        return access;
     }
 
     public static async Task<UserAccess> LoadAsync(AppDbContext db, string? userName, DateTime now)

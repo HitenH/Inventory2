@@ -99,6 +99,7 @@ namespace Inventory.Domain.Repository
             var existing = await context.SalesOrderVariants.FindAsync(variant.Id);
             if (existing is null)
             {
+                context.ThrowPartGone<SalesOrderVariantEntity>();   // batch 1c-2: deleted by someone else
                 return;
             }
 

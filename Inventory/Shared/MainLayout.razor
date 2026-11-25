@@ -53,6 +53,14 @@ else
                         A backup was restored. Close the Inventory app and start it again before entering anything else.
                     </MudAlert>
                 }
+                @* Batch 1c-2: a save refused because someone else changed the same record meanwhile (Domain/EditClash.cs). *@
+                @if (_clashMessage is not null)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-2" id="record-changed" ShowCloseIcon="true" CloseIconClicked="CloseClash">
+                        <span id="record-changed-text">@_clashMessage</span>
+                        <MudButton id="record-changed-reload" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="ml-3" OnClick="ReloadAfterClash">Reload</MudButton>
+                    </MudAlert>
+                }
                 @* Batch 9: an error on one screen shows this box (and goes to the log file) instead of stopping the whole app. *@
                 <ErrorBoundary @ref="_errorBoundary">
                     <ChildContent>
@@ -100,14 +108,31 @@ else
     protected override Task OnInitializedAsync()
     {
         Backups.RestartRequiredChanged += OnRestartRequiredChanged;
+        Seen.Clash += OnClash;
         return Task.CompletedTask;
     }
+
+    // Batch 1c-2: "someone else changed this, reload". Shown above the screen until Reload, the X, or another screen.
+    [Inject] private Inventory.Domain.SeenVersions Seen { get; set; } = default!;
+    private string? _clashMessage;
+
+    private void OnClash(Inventory.Domain.RecordChangedException clash) => _ = InvokeAsync(() =>
+    {
+        _clashMessage = clash.Message;
+        StateHasChanged();
+    });
+
+    private void CloseClash() => _clashMessage = null;
+
+    // A full reload opens the record afresh, with the other person's changes; what was typed here is lost.
+    private void ReloadAfterClash() => Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
 
     private void OnRestartRequiredChanged() => _ = InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
         Backups.RestartRequiredChanged -= OnRestartRequiredChanged;
+        Seen.Clash -= OnClash;
         _themeState.Changed -= OnThemeChanged;
         _shortcutsRef?.Dispose();
     }
@@ -159,6 +184,7 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _errorBoundary?.Recover();
+        _clashMessage = null;
         _access = await AccessService.CurrentAsync();
     }
 
