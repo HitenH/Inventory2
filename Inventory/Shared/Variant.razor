@@ -75,7 +75,7 @@
         </MudTd>
         <MudTd>@context.VariantId</MudTd>
         <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
-        <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
+        <MudTd><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
         <MudTd>
             @context.ReorderLevel
             @if (Access?.Allows(Inventory.Service.Permissions.LabelsPrint) == true && Product?.Id != Guid.Empty)

@@ -14,6 +14,8 @@
         <PropertyColumn Property="x => x.VariantId" Title="Variant ID" />
         <PropertyColumn Property="x => x.VariantName" Title="Variant Name" />
         <PropertyColumn Property="x => x.StockInHand" Title="Stock In Hand" />
+        @* Stage 2, batch 2-2: stock in hand is the sellable pieces; damaged pieces are counted in their own column. *@
+        <PropertyColumn Property="x => x.Damaged" Title="Damaged" />
     </Columns>
     <PagerContent>
         <MudDataGridPager T="ProductReportItem" />

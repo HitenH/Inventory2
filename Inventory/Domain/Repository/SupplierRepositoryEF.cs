@@ -28,6 +28,10 @@ namespace Inventory.Domain.Repository
             try
             {
                 var hasRelatedPurchases = context.Purchases.Any(p => p.SupplierEntityId == supplier.Id);  
+                // Stage 2: a supplier with purchase returns, or damaged goods waiting to go back to it, is kept too.
+                hasRelatedPurchases = hasRelatedPurchases
+                    || context.StockChanges.Any(s => s.SupplierEntityId == supplier.Id)
+                    || context.StockChangeLines.Any(l => l.ReturnSupplierEntityId == supplier.Id);
                 if (hasRelatedPurchases)
                 {
                     throw new Exception("The Supplier cannot be deleted due to association with other entities");

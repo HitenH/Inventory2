@@ -1,0 +1,54 @@
+@using Inventory.Domain
+@* Stage 2, batch 2-2 (Hiten, 25 Nov 2026): a stock figure shows the sellable pieces only. When there are damaged pieces
+   or pieces waiting for approval, a small arrow sits beside the number; clicking the number or the arrow opens the
+   breakdown (Sellable / Damaged / Waiting approval) – nothing else is shown until then.
+   Waiting pieces have not moved yet, so they are still inside the sellable figure.
+   One component for every place stock shows, so they cannot disagree. *@
+<span class="stock-fig">
+    @if (Figures.HasBreakdown)
+    {
+        <button type="button" class="stock-toggle" aria-expanded="@(open ? "true" : "false")"
+                title="@($"{Describe(Figures)} – click to {(open ? "hide" : "show")} the breakdown")" @onclick="() => open = !open">
+            <span class="stock-sellable">@Figures.Sellable</span><span class="stock-caret" aria-hidden="true">@(open ? "▴" : "▾")</span>
+        </button>
+        @if (open)
+        {
+            <span class="stock-breakdown">
+                <span>Sellable <b>@Figures.Sellable</b></span>
+                <span>Damaged <b>@Figures.Damaged</b></span>
+                @if (Figures.Waiting != 0)
+                {
+                    <span>Waiting approval <b>@Figures.Waiting</b></span>
+                }
+            </span>
+        }
+    }
+    else
+    {
+        @* Hiten, 25 Nov 2026: the same width as a figure with an arrow, so every number lines up and the arrows sit one below the other. *@
+        <span class="stock-plain"><span class="stock-sellable">@Figures.Sellable</span><span class="stock-caret" aria-hidden="true"></span></span>
+    }
+</span>
+
+@code {
+    [Parameter] public StockFigures Figures { get; set; }
+
+    private bool open;
+
+    /// <summary>"+ 3 damaged", "+ 3 damaged · 2 waiting" or "2 waiting" (the arrow's hover text).</summary>
+    public static string Describe(StockFigures f)
+    {
+        var parts = new List<string>();
+        if (f.Damaged != 0)
+        {
+            parts.Add($"+ {f.Damaged} damaged");
+        }
+
+        if (f.Waiting != 0)
+        {
+            parts.Add($"{f.Waiting} waiting");
+        }
+
+        return string.Join(" · ", parts);
+    }
+}

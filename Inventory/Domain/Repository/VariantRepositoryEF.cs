@@ -28,7 +28,8 @@ namespace Inventory.Domain.Repository
                 var hasRelatedPurchaseVariant = context.PurchaseVariant.Any(s => s.VariantEntityId == variant.Id);
                 var hasRelatedSalesOrderVariants = context.SalesOrderVariants.Any(s => s.VariantEntityId == variant.Id);
                 var hasRelatedSalesVariants = context.SalesVariants.Any(s => s.VariantEntityId == variant.Id);
-                if (hasRelatedPurchaseVariant || hasRelatedSalesOrderVariants || hasRelatedSalesVariants)
+                var hasStockChanges = context.StockChangeLines.Any(s => s.VariantEntityId == variant.Id);   // stage 2
+                if (hasRelatedPurchaseVariant || hasRelatedSalesOrderVariants || hasRelatedSalesVariants || hasStockChanges)
                 {
                     throw new Exception("The Product Variant cannot be deleted due to association with other entities");
                 }

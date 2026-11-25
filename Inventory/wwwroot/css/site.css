@@ -340,3 +340,21 @@ a, .btn-link {
 .label-sheet-mini { position: relative; background: #fff; zoom: 0.33; outline: 1px solid #bbb; }
 .label-mini { position: absolute; outline: 1px solid #9aa; outline-offset: -1px; }
 @media print { .label-sheet-mini { display: none; } }
+/* Stage 2, batch 2-2: a stock figure (Shared/StockFigure.razor) – the sellable pieces; when there is damage or something waiting,
+   a small arrow beside the number, and a click opens the breakdown (Hiten 25 Nov 2026: nothing more until clicked).
+   The arrow is a warm brown/amber, never red (red is for X and Delete). */
+.stock-fig { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+.num .stock-fig { justify-content: flex-end; }
+.stock-toggle, .stock-plain { border: 0; background: none; padding: 0; margin: 0; font: inherit; line-height: inherit; color: inherit;
+                               vertical-align: baseline; white-space: nowrap; }
+.stock-toggle { cursor: pointer; }
+.stock-toggle:hover .stock-sellable { text-decoration: underline; }
+/* Hiten, 25 Nov 2026: uniform figures – the number right-aligned in a fixed box, then a fixed slot for the arrow (empty when
+   there is nothing to show), so numbers line up and arrows sit one below the other. */
+.stock-sellable { display: inline-block; min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
+.stock-caret { display: inline-block; width: 1.1em; margin-left: 3px; text-align: left; font-size: 0.9rem; color: hsl(25 80% 34%); }
+.stock-breakdown { flex-basis: 100%; display: flex; flex-direction: column; align-items: flex-start; font-size: 0.8rem; line-height: 1.35;
+                   color: var(--mud-palette-text-secondary); }
+.num .stock-breakdown { align-items: flex-end; }
+.stock-breakdown b { color: var(--mud-palette-text-primary); font-weight: 600; }
+.app-dark .stock-caret { color: hsl(32 85% 68%); }

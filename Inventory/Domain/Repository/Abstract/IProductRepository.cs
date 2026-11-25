@@ -13,6 +13,7 @@ namespace Inventory.Domain.Repository.Abstract
         Task<List<ProductEntity>> GetAllForLookup();
         Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false);
         Task<Dictionary<Guid, int>> GetStockInHandByVariantIdsAsync(IEnumerable<Guid> variantIds);
+        Task<Dictionary<Guid, StockFigures>> GetStockByVariantIdsAsync(IEnumerable<Guid> variantIds);
         Task Update(ProductEntity product);
         Task Delete(ProductEntity product);
         bool IsProductIdExist(string productId);

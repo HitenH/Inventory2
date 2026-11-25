@@ -511,7 +511,7 @@ namespace Inventory.Migrations
 
                     b.HasIndex("PurchaseEntityId");
 
-                    b.HasIndex("VariantEntityId");
+                    b.HasIndex("VariantEntityId", "Quantity");
 
                     b.ToTable("PurchaseVariant");
                 });
@@ -774,9 +774,210 @@ namespace Inventory.Migrations
 
                     b.HasIndex("SalesEntityId");
 
-                    b.HasIndex("VariantEntityId");
+                    b.HasIndex("VariantEntityId", "Quantity");
 
                     b.ToTable("SalesVariants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ChangedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChangedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CustomerEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecidedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PurchaseEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SourceStockChangeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SupplierEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerEntityId");
+
+                    b.HasIndex("PurchaseEntityId");
+
+                    b.HasIndex("SupplierEntityId");
+
+                    b.HasIndex("Kind", "Date");
+
+                    b.ToTable("StockChanges");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeLineEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("From")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProductEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PurchaseVariantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ReadyToSend")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReturnSupplierEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SerialNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SourceLineId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("StockChangeEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("To")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("VariantEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductEntityId");
+
+                    b.HasIndex("PurchaseVariantId");
+
+                    b.HasIndex("SourceLineId");
+
+                    b.HasIndex("StockChangeEntityId");
+
+                    b.HasIndex("VariantEntityId");
+
+                    b.ToTable("StockChangeLines");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeReasonEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("StockChangeReasons");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsActive = true,
+                            Name = "Broken in transit",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            IsActive = true,
+                            Name = "Manufacturing defect",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            IsActive = true,
+                            Name = "Damaged in shop",
+                            SortOrder = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            IsActive = true,
+                            Name = "Wrong item received",
+                            SortOrder = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            IsActive = true,
+                            Name = "Count difference",
+                            SortOrder = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            IsActive = true,
+                            Name = "Other",
+                            SortOrder = 6
+                        });
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>
@@ -1080,6 +1281,50 @@ namespace Inventory.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.CustomerEntity", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerEntityId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Inventory.Domain.Entities.SupplierEntity", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierEntityId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeLineEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.ProductEntity", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductEntityId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.StockChangeEntity", "StockChange")
+                        .WithMany("Lines")
+                        .HasForeignKey("StockChangeEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.VariantEntity", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("VariantEntityId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("StockChange");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.UserRoleEntity", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.RoleEntity", null)
@@ -1150,6 +1395,11 @@ namespace Inventory.Migrations
             modelBuilder.Entity("Inventory.Domain.Entities.SalesOrderEntity", b =>
                 {
                     b.Navigation("SalesOrderVariants");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.StockChangeEntity", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.SupplierEntity", b =>

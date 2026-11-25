@@ -36,7 +36,8 @@ namespace Inventory.Domain.Repository
                 var hasRelatedSalesVariant = context.SalesVariants.Any(s => s.ProductEntityId == product.Id);
                 var hasRelatedPurchases = context.PurchaseVariant.Any(p => p.ProductEntityId == product.Id);
                 var hasRelatedSalesOrder = context.SalesOrderVariants.Any(p => p.ProductEntityId == product.Id);
-                if (hasRelatedSalesVariant || hasRelatedPurchases || hasRelatedSalesOrder)
+                var hasStockChanges = context.StockChangeLines.Any(l => l.ProductEntityId == product.Id);   // stage 2
+                if (hasRelatedSalesVariant || hasRelatedPurchases || hasRelatedSalesOrder || hasStockChanges)
                 {
                     throw new Exception("The Product cannot be deleted due to association with other entities");
                 }
@@ -82,7 +83,11 @@ namespace Inventory.Domain.Repository
         public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false)
         {
             await using var context = await factory.CreateDbContextAsync();
-            var (purchaseQtyByVariant, salesQtyByVariant) = await GetPurchasedAndSoldAsync(context, variantIds: null);
+            var stockByVariant = await StockQuery.ForVariantsAsync(context, variantIds: null);
+            var salesQtyByVariant = await context.SalesVariants.AsNoTracking()
+                .GroupBy(sv => sv.VariantEntityId)
+                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
+                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
 
             var variants = await context.Variants
                 .AsNoTracking()
@@ -101,9 +106,9 @@ namespace Inventory.Domain.Repository
                     continue;
                 }
 
-                purchaseQtyByVariant.TryGetValue(variant.Id, out var purchasedQty);
+                var stock = stockByVariant.GetValueOrDefault(variant.Id);
                 salesQtyByVariant.TryGetValue(variant.Id, out var soldQty);
-                var stockInHand = purchasedQty - soldQty;
+                var stockInHand = stock.Sellable;   // stage 2: stock in hand = sellable pieces; damaged are not for sale
 
                 if (onlyBelowReorderLevel && stockInHand > (variant.ReorderLevel ?? int.MaxValue))
                 {
@@ -117,6 +122,8 @@ namespace Inventory.Domain.Repository
                     VariantId = variant.VariantId,
                     VariantName = variant.Name ?? string.Empty,
                     StockInHand = stockInHand,
+                    Damaged = stock.Damaged,
+                    WaitingApproval = stock.Waiting,
                     ReorderLevel = variant.ReorderLevel,
                     SalesQuantity = soldQty,
                     SalesAmount = soldQty * product.Rate
@@ -126,48 +133,25 @@ namespace Inventory.Domain.Repository
             return reportItems;
         }
 
+        /// <summary>Stock in hand (sellable pieces) per variant; every asked variant is in the answer (0 when it has no entries).</summary>
         public async Task<Dictionary<Guid, int>> GetStockInHandByVariantIdsAsync(IEnumerable<Guid> variantIds)
+        {
+            var stock = await GetStockByVariantIdsAsync(variantIds);
+            return stock.ToDictionary(s => s.Key, s => s.Value.Sellable);
+        }
+
+        /// <summary>Stage 2: sellable, damaged and waiting-for-approval pieces per variant (see <see cref="StockQuery"/>).</summary>
+        public async Task<Dictionary<Guid, StockFigures>> GetStockByVariantIdsAsync(IEnumerable<Guid> variantIds)
         {
             await using var context = await factory.CreateDbContextAsync();
             var idList = variantIds.Distinct().ToList();
             if (idList.Count == 0)
             {
-                return new Dictionary<Guid, int>();
+                return new Dictionary<Guid, StockFigures>();
             }
 
-            var (purchaseQtyByVariant, salesQtyByVariant) = await GetPurchasedAndSoldAsync(context, idList);
-
-            return idList.ToDictionary(
-                id => id,
-                id => purchaseQtyByVariant.GetValueOrDefault(id) - salesQtyByVariant.GetValueOrDefault(id));
-        }
-
-        /// <summary>
-        /// The one place stock is worked out: total purchased and total sold per variant.
-        /// Stock in hand = purchased - sold. Pass null to get every variant.
-        /// </summary>
-        private static async Task<(Dictionary<Guid, int> Purchased, Dictionary<Guid, int> Sold)> GetPurchasedAndSoldAsync(
-            AppDbContext context, List<Guid>? variantIds)
-        {
-            var purchaseLines = context.PurchaseVariant.AsNoTracking();
-            var salesLines = context.SalesVariants.AsNoTracking();
-            if (variantIds is not null)
-            {
-                purchaseLines = purchaseLines.Where(pv => variantIds.Contains(pv.VariantEntityId));
-                salesLines = salesLines.Where(sv => variantIds.Contains(sv.VariantEntityId));
-            }
-
-            var purchased = await purchaseLines
-                .GroupBy(pv => pv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
-
-            var sold = await salesLines
-                .GroupBy(sv => sv.VariantEntityId)
-                .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
-                .ToDictionaryAsync(x => x.VariantEntityId, x => x.Qty);
-
-            return (purchased, sold);
+            var stock = await StockQuery.ForVariantsAsync(context, idList);
+            return idList.ToDictionary(id => id, id => stock.GetValueOrDefault(id));
         }
 
         public async Task<ProductEntity> GetById(Guid id)

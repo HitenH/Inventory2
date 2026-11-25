@@ -24,7 +24,8 @@ public partial class Variant
     private VariantModel variantModel = new();
     private Image image = new();
     private List<VariantModel> variants = new();
-    private Dictionary<Guid, int> stockInHand = new();
+    // Stage 2: sellable, damaged and waiting pieces per variant (shown by StockFigure).
+    private Dictionary<Guid, Inventory.Domain.StockFigures> stockInHand = new();
     private EditContext? editContext;
     private MudTextField<string?> variantInputRef = null!;
     private ValidationMessageStore? messageStore;
@@ -266,11 +267,11 @@ public partial class Variant
     {
         if (Product?.Variants is not { Count: > 0 })
         {
-            stockInHand = new Dictionary<Guid, int>();
+            stockInHand = new Dictionary<Guid, Inventory.Domain.StockFigures>();
             return;
         }
 
-        stockInHand = await ProductRepository.GetStockInHandByVariantIdsAsync(
+        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(
             Product.Variants.Select(v => v.Id));
     }
 

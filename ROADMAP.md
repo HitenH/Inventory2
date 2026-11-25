@@ -1,6 +1,6 @@
 # Plan for version 3.0 – from one counter PC to a multi-user, multi-location system
 
-**Status:** agreed direction, 14 Nov 2026 (session 10). **Built so far:** stage 0 (live 16 Nov 2026), stage 1a and stage 1b (25 Nov 2026), on `main` but **not installed** – the counter PC still runs version 2.0 until stage 1 is finished. **Stage 1c done** (25 Nov 2026); 1d parked while there is one PC. **Stage L batches L-1 and L-2 done** (label printing, 25 Nov 2026); L-3 waits for the sticker printer. See "Where we are" below.
+**Status:** agreed direction, 14 Nov 2026 (session 10). **Built so far:** stage 0 (live 16 Nov 2026), stage 1a and stage 1b (25 Nov 2026), on `main` but **not installed** – the counter PC still runs version 2.0 until stage 1 is finished. **Stage 1c done** (25 Nov 2026); 1d parked while there is one PC. **Stage L batches L-1 and L-2 done** (label printing, 25 Nov 2026); L-3 waits for the sticker printer. **Stage 2 opened 25 Nov 2026** (Describe step done; mock-ups next). See "Where we are" below.
 **Versions:** 1.0 = the May 2026 build. 2.0 = the current app, concluded 14 Nov 2026 and described in `README.md` (what it does, how it is built, how to run, test and install it, known limits). 3.0 = this plan.
 **How this fits:** `README.md` explains the app as it is. This file is the only plan. Nothing is due on version 2.0. When a stage starts, its open questions (section 9) are asked and its batches are written into a "Current stage" section added at the top of this file.
 **Written for:** Hiten (plain English) and any future session picking this up.
@@ -26,10 +26,11 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 - **Stage 1c** (who and when) – who made and changed every record, "someone else changed this, reload", the activity log (side panel on each record and the Activity log screen with coloured record names). Full browser suite passed.
 - **Stage L, batches L-1 and L-2** (label printing) – the Labels screen for A4 sheets of 65 ready-cut labels, named label set-ups on Label settings, filling from the bottom-right with "Already used on this sheet" kept in the database; Labels in the menu under Masters (Alt+L); "Print labels" button and Alt+L on a purchase; label icon per variant on the product page; Ctrl+P prints; Esc goes back to the purchase or product the Labels screen was opened from; every print in the activity log. Last commit `19ee5ed`.
 
-**Counts now:** build 0 errors / 329 warnings (baseline was 333); **455 tests** pass.
+**Counts now:** build 0 errors / 329 warnings (baseline was 333); **474 tests** pass (stage 2 batches 2-1 and 2-2 built, not yet pushed).
 
-**Due (waiting on Hiten):**
-- **Printer test** of the latest labels (bigger content, named set-up "A4 65 Label") on a real sheet, and the **scan test** (scan a printed label into Notepad and into the Sale screen: product, Tab, variant).
+**Done by Hiten (25 Nov 2026):** the printer test of the latest labels and the scan test.
+
+**Now (25 Nov 2026): stage 2 – stock breakdown and damage.** Hiten chose to build it before installing, step by step or two batches at a time. Describe and mock-up steps done (decisions in "Stage 2" below). **Batches 2-1 and 2-2 built and checked 25 Nov 2026, waiting for Hiten to try them and say "push".** Next: 2-3 and 2-4.
 
 **Parked (Hiten's decision, comes back later):**
 - **1d – shop network:** parked 25 Nov 2026 ("I only have 1 system as of now"); back when a second PC, tablet or phone is added.
@@ -37,9 +38,7 @@ Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten op
 - **L-3 – sticker printer settings:** when Hiten has the sticker printer (needs make, model and label size).
 - **Labels tied to purchases** (extra labels only with permission from someone higher up): with goods inwards, stage 5.
 
-**Next step – Hiten chooses:**
-- **A) Install on the counter PC** everything built so far (1a, 1b, 1c, L-1, L-2). Steps: the printer and scan tests above; the **full browser suite** on a test copy (stage L has only had its own check so far); copy the live database first; try the upgrade on that copy; install; smoke test at the counter. Recommended: the label screen is only useful once it is on the counter PC, and four stages of work are waiting there.
-- **B) Build another stage first** – in the plan's order that is stage 2 (stock breakdown and damage, the largest and riskiest), whose open questions are asked first.
+**Next step:** stage 2 mock-ups for Hiten to agree, then its batches. Installing 1a, 1b, 1c, L-1 and L-2 on the counter PC stays open for whenever Hiten chooses (steps: full browser suite on a test copy, copy the live database first, try the upgrade on that copy, install, smoke test at the counter).
 
 - **Install rule:** copy the live database before installing anything (README section 10). The upgrades add tables and columns (`UsersAndRoles`, `StarterRoles`, `RecordStamps`, `ActivityLog`, `ActivityLogDetail`, `LabelLayouts`, `LabelSheetUse`): an older build cannot open the upgraded database. The stage 1 upgrades were tried on a copy of real data (both users became Admin, nothing else changed); the two label upgrades only add new tables.
 - **Working agreements with Hiten:** plain English, no jargon; he answers questions and says **"push"** to approve – nothing is committed or pushed before that. Show mock-ups (ASCII is fine) before building a new screen. Tests every batch; one browser check per two batches; the full browser suite once per stage and before any install. Senior-developer role: delegate large batches to a cheaper agent with a precise brief and review its work, or do it directly when Hiten asks. Stop any agent that loops.
@@ -117,6 +116,58 @@ As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
 | Future (Hiten, 25 Nov 2026) | **Labels tied to purchases:** in the future workflow labels can only be printed for what a purchase (later: the checker's count) brings in; **extra or repeat labels need permission from someone higher up**. Reason: duplicate labels, theft, and a cheaper product's label stuck on a dearer one. Groundwork already in place: the "Print labels" switch and every print in the activity log. | With goods inwards (stage 5) |
 | L-3 | **Label printer settings (Hiten, 25 Nov 2026):** this module as built is for **A4 ready-label sheets**. A Settings page is to let the Admin switch the A4-sheet printing off and choose a different printer with its own settings – first the dedicated sticker printer (needs its make, model and label size); the layout is already kept in one place (`LabelSheetLayout`) for this. | When Hiten has the sticker printer |
 
+
+# Stage 2 – Stock breakdown and damage (opened 25 Nov 2026, before stage 1 is installed: Hiten chose to build it first)
+
+**What the data shows today (copy of real data, read only, 25 Nov 2026):** supplier "CAPITAL" stands in for things that are not purchases – opening stock, customer returns ("RAJA BABU RETURN" …) and 442 minus lines with no reason (stock corrections). 175 minus lines on sales are customer returns ("RETURN GOODS", "EXCHANGE OF GODS"). So a customer return is recorded two different ways, and most corrections carry no reason.
+
+**How stock is worked out (kept):** stock is never stored; it is added up every time from the entries (today purchased − sold). Hiten asked whether this is good and whether it holds with many devices and locations: yes – it cannot drift, it extends to locations by recording "where" on each entry, and the "last piece sold twice" risk is handled by checking stock inside the save (stage 6), as with any method. Timed on the copy of real data: all items 0.4 s, one item 0.006 s; with a lookup index on (variant, quantity) about 35 times faster (0.01 s / 0.0002 s). Stored running totals or a yearly closing figure only if, years from now, the full report gets heavy.
+
+**Decided with Hiten (Describe step, 25 Nov 2026):**
+- **Way B – nothing old is converted.** Purchases and sales stay exactly as they are and stay the record of what came and went. A new kind of entry, **"Stock change"**, is added beside them. Stock = purchased − sold ± stock changes. Today's figures cannot move, and no parallel run is needed. (The old plan – copy all 45,000 lines into a new movements book – is dropped.) Later stages add their own kinds of entry the same way (transfers in stage 3, receipts in stage 5).
+- **Kinds of stock change (all happen in the shop):** set aside as damaged; repaired, back to stock; written off (thrown away or lost); count correction (found more / found fewer); customer return; supplier return; opening stock.
+- **Damaged goods afterwards:** repaired (back to stock) or sent back to the supplier.
+- **Customer returns and supplier returns** get their own proper entries (no more CAPITAL purchases or minus sale lines for them). Amounts stay parked, as agreed in stage 1.
+- **Reasons:** a fixed list the Admin can edit, plus a note.
+- **Approval:** built in, with a switch; **switched off** for now (a stock change counts at once). When switched on, nothing moves until it is approved, and the waiting entry is shown as "waiting for approval".
+- **Old entries** (CAPITAL lines, minus sale lines): left untouched.
+- **What the stock figure shows:** the **sellable** pieces, with damaged pieces counted **separately** beside it ("13 + 3 damaged"); clicking or expanding a stock figure shows the breakdown. A separate stock breakdown report in Reports.
+- **Speed:** the lookup index for stock is added in the first batch, and the new stock change entries get the same index from day one.
+
+**Decided with Hiten (mock-up step, 25 Nov 2026):**
+- **Damage is recorded where it is found.** On a saved purchase, one **"Record damage"** button (in the totals bar, not one per line: the line table is already crowded) opens a pop-up listing **every line of that purchase** (product, variant, quantity received, already damaged) with an empty "Damaged now" box per line; fill in any lines and save once – all damages of that purchase in one go. It makes one stock change entry linked to the purchase and its lines (waiting for approval when the switch is on). The same pop-up is used on a Sales Return.
+- **Damage report = the list of what is lying in damage**, one row per damaged lot until it is dealt with (product, variant, quantity, date, where it came from, reason, supplier, status). Actions on ticked rows: **assign supplier** (filled in automatically when the damage came from a purchase), **Ready to send**, **Sent** – which makes a **Purchase Return** voucher and takes the pieces off the damaged count – **Repaired** (back to sellable), **Written off**.
+- **One Purchase Return per supplier per sending**, holding everything ticked together. A purchase return can also be made directly (good stock sent back: comes off sellable).
+- **After a purchase return nothing is tracked.** A replacement or repaired piece that comes back is simply a new purchase.
+- **Sales Return** is its own voucher (customer, lines; damaged pieces recorded with the same pop-up).
+- **The approval switch covers every stock change**, Purchase Returns and Sales Returns included: when it is on, stock waits for approval.
+
+**Defaults proposed (25 Nov 2026; Hiten may change):** reason per line in the damage pop-up, defaulting to one chosen at the top; a damaged quantity cannot exceed what that line brought in minus what is already damaged; Enter moves down the "Damaged now" column, Ctrl+S saves, Esc asks first when quantities were typed; returns carry quantities only for now (amounts parked); approval offers Approve or Reject (a rejected entry stays in the activity log, stock never moved); new switches: record damage / stock changes, sales returns, purchase returns, approve stock changes, damage report, change the reasons list and the approval switch (Admin by default).
+
+**Batches (proposed 25 Nov 2026; each: its own tests, build clean, browser check per two batches):**
+
+| Batch | What | Visible? |
+|---|---|---|
+| 2-1 **built 25 Nov 2026** | Groundwork: the stock lookup index, the stock change tables (`StockChanges`, `StockChangeLines` – a damaged lot is a line moved into Damaged, with its return supplier and "ready to send" – and `StockChangeReasons` with six starting reasons), stock = purchased − sold ± approved changes, split into sellable, damaged and waiting (`Domain/StockQuery.cs`, the one place). Database rules: a line must be a real product and variant, more than zero pieces, and a real move. Products, variants, customers and suppliers with stock changes cannot be deleted. The approval switch's own setting comes with 2-8. Upgrade `StockChanges` tried on a copy of real data: all 693 variants' stock identical (12,429 pieces), no old table changed by a single row; adding up all stock 374 ms → 23 ms. 470 tests pass (15 new); 329 warnings. | No |
+| 2-2 **built 25 Nov 2026** | The stock figure on the product page and the Variant Report (rows and total) shows the sellable pieces; when there are damaged or waiting pieces a small arrow sits beside the number, and only a click opens Sellable / Damaged / Waiting approval (Hiten, after trying the first version with "+ 3 damaged" written beside it) (`Shared/StockFigure.razor`, one component). Waiting pieces have not moved, so they are still in stock in hand. The Variants List report gains a Damaged column; the Reorder Level report does not (Hiten) and compares the sellable pieces. 474 tests pass; `tools/ui-check/check-stock-figures.mjs` (setup `setup-stock-figures.py`) and `check-look` pass. | Yes |
+| 2-3 | "Record damage" pop-up on a saved purchase; activity log. | Yes |
+| 2-4 | Sales Return voucher (list and page, same damage pop-up). | Yes |
+| 2-5 | Damage report with its actions (assign supplier, Ready to send, Repaired, Written off). | Yes |
+| 2-6 | Purchase Return voucher: made by "Sent" on the damage report, or directly. | Yes |
+| 2-7 | Stock change screen for damage found in the shop, count corrections, write-offs and opening stock; reasons list in Settings. | Yes |
+| 2-8 | Approval switch in Settings and the "Waiting for approval" list (Approve / Reject). | Yes |
+
+
+# To do – Year-end close (Hiten, 25 Nov 2026)
+
+At every year end, the year's closing stock becomes the **opening stock of a fresh database**; the old database is kept in storage. The new year starts with that opening stock, with all other data carried forward (customers, suppliers, products, users, settings and the like) and the **amount balances carried forward as opening figures**. Not scheduled yet. Points to settle when it is built:
+- The financial year starts in April (the reports already use this), so the **first close would be 31 March 2027**: build and try it on a copy of real data before then if it is wanted that year.
+- Opening stock carries sellable and damaged pieces separately (needs stage 2).
+- "Amount balances": the app records no payments yet (accounts and payments are outside this plan, section 11), so what balance is carried forward is to be agreed.
+- What else moves forward: open purchase orders and sales orders, entries waiting for approval, the activity log, label sheet use.
+- Whether last year's data needs to be opened from the app (read only) for reports and lookups, and whether last year's entries are locked.
+- Voucher numbers restart or continue.
+
 ---
 
 ## 1. Where we are going
@@ -188,7 +239,7 @@ Stock states the plan allows for:
 
 "Reserved", "Picked" and "In transit" arrive with stages 6 and 3; the screen only shows the states in use.
 
-The existing purchases and sales are converted once into movements. The totals before and after must match exactly for every variant before the change goes live. **This is the riskiest step in the whole roadmap** because the counter depends on these numbers every day.
+~~The existing purchases and sales are converted once into movements.~~ **Changed 25 Nov 2026 (Hiten chose way B):** the existing purchases and sales are not converted; they stay the record of what came and went, and new kinds of entry (stock changes, later transfers and receipts) are added beside them. Stock in any state or place is still the sum of all these entries, and today's figures cannot move, which removes what used to be the riskiest step in the roadmap.
 
 ### 2.3 Entries have stages
 A receipt is entered → counted → labelled → approved → put away. An order is taken → picked → verified → sold → dispatched. Each stage records who did it and when, and only the right role can move it on. Entries can also be sent back a step with a reason (the manager returns a count to the checker) or cancelled; nothing disappears silently. Part-deliveries and part-dispatches are allowed for from the start.
@@ -291,12 +342,11 @@ Today some rules still sit in the screens. **Before stage 1 adds new screens, th
 - **Done when:** a day's labels are printed from the app instead of by hand.
 
 ### Stage 2 – Stock breakdown and damage (Large; the riskiest)
-- Stock recorded as movements; old purchases and sales converted.
-- Click a stock figure to see In stock / Arrived / Damaged.
-- Screen to move goods to damaged, back, or write them off, with a reason.
-- Stock corrections with a reason and an approval.
-- Parallel run and nightly self-check (section 3.4).
-- **Done when:** old and new stock figures agree for every variant for the whole parallel-run period, and reports show the same numbers as before.
+- **Changed 25 Nov 2026 (way B, see "Stage 2" at the top):** old purchases and sales are not converted; "Stock change" entries are added beside them, so no parallel run is needed.
+- Click a stock figure to see In stock / Damaged (Arrived comes with stage 5).
+- Screen to move goods to damaged, back, or write them off, with a reason; customer and supplier returns.
+- Stock corrections with a reason and an approval (approval switch, off for now).
+- **Done when:** every variant's stock is unchanged by the upgrade, and damage, repairs, returns and corrections are entered with a reason instead of CAPITAL purchases and minus lines.
 
 ### Stage 3 – Locations (Medium)
 - Shops/godowns and the areas inside them; a usual place for each product variant.

@@ -28,7 +28,10 @@ namespace Inventory.Domain.Repository
                 var hasRelatedSalesOrder = context.SalesOrders.Any(p => p.CustomerEntityId == customer.Id);
                 var hasRelatedSales = context.Sales.Any(p => p.CustomerEntityId == customer.Id);
 
-                if (hasRelatedSalesOrder || hasRelatedSales)
+                // Stage 2: a customer with sales returns is kept too.
+                var hasStockChanges = context.StockChanges.Any(s => s.CustomerEntityId == customer.Id);
+
+                if (hasRelatedSalesOrder || hasRelatedSales || hasStockChanges)
                 {
                     throw new Exception("The Customer cannot be deleted due to association with other entities");
                 }

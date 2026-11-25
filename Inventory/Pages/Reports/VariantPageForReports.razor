@@ -34,7 +34,7 @@
     <RowTemplate>
         <MudTd>@context.VariantId</MudTd>
         <MudTd>@context.Name</MudTd>
-        <MudTd Class="num">@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
+        <MudTd Class="num"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
         <MudTd Class="num">@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
@@ -55,7 +55,8 @@
     </NoRecordsContent>
 </MudTable> 
 <MudText Typo="Typo.h6" Class="mt-4">
-    Total Stock In Hand: @totalStockInHand
+    @* Stage 2: the total works like the rows – sellable pieces, the breakdown on a click. *@
+    Total Stock In Hand: <StockFigure Figures="@totalStock" />
 </MudText>
 @code{
 
@@ -64,10 +65,11 @@
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IImageRepository ImageRepository { get; set; }
     [Inject] private IConfiguration config { get; set; }
-    private int totalStockInHand;
 
     private List<VariantModel> variants = new();
-    private Dictionary<Guid, int> stockInHand = new();
+    // Stage 2: sellable, damaged and waiting pieces per variant (shown by StockFigure).
+    private Dictionary<Guid, Inventory.Domain.StockFigures> stockInHand = new();
+    private Inventory.Domain.StockFigures totalStock;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -104,16 +106,17 @@
     {
         if (Product?.Variants is not { Count: > 0 })
         {
-            stockInHand = new Dictionary<Guid, int>();
+            stockInHand = new Dictionary<Guid, Inventory.Domain.StockFigures>();
             return;
         }
 
-        stockInHand = await ProductRepository.GetStockInHandByVariantIdsAsync(
+        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(
             Product.Variants.Select(v => v.Id));
     }
 
     private void CalculateTotalStockInHand()
     {
-        totalStockInHand = stockInHand.Values.Sum();
+        totalStock = new Inventory.Domain.StockFigures(
+            stockInHand.Values.Sum(s => s.Sellable), stockInHand.Values.Sum(s => s.Damaged), stockInHand.Values.Sum(s => s.Waiting));
     }
 }
