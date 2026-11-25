@@ -166,6 +166,112 @@ namespace Inventory.Migrations
                     b.ToTable("Images");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.LabelLayoutEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ChangedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChangedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Columns")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("ContentDownMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("ContentLeftMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("GapAcrossMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("GapDownMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("IdFontPt")
+                        .HasColumnType("REAL");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("LabelHeightMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("LabelWidthMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("LeftMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<double>("NameFontPt")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("PageHeightMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("PageWidthMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("QrMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Rows")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("TopMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("VariantFontPt")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("LabelLayouts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Columns = 5,
+                            ContentDownMm = 2.2000000000000002,
+                            ContentLeftMm = 0.5,
+                            GapAcrossMm = 0.0,
+                            GapDownMm = 0.0,
+                            IdFontPt = 7.5,
+                            IsActive = true,
+                            LabelHeightMm = 21.0,
+                            LabelWidthMm = 40.0,
+                            LeftMm = 4.0,
+                            Name = "A4 65 Label",
+                            NameFontPt = 9.0,
+                            PageHeightMm = 297.0,
+                            PageWidthMm = 210.0,
+                            QrMm = 13.0,
+                            Rows = 13,
+                            TopMm = 12.0,
+                            VariantFontPt = 11.0
+                        });
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
                 {
                     b.Property<int>("Id")

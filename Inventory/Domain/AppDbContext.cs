@@ -31,6 +31,7 @@ namespace Inventory.Domain
         public DbSet<SalesVariantEntity> SalesVariants { get; set; }
         public DbSet<SalesSummaryEntity> SalesSummary { get; set; }
         public DbSet<ActivityEntry> ActivityLog { get; set; }
+        public DbSet<LabelLayoutEntity> LabelLayouts { get; set; }
 
         /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
         public string? ActivityNote { get; set; }
@@ -138,6 +139,19 @@ namespace Inventory.Domain
             modelBuilder.Entity<PairRuleEntity>()
                         .HasIndex(p => new { p.PermissionA, p.PermissionB })
                         .IsUnique();
+
+            // Stage L: named label set-ups, names unique ignoring capitals; the first one, "A4 65 Label", comes with the upgrade.
+            modelBuilder.Entity<LabelLayoutEntity>().Property(l => l.Name).UseCollation("NOCASE");
+            modelBuilder.Entity<LabelLayoutEntity>().HasIndex(l => l.Name).IsUnique();
+            var a4 = LabelSheetLayout.A4Sheet65;
+            modelBuilder.Entity<LabelLayoutEntity>().HasData(new LabelLayoutEntity
+            {
+                Id = 1, Name = a4.Name, IsActive = true, PageWidthMm = a4.PageWidthMm, PageHeightMm = a4.PageHeightMm,
+                Columns = a4.Columns, Rows = a4.Rows, LabelWidthMm = a4.LabelWidthMm, LabelHeightMm = a4.LabelHeightMm,
+                GapAcrossMm = a4.GapAcrossMm, GapDownMm = a4.GapDownMm, TopMm = a4.TopMm, LeftMm = a4.LeftMm,
+                ContentDownMm = a4.ContentDownMm, ContentLeftMm = a4.ContentLeftMm, QrMm = a4.QrMm,
+                NameFontPt = a4.NameFontPt, VariantFontPt = a4.VariantFontPt, IdFontPt = a4.IdFontPt,
+            });
 
             // Batch 1c-3: the activity log is read per record (the panel) and by date (the log screen).
             modelBuilder.Entity<ActivityEntry>().ToTable("ActivityLog");

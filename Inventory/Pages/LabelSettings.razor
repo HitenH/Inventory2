@@ -1,0 +1,239 @@
+@page "/labelsettings"
+@* Version 3.0, stage L (Hiten, 25 Nov 2026): the named label set-ups – sheet, label size, margins, and what sits inside a label –
+   instead of numbers fixed in the program. "A4 65 Label" comes first; Hiten makes a new one for another sheet or printer and
+   switches between them. Needs the "Change label settings" switch (Permissions.ForPath). Saved in the database, stamped and
+   in the activity log; numbers that do not fit their page are refused (LabelSheetLayout.Problems). *@
+@inject LabelLayoutService LayoutService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<LabelSettings> Logger
+
+<MudPaper Class="pa-3 mb-2">
+    <div class="d-flex flex-wrap align-center gap-3">
+        <MudText Typo="Typo.h6" Class="me-auto">Label settings</MudText>
+        <a href="/labels" class="btn btn-secondary" id="label-settings-back">Back to Labels</a>
+    </div>
+</MudPaper>
+
+<div class="label-settings">
+    <MudPaper Class="pa-3 label-settings-list">
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Labels</MudText>
+        @foreach (var l in layouts)
+        {
+            <button type="button" class="btn btn-sm w-100 mb-1 text-start @(l.Id == form.Id ? "btn-primary" : "btn-light")" @onclick="() => Pick(l)">
+                @l.Name @(l.IsActive ? "· in use" : "")
+            </button>
+        }
+        <button type="button" class="btn btn-secondary btn-sm w-100 mt-2" id="label-new" @onclick="New">New label</button>
+    </MudPaper>
+
+    <MudPaper Class="pa-3 label-settings-form">
+        <div class="label-settings-grid">
+            <label>Name<input id="ls-name" class="form-control" @bind="form.Name" @bind:event="oninput" /></label>
+            <span></span>
+
+            <div class="label-settings-head">Sheet</div>
+            <label>Page width (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.PageWidthMm" @bind:event="oninput" /></label>
+            <label>Page height (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.PageHeightMm" @bind:event="oninput" /></label>
+            <label>Labels across<input type="number" step="1" class="form-control text-center" @bind="form.Columns" @bind:event="oninput" /></label>
+            <label>Labels down<input type="number" step="1" class="form-control text-center" @bind="form.Rows" @bind:event="oninput" /></label>
+
+            <div class="label-settings-head">Each label</div>
+            <label>Width (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.LabelWidthMm" @bind:event="oninput" /></label>
+            <label>Height (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.LabelHeightMm" @bind:event="oninput" /></label>
+            <label>Gap across (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.GapAcrossMm" @bind:event="oninput" /></label>
+            <label>Gap down (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.GapDownMm" @bind:event="oninput" /></label>
+
+            <div class="label-settings-head">Margins (to the first label)</div>
+            <label>Top (mm)<input id="ls-top" type="number" step="0.1" class="form-control text-center" @bind="form.TopMm" @bind:event="oninput" /></label>
+            <label>Left (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.LeftMm" @bind:event="oninput" /></label>
+
+            <div class="label-settings-head">Inside the label</div>
+            <label>Move content down (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.ContentDownMm" @bind:event="oninput" /></label>
+            <label>Move content left (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.ContentLeftMm" @bind:event="oninput" /></label>
+            <label>QR size (mm)<input type="number" step="0.1" class="form-control text-center" @bind="form.QrMm" @bind:event="oninput" /></label>
+            <span></span>
+            <label>Product name (pt)<input type="number" step="0.5" class="form-control text-center" @bind="form.NameFontPt" @bind:event="oninput" /></label>
+            <label>Variant (pt)<input type="number" step="0.5" class="form-control text-center" @bind="form.VariantFontPt" @bind:event="oninput" /></label>
+            <label>Product ID (pt)<input type="number" step="0.5" class="form-control text-center" @bind="form.IdFontPt" @bind:event="oninput" /></label>
+        </div>
+
+        @if (Problems.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-3" id="label-settings-problems">@string.Join(" ", Problems)</MudAlert>
+        }
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="btn btn-primary" id="label-save" @onclick="SaveAsync" disabled="@busy">Save</button>
+            @if (form.Id != 0 && !IsInUse)
+            {
+                <button type="button" class="btn btn-secondary" id="label-use" @onclick="UseAsync" disabled="@busy">Use this label</button>
+                <button type="button" class="btn btn-danger" id="label-delete" @onclick="DeleteAsync" disabled="@busy">Delete</button>
+            }
+        </div>
+    </MudPaper>
+
+    <MudPaper Class="pa-3 label-settings-preview">
+        <MudText Typo="Typo.subtitle2" Class="mb-2">One label, actual size</MudText>
+        @if (Problems.Count == 0)
+        {
+            var preview = form.ToLayout();
+            <div class="label-sample-wrap" style="@Inventory.Service.Labels.InsideStyle(preview)">
+                <div class="label label-sample" style="width:@Mm(preview.LabelWidthMm);height:@Mm(preview.LabelHeightMm)">
+                    <div class="label-text">
+                        <div class="label-name">1 NO HAATICHAP (NS/11)</div>
+                        <div class="label-variant">GANESH</div>
+                    </div>
+                    <div class="label-qr">@sampleQr</div>
+                    <div class="label-id">AJ0120103</div>
+                </div>
+            </div>
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-2">The sheet</MudText>
+            <div class="label-sheet-mini" style="width:@Mm(preview.PageWidthMm);height:@Mm(preview.PageHeightMm)">
+                @for (var r = 0; r < preview.Rows; r++)
+                {
+                    @for (var c = 0; c < preview.Columns; c++)
+                    {
+                        <div class="label-mini" style="left:@Mm(preview.LeftOf(c));top:@Mm(preview.TopOf(r));width:@Mm(preview.LabelWidthMm);height:@Mm(preview.LabelHeightMm)"></div>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Class="mud-text-secondary">The preview appears when the numbers fit.</MudText>
+        }
+    </MudPaper>
+</div>
+
+@code {
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    private List<LabelSheetLayout> layouts = [];
+    private LabelForm form = LabelForm.From(LabelSheetLayout.A4Sheet65);
+    private bool busy;
+    private readonly MarkupString sampleQr = new(Inventory.Service.Labels.QrSvg(Inventory.Service.Labels.QrText("AJ0120103", "G")));
+
+    private static string Mm(double value) => Inventory.Service.Labels.Mm(value);
+    private List<string> Problems => form.ToLayout().Problems();
+    private bool IsInUse => layouts.FirstOrDefault(l => l.Id == form.Id)?.IsActive == true;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync(pickId: null);
+
+    private async Task ReloadAsync(int? pickId)
+    {
+        try
+        {
+            layouts = await LayoutService.ListAsync();
+            var pick = layouts.FirstOrDefault(l => l.Id == pickId) ?? layouts.FirstOrDefault(l => l.IsActive) ?? layouts.FirstOrDefault();
+            if (pick is not null)
+            {
+                form = LabelForm.From(pick);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Label settings could not be read");
+            Snackbar.Add("The label settings could not be read.", Severity.Error);
+        }
+    }
+
+    private void Pick(LabelSheetLayout layout) => form = LabelForm.From(layout);
+
+    /// <summary>A new label starts as a copy of the one on screen, so only what differs needs typing.</summary>
+    private void New()
+    {
+        form = LabelForm.From(form.ToLayout() with { Id = 0, IsActive = false, Name = "New label" });
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Access is null)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var result = await LayoutService.SaveAsync(form.ToLayout(), Access);
+            Snackbar.Add(result.Message, result.Ok ? Severity.Success : Severity.Warning);
+            if (result.Ok)
+            {
+                var name = form.Name.Trim();
+                layouts = await LayoutService.ListAsync();
+                await ReloadAsync(layouts.FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase))?.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Saving label settings failed");
+            Snackbar.Add("The label settings could not be saved.", Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task UseAsync()
+    {
+        if (Access is null)
+        {
+            return;
+        }
+
+        var result = await LayoutService.UseAsync(form.Id, Access);
+        Snackbar.Add(result.Message, result.Ok ? Severity.Success : Severity.Warning);
+        await ReloadAsync(form.Id);
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Access is null || !await DialogService.ConfirmAsync("Delete", $"Delete the label {form.Name}?", "Delete", Color.Error))
+        {
+            return;
+        }
+
+        var result = await LayoutService.DeleteAsync(form.Id, Access);
+        Snackbar.Add(result.Message, result.Ok ? Severity.Success : Severity.Warning);
+        await ReloadAsync(pickId: null);
+    }
+
+    /// <summary>What the boxes hold while typing; becomes a LabelSheetLayout for the preview, the checks and saving.</summary>
+    private sealed class LabelForm
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public double PageWidthMm { get; set; }
+        public double PageHeightMm { get; set; }
+        public int Columns { get; set; }
+        public int Rows { get; set; }
+        public double LabelWidthMm { get; set; }
+        public double LabelHeightMm { get; set; }
+        public double GapAcrossMm { get; set; }
+        public double GapDownMm { get; set; }
+        public double TopMm { get; set; }
+        public double LeftMm { get; set; }
+        public double ContentDownMm { get; set; }
+        public double ContentLeftMm { get; set; }
+        public double QrMm { get; set; }
+        public double NameFontPt { get; set; }
+        public double VariantFontPt { get; set; }
+        public double IdFontPt { get; set; }
+
+        public static LabelForm From(LabelSheetLayout l) => new()
+        {
+            Id = l.Id, Name = l.Name, PageWidthMm = l.PageWidthMm, PageHeightMm = l.PageHeightMm, Columns = l.Columns, Rows = l.Rows,
+            LabelWidthMm = l.LabelWidthMm, LabelHeightMm = l.LabelHeightMm, GapAcrossMm = l.GapAcrossMm, GapDownMm = l.GapDownMm,
+            TopMm = l.TopMm, LeftMm = l.LeftMm, ContentDownMm = l.ContentDownMm, ContentLeftMm = l.ContentLeftMm, QrMm = l.QrMm,
+            NameFontPt = l.NameFontPt, VariantFontPt = l.VariantFontPt, IdFontPt = l.IdFontPt,
+        };
+
+        public LabelSheetLayout ToLayout() => new(Name ?? "", PageWidthMm, PageHeightMm, Columns, Rows, LabelWidthMm, LabelHeightMm, TopMm, LeftMm)
+        {
+            Id = Id, GapAcrossMm = GapAcrossMm, GapDownMm = GapDownMm, ContentDownMm = ContentDownMm, ContentLeftMm = ContentLeftMm,
+            QrMm = QrMm, NameFontPt = NameFontPt, VariantFontPt = VariantFontPt, IdFontPt = IdFontPt,
+        };
+    }
+}

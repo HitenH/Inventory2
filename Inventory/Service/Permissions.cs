@@ -25,6 +25,10 @@ public static class Permissions
     public const string AdminSettings = "admin.settings";
     /// <summary>Batch 1c-4: the "See activity log" button and (1c-5) the log screen. Rates in the log follow the rate switches.</summary>
     public const string ActivitySee = "activity.see";
+    /// <summary>Stage L: the Labels screen (print product labels).</summary>
+    public const string LabelsPrint = "labels.print";
+    /// <summary>Stage L: add, change and delete the named label set-ups (sizes, margins) on the Label settings page.</summary>
+    public const string LabelsSettings = "labels.settings";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -51,6 +55,8 @@ public static class Permissions
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
         ["activity"] = ActivitySee,
+        ["labels"] = LabelsPrint,
+        ["labelsettings"] = LabelsSettings,
     };
 
     /// <summary>Screens every logged-in user may open, whatever their roles.</summary>
@@ -83,10 +89,12 @@ public static class Permissions
         new(ScreenSalesOrders, "Open the Sales Orders screen", ScreensGroup),
         new(ScreenSales, "Open the Sales screen", ScreensGroup),
         new(ScreenReports, "Open the Reports screen", ScreensGroup),
+        new(LabelsPrint, "Print labels", ScreensGroup),
         new(AdminUsers, "Manage users and roles", AdminGroup),
         new(AdminImport, "Import data", AdminGroup),
         new(AdminSettings, "Change settings and backups", AdminGroup),
         new(ActivitySee, "See activity log", AdminGroup),
+        new(LabelsSettings, "Change label settings", AdminGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

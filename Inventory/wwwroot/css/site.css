@@ -302,3 +302,41 @@ a, .btn-link {
 .app-dark .act-person { background: hsl(var(--act-h) 22% 26%); color: hsl(var(--act-h) 45% 85%); }
 .act-person[data-plain] { background: hsl(0 0% 92%); color: hsl(0 0% 35%); }
 .app-dark .act-person[data-plain] { background: hsl(0 0% 25%); color: hsl(0 0% 80%); }
+/* Version 3.0, stage L: product labels (Pages/Labels.razor). Sheet positions come from Service/Labels.cs (LabelSheetLayout);
+   the inside of one label copies Hiten's Word file, a little bigger after his second printer test (25 Nov 2026): name bold 9 pt
+   and variant 11 pt underlined on the left, a 13 mm QR on the right with the product ID in 7.5 pt under it, Calibri. Always black on white, also in dark mode. */
+.label-print { zoom: 0.55; }
+.label-sheet { position: relative; overflow: hidden; background: #fff; margin-bottom: 8mm; box-shadow: 0 1px 6px rgba(0,0,0,.25); }
+.label { position: absolute; box-sizing: border-box; color: #000; font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif; outline: 1px dashed #c8c8c8; outline-offset: -1px; }
+.label-text { position: absolute; left: calc(1mm - var(--label-left, 0mm)); top: calc(3.2mm + var(--label-down, 0mm)); width: calc(var(--lw, 40mm) - var(--qr, 13mm) - 4mm); text-align: center; }
+.label-name { font-weight: bold; font-size: var(--name-pt, 9pt); line-height: 1.15; overflow-wrap: anywhere; }
+.label-variant { font-size: var(--variant-pt, 11pt); line-height: 1.2; text-decoration: underline; margin-top: 0.3mm; overflow-wrap: anywhere; }
+.label-qr { position: absolute; left: calc(var(--lw, 40mm) - 2.5mm - var(--qr, 13mm) - var(--label-left, 0mm)); top: calc(2.6mm + var(--label-down, 0mm)); width: var(--qr, 13mm); height: var(--qr, 13mm); }
+.label-qr svg { display: block; width: 100%; height: 100%; }
+.label-used { background: repeating-linear-gradient(45deg, #e6e6e6 0 6px, #f6f6f6 6px 12px); }
+.label-copies-edit { width: 80px; display: inline-block; }
+.label-id { position: absolute; left: calc(var(--lw, 40mm) - 5mm - var(--qr, 13mm) - var(--label-left, 0mm)); width: calc(var(--qr, 13mm) + 2.5mm); top: calc(2.7mm + var(--qr, 13mm) + var(--label-down, 0mm)); font-size: var(--id-pt, 7.5pt); line-height: 1; text-align: right; }
+@media print {
+  @page { size: A4; margin: 0; }
+  /* Only the sheets go to paper: no menu, top bar, list or notices. */
+  body:has(.label-print) .mud-appbar, body:has(.label-print) .mud-drawer, body:has(.label-print) .labels-editor,
+  body:has(.label-print) .mud-snackbar-provider, body:has(.label-print) .mud-alert { display: none !important; }
+  body:has(.label-print) .mud-main-content, body:has(.label-print) .mud-container { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  body:has(.label-print), body:has(.label-print) .mud-layout { background: #fff !important; }
+  .label-print { zoom: 1; }
+  .label-sheet { margin: 0; box-shadow: none; break-after: page; }
+  .label-sheet:last-child { break-after: auto; }
+  .label { outline: none; }
+  .label-used { display: none; }
+}
+/* Stage L: Label settings page (Pages/LabelSettings.razor). */
+.label-settings { display: grid; grid-template-columns: 220px minmax(380px, 1fr) minmax(260px, 1fr); gap: 8px; align-items: start; }
+@media (max-width: 1300px) { .label-settings { grid-template-columns: 200px 1fr; } .label-settings-preview { grid-column: 1 / -1; } }
+.label-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 8px 16px; }
+.label-settings-grid label { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; margin: 0; }
+.label-settings-head { grid-column: 1 / -1; font-weight: 600; margin-top: 8px; border-bottom: 1px solid var(--mud-palette-lines-default); }
+.label-sample-wrap { padding: 6px; background: #fff; display: inline-block; }
+.label-sample { position: relative; outline: 1px dashed #999; }
+.label-sheet-mini { position: relative; background: #fff; zoom: 0.33; outline: 1px solid #bbb; }
+.label-mini { position: absolute; outline: 1px solid #9aa; outline-offset: -1px; }
+@media print { .label-sheet-mini { display: none; } }

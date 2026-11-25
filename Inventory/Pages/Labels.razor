@@ -1,0 +1,390 @@
+@page "/labels"
+@* Version 3.0, stage L, batch L-1: print product labels (mock-up agreed with Hiten, 25 Nov 2026).
+   Pick product, variant (or all its variants) and copies; Print opens the browser's print window with A4 sheets laid out as
+   Hiten's Word file (Service/Labels.cs). On paper only the sheets appear (site.css, @media print).
+   Where this screen sits in the menu is still to be decided; for now it opens at /labels. *@
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Shared.Selectors
+@inject IProductRepository ProductRepository
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject ILogger<Labels> Logger
+@inject LabelLayoutService LayoutService
+
+<div class="labels-editor">
+    <MudPaper Class="pa-3 mb-2">
+        <div class="d-flex flex-wrap align-center gap-3 mb-2">
+            <MudText Typo="Typo.h6" Class="me-auto">Labels</MudText>
+            @* Owner, 25 Nov 2026: named label set-ups; the one chosen here is used for printing. *@
+            <label for="label-layout" class="mb-0">Label</label>
+            <select id="label-layout" class="form-control" style="width:auto;min-width:180px;" value="@Layout.Id" @onchange="e => UseLayoutAsync(e.Value)">
+                @foreach (var l in layouts)
+                {
+                    <option value="@l.Id">@l.Name</option>
+                }
+            </select>
+            @if (Access?.Allows(Permissions.LabelsSettings) == true)
+            {
+                <a href="/labelsettings" id="label-settings-open" class="btn btn-secondary">Label settings</a>
+            }
+        </div>
+        <div class="d-flex flex-row flex-wrap gap-3 align-items-end">
+            <div style="min-width:280px;" class="flex-grow-1">
+                <label class="form-label">Product</label>
+                <ProductAutocomplete T="ProductModel" Class="focus-label-product" SelectedProduct="selectedProduct" SelectedProductChanged="OnProductSelected" EnterPressed="OnProductEnter" />
+            </div>
+            <div>
+                <label class="form-label" for="label-variant">Variant</label>
+                <select id="label-variant" class="form-control text-center" style="min-width:170px;" @bind="variantKey" @onkeydown="OnVariantKey">
+                    <option value="">-</option>
+                    @if (product.Variants.Count > 1)
+                    {
+                        <option value="@AllVariants">All variants</option>
+                    }
+                    @foreach (var v in product.Variants)
+                    {
+                        <option value="@v.Id">@v.DisplayText</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="label-copies">Copies</label>
+                @* Owner, 25 Nov 2026: Enter here adds the line and puts the cursor back in Product for the next one. *@
+                <input id="label-copies" type="number" min="1" max="@Inventory.Service.Labels.MaxCopies" class="form-control text-center" style="width:100px;" @bind="copies" @bind:event="oninput" @onkeydown="OnCopiesKey" autocomplete="off" />
+            </div>
+            <button type="button" id="label-add" class="btn btn-success" @onclick="() => Add()">Add</button>
+        </div>
+    </MudPaper>
+
+    <MudPaper Class="pa-3 mb-2">
+        @if (items.Count == 0)
+        {
+            <MudText Class="mud-text-secondary" id="labels-empty">Nothing to print yet. Choose a product, a variant and how many copies, then Add.</MudText>
+        }
+        else
+        {
+            <table class="table table-sm lines-table mb-2" id="labels-list">
+                <thead>
+                    <tr><th style="width:140px">Product ID</th><th>Product name</th><th style="width:170px">Variant</th><th class="c-qty">Copies</th><th style="width:48px"></th></tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < items.Count; i++)
+                    {
+                        var index = i;
+                        var item = items[i];
+                        <tr>
+                            <td>@item.ProductId</td>
+                            <td>@item.ProductName</td>
+                            <td>@item.VariantId @(string.IsNullOrWhiteSpace(item.VariantName) ? "" : $"({item.VariantName})")</td>
+                            @* Owner, 25 Nov 2026: the number of copies can be changed in the list. *@
+                            <td class="c-qty"><input type="number" min="1" max="@Inventory.Service.Labels.MaxCopies" class="form-control form-control-sm text-center label-copies-edit" value="@item.Copies" @onchange="e => SetCopies(index, e.Value)" /></td>
+                            <td><MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small" aria-label="Remove" OnClick="() => items.RemoveAt(index)" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="d-flex flex-wrap align-center gap-3">
+                @* Owner, 25 Nov 2026: a part-used sheet; labels fill from the bottom-right backwards, so printing starts above the used ones. *@
+                <label for="labels-used" class="mb-0">Already used on this sheet</label>
+                <input @key="usedBoxVersion" id="labels-used" type="number" min="0" max="@(Layout.PerSheet - 1)" class="form-control text-center" style="width:90px;" value="@used" @onchange="e => SetUsed(e.Value)" />
+                <MudText id="labels-total" Class="me-auto">Total: @TotalLabels label@(TotalLabels == 1 ? "" : "s") (@Sheets sheet@(Sheets == 1 ? "" : "s"))</MudText>
+                <button type="button" class="btn btn-danger" id="labels-clear" @onclick="() => items.Clear()">Clear list</button>
+                <button type="button" class="btn btn-primary" id="labels-print" @onclick="PrintAsync">Print</button>
+            </div>
+        }
+    </MudPaper>
+
+    @if (items.Count > 0)
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Preview (smaller than on paper)</MudText>
+    }
+</div>
+
+@if (items.Count > 0)
+{
+    @* The sheets: shown small on screen as a preview, and the only thing on paper when printed. *@
+    <div class="label-print" id="label-print">
+        @foreach (var sheet in Inventory.Service.Labels.Arrange(items, Layout, used).GroupBy(s => s.Sheet))
+        {
+            <div class="label-sheet" style="width:@Mm(Layout.PageWidthMm);height:@Mm(Layout.PageHeightMm);@Inventory.Service.Labels.InsideStyle(Layout)">
+                @if (sheet.Key == 0)
+                {
+                    @* Already used: greyed in the preview, nothing printed there. *@
+                    @foreach (var (row, column) in Inventory.Service.Labels.UsedSpots(used, Layout))
+                    {
+                        <div class="label label-used" style="left:@Mm(Layout.LeftOf(column));top:@Mm(Layout.TopOf(row));width:@Mm(Layout.LabelWidthMm);height:@Mm(Layout.LabelHeightMm)"></div>
+                    }
+                }
+                @foreach (var spot in sheet)
+                {
+                    <div class="label" style="left:@Mm(Layout.LeftOf(spot.Column));top:@Mm(Layout.TopOf(spot.Row));width:@Mm(Layout.LabelWidthMm);height:@Mm(Layout.LabelHeightMm)">
+                        <div class="label-text">
+                            <div class="label-name">@spot.Item.ProductName</div>
+                            <div class="label-variant">@spot.Item.VariantName</div>
+                        </div>
+                        <div class="label-qr">@QrOf(spot.Item)</div>
+                        <div class="label-id">@spot.Item.ProductId</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private const string AllVariants = "all";
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    private LabelSheetLayout Layout = LabelSheetLayout.A4Sheet65;
+    private List<LabelSheetLayout> layouts = [];
+    private static string Mm(double value) => Inventory.Service.Labels.Mm(value);
+
+    private ProductModel selectedProduct = new();
+    private ProductModel product = new();
+    private string variantKey = "";
+    private int copies = 1;
+    private readonly List<LabelItem> items = [];
+    private readonly Dictionary<string, MarkupString> qrCache = new();
+
+    private int TotalLabels => items.Sum(i => i.Copies);
+    private int Sheets => Inventory.Service.Labels.SheetsFor(TotalLabels, Layout, used);
+    private int used;
+    private int usedBoxVersion;
+
+    private void SetUsed(object? value)
+    {
+        if (int.TryParse(Convert.ToString(value), out var n) && Inventory.Service.Labels.CheckUsed(n, Layout) is null)
+        {
+            used = n;
+            _ = SaveUsedAsync();
+            return;
+        }
+
+        Snackbar.Add(Inventory.Service.Labels.CheckUsed(-1, Layout)!, Severity.Warning);
+        usedBoxVersion++;   // redraw the box, so it shows the last good number again
+    }
+
+    private void SetCopies(int index, object? value)
+    {
+        if (index < 0 || index >= items.Count)
+        {
+            return;
+        }
+
+        var old = items[index];
+        if (!int.TryParse(Convert.ToString(value), out var n))
+        {
+            n = 0;
+        }
+
+        var changed = old with { Copies = n };
+        var problem = Inventory.Service.Labels.Check(changed, TotalLabels - old.Copies);
+        if (problem is not null)
+        {
+            Snackbar.Add(problem, Severity.Warning);
+            items[index] = old with { };   // a new object, so the box redraws with the old number
+            return;
+        }
+
+        items[index] = changed;
+    }
+
+    private MarkupString QrOf(LabelItem item)
+    {
+        var text = Inventory.Service.Labels.QrText(item.ProductId, item.VariantId);
+        if (!qrCache.TryGetValue(text, out var svg))
+        {
+            // Made by this app from fixed text (product and variant IDs), so it is safe to place in the page as a picture.
+            svg = new MarkupString(Inventory.Service.Labels.QrSvg(text));
+            qrCache[text] = svg;
+        }
+
+        return svg;
+    }
+
+    private async Task OnProductSelected(ProductModel picked)
+    {
+        variantKey = "";
+        if (picked is null || picked.Id == Guid.Empty)
+        {
+            selectedProduct = new();
+            product = new();
+            return;
+        }
+
+        try
+        {
+            selectedProduct = picked;
+            product = (await ProductRepository.GetProductWithVariantsById(picked.Id)).ToModel();
+            if (product.Variants.Count == 0)
+            {
+                Snackbar.Add("This product has no variants. Add a variant on the Products page first.", Severity.Warning);
+            }
+            else if (product.Variants.Count == 1)
+            {
+                variantKey = product.Variants[0].Id.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Labels: loading the product failed");
+            Snackbar.Add("Could not load this product's variants.", Severity.Error);
+        }
+    }
+
+    // Owner, 25 Nov 2026: Enter moves on - Product → Variant → Copies; Enter in Copies adds the line, empties the boxes
+    // and goes back to Product for the next one.
+    private async Task OnProductEnter(ProductModel picked) => await JS.FocusBoxAsync("#label-variant");
+
+    private async Task OnVariantKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter")
+        {
+            await JS.FocusBoxAsync("#label-copies");
+        }
+    }
+
+    private async Task OnCopiesKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter" && Add())
+        {
+            await JS.FocusBoxAsync(".focus-label-product");
+        }
+    }
+
+    /// <summary>Adds the chosen variant (or all variants) to the list; false when something is missing or too many.</summary>
+    private bool Add()
+    {
+        var variants = variantKey == AllVariants
+            ? product.Variants
+            : product.Variants.Where(v => v.Id.ToString() == variantKey).ToList();
+        if (product.Id == Guid.Empty || variants.Count == 0)
+        {
+            Snackbar.Add("Choose a product and a variant first.", Severity.Warning);
+            return false;
+        }
+
+        var listed = TotalLabels;
+        var adding = new List<LabelItem>();
+        foreach (var v in variants)
+        {
+            var item = new LabelItem(product.ProductId ?? "", product.Name ?? "", v.VariantId ?? "", v.Name ?? "", copies);
+            var problem = Inventory.Service.Labels.Check(item, listed);
+            if (problem is not null)
+            {
+                Snackbar.Add(problem, Severity.Warning);
+                return false;
+            }
+
+            listed += item.Copies;
+            adding.Add(item);
+        }
+
+        items.AddRange(adding);
+        // Ready for the next line: product, variant and copies start empty again (owner, 25 Nov 2026).
+        selectedProduct = new();
+        product = new();
+        variantKey = "";
+        copies = 1;
+        return true;
+    }
+
+    // Owner, 25 Nov 2026: the page remembers where the last print ended, on this PC (browser storage; the sheet sits in this
+    // PC's printer). Pressing Print counts the labels as printed - no question afterwards (owner's choice); if a print fails,
+    // the "Already used on this sheet" box is corrected by hand.
+    // One count per label set-up: each kind of sheet has its own part-used sheet.
+    private string UsedKey => $"inventory-labels-used-{Layout.Id}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            layouts = await LayoutService.ListAsync();
+            Layout = await LayoutService.ActiveAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Labels: the label settings could not be read");
+            Snackbar.Add("The label settings could not be read; using A4 65 Label.", Severity.Error);
+        }
+    }
+
+    private async Task UseLayoutAsync(object? value)
+    {
+        if (Access is null || !int.TryParse(Convert.ToString(value), out var id) || id == Layout.Id)
+        {
+            return;
+        }
+
+        var result = await LayoutService.UseAsync(id, Access);
+        if (!result.Ok)
+        {
+            Snackbar.Add(result.Message, Severity.Warning);
+            return;
+        }
+
+        layouts = await LayoutService.ListAsync();
+        Layout = await LayoutService.ActiveAsync();
+        used = 0;
+        await LoadUsedAsync();
+        usedBoxVersion++;
+        Snackbar.Add(result.Message, Severity.Success);
+    }
+
+    private async Task LoadUsedAsync()
+    {
+        try
+        {
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", UsedKey);
+            if (int.TryParse(saved, out var n) && Inventory.Service.Labels.CheckUsed(n, Layout) is null)
+            {
+                used = n;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Labels: the remembered position could not be read; starting from a fresh sheet");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await LoadUsedAsync();
+        usedBoxVersion++;
+        StateHasChanged();
+    }
+
+    private async Task SaveUsedAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", UsedKey, used.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Labels: the position could not be remembered");
+        }
+    }
+
+    private async Task PrintAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("window.print");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogError(ex, "Labels: the print window could not be opened");
+            Snackbar.Add("The print window could not be opened. Try Ctrl+P.", Severity.Error);
+            return;
+        }
+
+        used = Inventory.Service.Labels.UsedAfterPrint(used, TotalLabels, Layout);
+        usedBoxVersion++;
+        await SaveUsedAsync();
+    }
+}

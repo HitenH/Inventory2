@@ -30,7 +30,8 @@ builder.Services.AddSingleton<PasswordService>();
 builder.Services.AddScoped<UserAdmin>();
 builder.Services.AddScoped<RoleAdmin>();
 builder.Services.AddScoped<AccessService>();
-builder.Services.AddScoped<ActivityLogService>();   // batch 1c-3/1c-4: logins, backups, and the activity panel
+builder.Services.AddScoped<ActivityLogService>();
+builder.Services.AddScoped<LabelLayoutService>();   // stage L: named label set-ups   // batch 1c-3/1c-4: logins, backups, and the activity panel
 
 // Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
 // Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).

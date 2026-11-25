@@ -34,6 +34,11 @@ public static class ActivityLogWriter
         [typeof(SalesEntity)] = [new("CustomerEntityId", "Customer"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("DiscountAmount", "Discount", SaleSide)],
         [typeof(RoleEntity)] = [new("Name", "Name")],
         [typeof(UserEntity)] = [new("Name", "Name")],
+        [typeof(LabelLayoutEntity)] = [new("Name", "Name"), new("IsActive", "In use"), new("PageWidthMm", "Page width mm"), new("PageHeightMm", "Page height mm"),
+            new("Columns", "Labels across"), new("Rows", "Labels down"), new("LabelWidthMm", "Label width mm"), new("LabelHeightMm", "Label height mm"),
+            new("GapAcrossMm", "Gap across mm"), new("GapDownMm", "Gap down mm"), new("TopMm", "Top margin mm"), new("LeftMm", "Left margin mm"),
+            new("ContentDownMm", "Content down mm"), new("ContentLeftMm", "Content left mm"), new("QrMm", "QR size mm"),
+            new("NameFontPt", "Name text pt"), new("VariantFontPt", "Variant text pt"), new("IdFontPt", "ID text pt")],
     };
 
     private static readonly Dictionary<Type, Field[]> LineFields = new()
@@ -417,6 +422,7 @@ public static class ActivityLogWriter
             SalesEntity => $"Sale {V("VoucherId")} of {Day("Date")}",
             UserEntity => $"User {V("Name")}",
             RoleEntity => $"Role {V("Name")}",
+            LabelLayoutEntity => $"Label settings {V("Name")}",
             _ => record.Metadata.ClrType.Name,
         };
     }
@@ -470,6 +476,8 @@ public static class ActivityLogWriter
         null => "(blank)",
         string s when string.IsNullOrWhiteSpace(s) => "(blank)",
         decimal d => d.ToString("0.##", CultureInfo.InvariantCulture),
+        double d => d.ToString("0.##", CultureInfo.InvariantCulture),
+        bool b => b ? "yes" : "no",
         DateOnly d => d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture),
         DateTime d => d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture),
         Guid g when field == "SupplierEntityId" => names.SupplierName(g),
