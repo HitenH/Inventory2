@@ -272,6 +272,19 @@ namespace Inventory.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.LabelSheetUseEntity", b =>
+                {
+                    b.Property<int>("LabelLayoutId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Used")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("LabelLayoutId");
+
+                    b.ToTable("LabelSheetUse", (string)null);
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>
                 {
                     b.Property<int>("Id")
@@ -896,6 +909,15 @@ namespace Inventory.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.LabelSheetUseEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.LabelLayoutEntity", null)
+                        .WithOne()
+                        .HasForeignKey("Inventory.Domain.Entities.LabelSheetUseEntity", "LabelLayoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.Mobile", b =>

@@ -10,6 +10,8 @@
 @inject IJSRuntime JS
 @inject ILogger<Labels> Logger
 @inject LabelLayoutService LayoutService
+@inject LabelSourceService Sources
+@inject ActivityLogService Activity
 
 <div class="labels-editor">
     <MudPaper Class="pa-3 mb-2">
@@ -89,7 +91,8 @@
                 <input @key="usedBoxVersion" id="labels-used" type="number" min="0" max="@(Layout.PerSheet - 1)" class="form-control text-center" style="width:90px;" value="@used" @onchange="e => SetUsed(e.Value)" />
                 <MudText id="labels-total" Class="me-auto">Total: @TotalLabels label@(TotalLabels == 1 ? "" : "s") (@Sheets sheet@(Sheets == 1 ? "" : "s"))</MudText>
                 <button type="button" class="btn btn-danger" id="labels-clear" @onclick="() => items.Clear()">Clear list</button>
-                <button type="button" class="btn btn-primary" id="labels-print" @onclick="PrintAsync">Print</button>
+                @* Ctrl+P presses this button (shortcuts.js, data-shortcut="print"), so the count of used labels always moves on. *@
+                <button type="button" class="btn btn-primary" id="labels-print" data-shortcut="print" title="Ctrl+P" @onclick="PrintAsync">Print</button>
             </div>
         }
     </MudPaper>
@@ -155,7 +158,7 @@
         if (int.TryParse(Convert.ToString(value), out var n) && Inventory.Service.Labels.CheckUsed(n, Layout) is null)
         {
             used = n;
-            _ = SaveUsedAsync();
+            _ = Sources.SetUsedAsync(Layout.Id, used);
             return;
         }
 
@@ -288,11 +291,18 @@
         return true;
     }
 
-    // Owner, 25 Nov 2026: the page remembers where the last print ended, on this PC (browser storage; the sheet sits in this
-    // PC's printer). Pressing Print counts the labels as printed - no question afterwards (owner's choice); if a print fails,
-    // the "Already used on this sheet" box is corrected by hand.
-    // One count per label set-up: each kind of sheet has its own part-used sheet.
-    private string UsedKey => $"inventory-labels-used-{Layout.Id}";
+    // Owner, 25 Nov 2026: the page remembers where the last print ended – in the database (LabelSourceService), one count per
+    // label set-up, so it survives restarts and backups. Pressing Print counts the labels as printed – no question afterwards
+    // (owner's choice); if a print fails, the "Already used on this sheet" box is corrected by hand.
+
+    // Batch L-2: /labels?purchase=<id> fills the list from a purchase (Print labels button or Alt+L on a purchase);
+    // /labels?product=<id>&variant=<id> chooses a product and variant and puts the cursor in Copies (label icon on the product page).
+    [SupplyParameterFromQuery(Name = "purchase")] public Guid? PurchaseFrom { get; set; }
+    [SupplyParameterFromQuery(Name = "product")] public Guid? ProductFrom { get; set; }
+    [SupplyParameterFromQuery(Name = "variant")] public Guid? VariantFrom { get; set; }
+
+    private PurchaseLabels? fromPurchase;
+    private bool focusCopies;
 
     protected override async Task OnInitializedAsync()
     {
@@ -300,11 +310,48 @@
         {
             layouts = await LayoutService.ListAsync();
             Layout = await LayoutService.ActiveAsync();
+            used = await Sources.UsedAsync(Layout.Id);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Labels: the label settings could not be read");
             Snackbar.Add("The label settings could not be read; using A4 65 Label.", Severity.Error);
+        }
+
+        try
+        {
+            if (PurchaseFrom is { } purchaseId)
+            {
+                fromPurchase = await Sources.ForPurchaseAsync(purchaseId);
+                if (fromPurchase is null)
+                {
+                    Snackbar.Add("That purchase was not found.", Severity.Warning);
+                }
+                else
+                {
+                    items.AddRange(fromPurchase.Items);
+                    if (fromPurchase.Items.Count == 0)
+                    {
+                        Snackbar.Add($"{fromPurchase.Label} has no lines to label.", Severity.Info);
+                    }
+                }
+            }
+            else if (ProductFrom is { } productId)
+            {
+                var picked = (await ProductRepository.GetProductWithVariantsById(productId)).ToModel();
+                if (picked.Id != Guid.Empty)
+                {
+                    selectedProduct = picked;
+                    product = picked;
+                    variantKey = picked.Variants.FirstOrDefault(v => v.Id == VariantFrom)?.Id.ToString() ?? "";
+                    focusCopies = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Labels: the starting list could not be loaded");
+            Snackbar.Add("The labels for this purchase or product could not be loaded.", Severity.Error);
         }
     }
 
@@ -334,44 +381,31 @@
     {
         try
         {
-            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", UsedKey);
-            if (int.TryParse(saved, out var n) && Inventory.Service.Labels.CheckUsed(n, Layout) is null)
-            {
-                used = n;
-            }
+            used = await Sources.UsedAsync(Layout.Id);
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Labels: the remembered position could not be read; starting from a fresh sheet");
+            Logger.LogWarning(ex, "Labels: the used count could not be read; starting from a fresh sheet");
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (firstRender && focusCopies)
         {
-            return;
-        }
-
-        await LoadUsedAsync();
-        usedBoxVersion++;
-        StateHasChanged();
-    }
-
-    private async Task SaveUsedAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("localStorage.setItem", UsedKey, used.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Labels: the position could not be remembered");
+            focusCopies = false;
+            await JS.FocusBoxAsync("#label-copies");
         }
     }
 
     private async Task PrintAsync()
     {
+        if (TotalLabels > Inventory.Service.Labels.MaxLabels)
+        {
+            Snackbar.Add($"At most {Inventory.Service.Labels.MaxLabels} labels can be printed in one go. Remove some lines and print the rest afterwards.", Severity.Warning);
+            return;
+        }
+
         try
         {
             await JS.InvokeVoidAsync("window.print");
@@ -385,6 +419,17 @@
 
         used = Inventory.Service.Labels.UsedAfterPrint(used, TotalLabels, Layout);
         usedBoxVersion++;
-        await SaveUsedAsync();
+        try
+        {
+            await Sources.SetUsedAsync(Layout.Id, used);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Labels: the used count could not be saved");
+            Snackbar.Add("The number of used labels could not be remembered. Check the Already used box next time.", Severity.Warning);
+        }
+
+        // Every print is on record (groundwork for tying labels to purchases, ROADMAP stage L); a purchase's print shows in its panel.
+        await Activity.TryWriteLabelsAsync(Inventory.Service.Labels.PrintedText(items, Layout.Name), fromPurchase, Logger);
     }
 }

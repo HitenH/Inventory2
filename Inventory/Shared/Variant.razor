@@ -76,7 +76,16 @@
         <MudTd>@context.VariantId</MudTd>
         <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
         <MudTd>@(stockInHand.TryGetValue(context.Id, out var qty) ? qty : 0)</MudTd>
-        <MudTd>@context.ReorderLevel</MudTd>
+        <MudTd>
+            @context.ReorderLevel
+            @if (Access?.Allows(Inventory.Service.Permissions.LabelsPrint) == true && Product?.Id != Guid.Empty)
+            {
+                @* Stage L (Hiten, 25 Nov 2026): Labels with this product and variant chosen, cursor in Copies. *@
+                <a href="@($"/labels?product={Product!.Id}&variant={context.Id}")" class="variant-labels-link ms-2" title="Print labels for this variant" aria-label="Print labels for this variant">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Small" />
+                </a>
+            }
+        </MudTd>
         <MudTd>
             @if (context.Image != null)
             {

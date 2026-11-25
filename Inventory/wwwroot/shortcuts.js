@@ -37,6 +37,18 @@ window.inventoryShortcuts = {
                 return;
             }
 
+            // Ctrl+P on a screen with its own Print button (Labels, marked data-shortcut="print"): press that button, so the app
+            // keeps count of the labels used. On every other screen Chrome prints as usual.
+            if (e.ctrlKey && !e.altKey && !e.shiftKey && e.code === 'KeyP') {
+                const print = document.querySelector('[data-shortcut="print"]');
+                if (print && !print.disabled && !document.querySelector('.mud-dialog')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    print.click();
+                    return;
+                }
+            }
+
             // Alt+B: open the screen's many-items pop-up (Bulk Entry / Scan Mass Products) - its button is marked
             // data-shortcut="bulk". Not while a pop-up is already open.
             if (e.altKey && !e.ctrlKey && e.code === 'KeyB') {

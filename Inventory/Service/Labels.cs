@@ -187,6 +187,15 @@ public static class Labels
              + $"<rect width=\"{size}\" height=\"{size}\" fill=\"#fff\"/><path d=\"{path}\" fill=\"#000\"/></svg>";
     }
 
+    /// <summary>"Printed 15 labels on A4 65 Label: AJ0120103/G ×10, AJ0320105/2T ×5" – the activity-log line for one print.</summary>
+    public static string PrintedText(IReadOnlyList<LabelItem> items, string layoutName, int listAtMost = 25)
+    {
+        var total = items.Sum(i => i.Copies);
+        var lines = items.Take(listAtMost).Select(i => $"{i.ProductId}/{i.VariantId} ×{i.Copies}");
+        var more = items.Count > listAtMost ? $" and {items.Count - listAtMost} more lines" : "";
+        return $"Printed {total} label{(total == 1 ? "" : "s")} on {layoutName}: {string.Join(", ", lines)}{more}";
+    }
+
     /// <summary>The sizes inside one label for the sheet's style (site.css .label-* reads them), from the chosen label set-up.</summary>
     public static string InsideStyle(LabelSheetLayout l) =>
         $"--label-down:{Mm(l.ContentDownMm)};--label-left:{Mm(l.ContentLeftMm)};--lw:{Mm(l.LabelWidthMm)};--qr:{Mm(l.QrMm)};" +

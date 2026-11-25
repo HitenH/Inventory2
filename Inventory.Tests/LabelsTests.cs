@@ -190,4 +190,84 @@ public class LabelsTests
         Assert.True((await service.DeleteAsync(1, Admin())).Ok);
         Assert.Single(await service.ListAsync());   // the last one left is always the one in use, so it stays
     }
+
+    // ---- Batch L-2 (Hiten, 25 Nov 2026): labels from a purchase, menu, shortcuts, used count, print log. ----
+
+    [Fact]
+    public void Alt_L_opens_Labels_and_on_a_saved_purchase_fills_it_with_that_purchase()
+    {
+        var id = Guid.NewGuid();
+        Assert.Equal("/labels", Shortcuts.Target("/products", 'L', false));
+        Assert.Equal($"/labels?purchase={id}", Shortcuts.Target($"/purchase/{id}", 'L', false));
+        Assert.Equal("/labels", Shortcuts.Target("/purchase", 'L', false));   // a new, unsaved purchase
+        Assert.Equal("/labels", Shortcuts.Back("/labelsettings"));
+    }
+
+    [Fact]
+    public void Esc_on_Labels_goes_back_to_the_purchase_or_product_it_was_opened_from()
+    {
+        var purchase = Guid.NewGuid();
+        var product = Guid.NewGuid();
+        var variant = Guid.NewGuid();
+        Assert.Equal($"/purchase/{purchase}", Shortcuts.Back($"/labels?purchase={purchase}"));
+        Assert.Equal($"/product/{product}", Shortcuts.Back($"/labels?product={product}&variant={variant}"));
+        Assert.Equal("/", Shortcuts.Back("/labels"));                  // opened from the menu: Dashboard, as before
+        Assert.Equal("/", Shortcuts.Back("/labels?purchase=rubbish"));
+    }
+
+    [Fact]
+    public async Task A_purchase_gives_one_line_per_purchase_line_as_entered_and_leaves_out_minus_lines()
+    {
+        using var test = new TestDatabase();
+        var seed = await test.SeedAsync();
+        var purchaseId = await new Inventory.Domain.Repository.PurchaseRepositoryEF(test.Factory).Create(new Inventory.Domain.Entities.PurchaseEntity { Date = new DateOnly(2026, 11, 25), SupplierEntityId = seed.SupplierId, VoucherId = 14 });
+        var lines = new Inventory.Domain.Repository.PurchaseVariantRepositoryEF(test.Factory);
+        await lines.Create(new Inventory.Domain.Entities.PurchaseVariant { PurchaseEntityId = purchaseId, ProductEntityId = seed.ProductId, VariantEntityId = seed.Variant1Id, Quantity = 10, SerialNumber = 1 });
+        await lines.Create(new Inventory.Domain.Entities.PurchaseVariant { PurchaseEntityId = purchaseId, ProductEntityId = seed.ProductId, VariantEntityId = seed.Variant2Id, Quantity = -2, SerialNumber = 2 });
+        await lines.Create(new Inventory.Domain.Entities.PurchaseVariant { PurchaseEntityId = purchaseId, ProductEntityId = seed.ProductId, VariantEntityId = seed.Variant1Id, Quantity = 5, SerialNumber = 3 });
+
+        var labels = await new LabelSourceService(test.Factory).ForPurchaseAsync(purchaseId);
+
+        Assert.NotNull(labels);
+        Assert.Equal("Purchase 14 of 25-11-2026", labels.Label);
+        Assert.Equal([("P1", "V1", 10), ("P1", "V1", 5)], labels.Items.Select(i => (i.ProductId, i.VariantId, i.Copies)));
+        Assert.Equal(("Product One", "Red"), (labels.Items[0].ProductName, labels.Items[0].VariantName));
+        Assert.Null(await new LabelSourceService(test.Factory).ForPurchaseAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task Already_used_is_kept_in_the_database_per_label_set_up()
+    {
+        using var test = new TestDatabase();
+        var sources = new LabelSourceService(test.Factory);
+        Assert.Equal(0, await sources.UsedAsync(1));
+
+        await sources.SetUsedAsync(1, 30);
+        await sources.SetUsedAsync(1, 5);
+
+        Assert.Equal(5, await new LabelSourceService(test.Factory).UsedAsync(1));   // as after a restart
+        Assert.Equal(0, await sources.UsedAsync(2));
+    }
+
+    [Fact]
+    public void A_print_is_written_down_with_what_and_how_many()
+    {
+        Assert.Equal("Printed 15 labels on A4 65 Label: AJ0120103/G ×10, AJ0320105/2T ×5",
+            Labels.PrintedText([Item(10), Item(5, "AJ0320105", "2T")], "A4 65 Label"));
+        Assert.EndsWith(" and 2 more lines", Labels.PrintedText([Item(1), Item(1), Item(1)], "A4 65 Label", listAtMost: 1));
+    }
+
+    [Fact]
+    public async Task A_print_from_a_purchase_shows_in_that_purchases_activity_panel()
+    {
+        using var test = new TestDatabase();
+        var purchaseId = Guid.NewGuid();
+        var service = new ActivityLogService(test.Factory, new Inventory.Domain.CurrentUser { Name = "Hiten" });
+
+        await service.TryWriteLabelsAsync("Printed 10 labels on A4 65 Label: P1/V1 ×10", new PurchaseLabels(purchaseId, "Purchase 14 of 25-11-2026", []), Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+
+        var history = await service.ForRecordAsync(nameof(Inventory.Domain.Entities.PurchaseEntity), purchaseId.ToString(), Admin());
+        Assert.Equal(["Printed 10 labels on A4 65 Label: P1/V1 ×10"], Assert.Single(history.Groups).Lines);
+        Assert.Equal("Hiten", history.Groups[0].By);
+    }
 }

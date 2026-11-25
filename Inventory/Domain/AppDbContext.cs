@@ -32,6 +32,7 @@ namespace Inventory.Domain
         public DbSet<SalesSummaryEntity> SalesSummary { get; set; }
         public DbSet<ActivityEntry> ActivityLog { get; set; }
         public DbSet<LabelLayoutEntity> LabelLayouts { get; set; }
+        public DbSet<LabelSheetUseEntity> LabelSheetUse { get; set; }
 
         /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
         public string? ActivityNote { get; set; }
@@ -143,6 +144,9 @@ namespace Inventory.Domain
             // Stage L: named label set-ups, names unique ignoring capitals; the first one, "A4 65 Label", comes with the upgrade.
             modelBuilder.Entity<LabelLayoutEntity>().Property(l => l.Name).UseCollation("NOCASE");
             modelBuilder.Entity<LabelLayoutEntity>().HasIndex(l => l.Name).IsUnique();
+            // Batch L-2: labels already used on the current sheet, one row per label set-up (goes when the set-up is deleted).
+            modelBuilder.Entity<LabelSheetUseEntity>().ToTable("LabelSheetUse").HasKey(u => u.LabelLayoutId);
+            modelBuilder.Entity<LabelSheetUseEntity>().HasOne<LabelLayoutEntity>().WithOne().HasForeignKey<LabelSheetUseEntity>(u => u.LabelLayoutId).OnDelete(DeleteBehavior.Cascade);
             var a4 = LabelSheetLayout.A4Sheet65;
             modelBuilder.Entity<LabelLayoutEntity>().HasData(new LabelLayoutEntity
             {

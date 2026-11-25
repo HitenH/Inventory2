@@ -19,7 +19,7 @@ public sealed record ActivityGroup(DateTime At, string? By, IReadOnlyList<string
 }
 
 /// <summary>Batch 1c-5: the kinds offered by the Kind filter of the Activity log screen.</summary>
-public enum ActivityKind { Everything, Customers, Suppliers, Products, PurchaseOrders, Purchases, SalesOrders, Sales, UsersAndRoles, Logins, Backups, Imports }
+public enum ActivityKind { Everything, Customers, Suppliers, Products, PurchaseOrders, Purchases, SalesOrders, Sales, UsersAndRoles, Logins, Backups, Imports, Labels }
 
 /// <summary>What the Activity log screen asks for. Person null = everyone.</summary>
 public sealed record ActivityFilter(DateOnly From, DateOnly To, string? Person, ActivityKind Kind, string? Search);
@@ -39,6 +39,7 @@ public sealed record RecordHistory(IReadOnlyList<ActivityGroup> Groups, bool Ear
 public class ActivityLogService(IDbContextFactory<AppDbContext> factory, CurrentUser currentUser)
 {
     public const string Login = "Login";
+    public const string LabelsPrinted = "Labels";
     public const string LoginRefused = "Login refused";
     public const string Backup = "Backup";
 
@@ -67,6 +68,30 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         catch (Exception ex)
         {
             logger.LogError(ex, "Could not write to the activity log: {Action} {Text}", action, text);
+        }
+    }
+
+    /// <summary>
+    /// Stage L: one line for a print of labels. A print made from a purchase is filed under that purchase, so it shows in the
+    /// purchase's activity panel. A failure only goes to the log file: it must never stop printing.
+    /// </summary>
+    public async Task TryWriteLabelsAsync(string text, PurchaseLabels? purchase, ILogger logger)
+    {
+        try
+        {
+            await using var db = await factory.CreateDbContextAsync();
+            db.ActivityLog.Add(new ActivityEntry
+            {
+                At = DateTime.Now, By = currentUser.Name, SaveId = Guid.NewGuid(), Action = LabelsPrinted, Text = text,
+                RecordType = purchase is null ? null : nameof(PurchaseEntity),
+                RecordId = purchase?.PurchaseId.ToString(),
+                RecordLabel = purchase?.Label,
+            });
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Could not write the label print to the activity log: {Text}", text);
         }
     }
 
@@ -150,6 +175,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
             ActivityKind.Logins => query.Where(a => a.Action == Login || a.Action == LoginRefused),
             ActivityKind.Backups => query.Where(a => a.Action == Backup),
             ActivityKind.Imports => query.Where(a => a.Action == "Import"),
+            ActivityKind.Labels => query.Where(a => a.Action == LabelsPrinted),
             _ => query.Where(a => a.RecordType != null && RecordTypesOf(filter.Kind).Contains(a.RecordType)),
         };
 

@@ -14,6 +14,8 @@ namespace Inventory.Shared;
 public partial class Variant
 {
     [Parameter] public ProductEntity Product { get; set; }
+    // Stage L: the label icon next to the reorder level shows only for people who may print labels.
+    [CascadingParameter] private Inventory.Service.UserAccess? Access { get; set; }
     [Inject] private IVariantRepository VariantRepository { get; set; }
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IImageRepository ImageRepository { get; set; }

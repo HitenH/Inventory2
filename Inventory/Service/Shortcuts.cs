@@ -30,6 +30,7 @@ namespace Inventory.Service
             new("Customers", 'C', "/customers", "/customer", ["customers", "customer"]),
             new("Suppliers", 'U', "/suppliers", "/supplier", ["suppliers", "supplier"]),
             new("Products", 'I', "/products", "/product", ["products", "product"]),
+            new("Labels", 'L', "/labels", null, ["labels", "labelsettings"]),
             new("Purchase Orders", 'Q', "/purchaseorder", null, ["purchaseorder"]),
             new("Purchases", 'P', "/purchases", "/purchase", ["purchases", "purchase"]),
             new("Sale Orders", 'O', "/salesorders", "/salesorder", ["salesorders", "salesorder"]),
@@ -55,6 +56,12 @@ namespace Inventory.Service
                 return Screens.FirstOrDefault(s => s.Pages.Contains(segment, StringComparer.OrdinalIgnoreCase))?.NewUrl;
             }
 
+            // Stage L-2 (owner, 25 Nov 2026): Alt+L on a saved purchase opens Labels filled with that purchase.
+            if (key == 'L' && !shift && PurchaseIdIn(currentPath) is { } purchaseId)
+            {
+                return $"/labels?purchase={purchaseId}";
+            }
+
             var screen = Screens.FirstOrDefault(s => s.Key == key);
             if (screen is null)
             {
@@ -73,6 +80,14 @@ namespace Inventory.Service
             if (segment.Length == 0 || segment.Equals("login", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
+            }
+            if (segment.Equals("labelsettings", StringComparison.OrdinalIgnoreCase))
+            {
+                return "/labels";   // label settings are kept from the Labels screen
+            }
+            if (segment.Equals("labels", StringComparison.OrdinalIgnoreCase) && LabelsCameFrom(currentPath) is { } cameFrom)
+            {
+                return cameFrom;   // owner (25 Nov 2026): Labels opened from a purchase or a product goes back there
             }
             if (segment.Equals("category", StringComparison.OrdinalIgnoreCase))
             {
@@ -112,6 +127,42 @@ namespace Inventory.Service
         {
             var screen = Screens.FirstOrDefault(s => s.ListUrl == listUrl);
             return screen is null ? null : $"Alt+{screen.Key}";
+        }
+
+        /// <summary>
+        /// Where "/labels?purchase={id}" or "/labels?product={id}&amp;variant=..." was opened from: "/purchase/{id}" or
+        /// "/product/{id}". Null for plain "/labels".
+        /// </summary>
+        public static string? LabelsCameFrom(string path)
+        {
+            var cut = path.IndexOf('?');
+            if (cut < 0)
+            {
+                return null;
+            }
+            foreach (var pair in path[(cut + 1)..].Split('#')[0].Split('&'))
+            {
+                var parts = pair.Split('=', 2);
+                if (parts.Length == 2 && Guid.TryParse(Uri.UnescapeDataString(parts[1]), out var id))
+                {
+                    if (parts[0].Equals("purchase", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return $"/purchase/{id}";
+                    }
+                    if (parts[0].Equals("product", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return $"/product/{id}";
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>The purchase id in "/purchase/{id}", or null on any other address (or a new, unsaved purchase).</summary>
+        public static Guid? PurchaseIdIn(string path)
+        {
+            var parts = path.Split('?', '#')[0].Trim('/').Split('/');
+            return parts.Length == 2 && parts[0].Equals("purchase", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(parts[1], out var id) ? id : null;
         }
     }
 }

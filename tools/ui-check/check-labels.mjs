@@ -1,7 +1,8 @@
 // Version 3.0, stage L, batch L-1: the Labels page (/labels). Adds labels with the real product picker, checks the list,
 // the sheet count, that each label has its QR picture, that printing shows only the sheets at full A4 size with the labels
 // where Hiten's Word file puts them, and saves the printed result as a PDF (<SCRATCH>labels.pdf) to look at.
-// A user without the "Print labels" switch is refused.
+// Batch L-2: Labels in the menu, Alt+L, the product-page icon, a purchase (LOG_PURCHASE), Ctrl+P, the used count kept,
+// and the print in the purchase's activity panel. A user without the "Print labels" switch is refused.
 // Development only; it changes no data. Test copy: the usual Admin password; for the refused user run
 // tools/ui-check/setup-activity-log.py on the copy first (it adds UiNoLog).
 import { launch, sleep } from './cdp.mjs';
@@ -114,6 +115,55 @@ try {
   await sleep(800);
   expect('a used number that leaves nothing is refused', (await b.snack()).includes('Already used must be a whole number from 0 to 64.'), true);
   await b.shot(`${shots}/labels-used.png`);
+
+  log('--- L-2: Labels in the menu under Masters, Alt+L, the product page icon, a purchase, Ctrl+P (owner, 25 Nov 2026)');
+  const menuOrder = await b.eval(`[...document.querySelectorAll('.mud-nav-link')].map(a => a.innerText.trim().split('\\n')[0])`);
+  expect('Labels comes right after Products in the menu', menuOrder[menuOrder.indexOf('Products') + 1], 'Labels');
+  await b.goto('/products'); await sleep(1500);
+  await b.key('l', 1); await sleep(1500);
+  expect('Alt+L opens Labels', await b.path(), '/labels');
+
+  await b.goto('/products'); await b.waitFor(`document.querySelector('a[href^="product/"]')`, 10000);
+  await b.eval(`document.querySelector('a[href^="product/"]').click()`);
+  await b.waitFor(`document.querySelector('.variant-labels-link')`, 10000); await sleep(800);
+  await b.eval(`document.querySelector('.variant-labels-link').click()`);
+  await b.waitFor(`location.pathname === '/labels' && document.querySelector('#label-variant')?.value`, 10000); await sleep(1500);
+  expect('the variant icon chose the product', (await b.eval(`document.querySelector('.focus-label-product input').value`)).length > 0, true);
+  expect('... and the variant', (await b.eval(`document.querySelector('#label-variant').value`)).length > 0, true);
+  expect('... and put the cursor in Copies', await b.active(), 'INPUT#label-copies');
+  const productPath = await b.eval(`'/product/' + new URLSearchParams(location.search).get('product')`);
+  await b.key('Escape'); await sleep(1500);
+  expect('Esc goes back to the product it was opened from', await b.path(), productPath);
+
+  const purchaseId = process.env.LOG_PURCHASE;
+  if (purchaseId) {
+    await b.goto(`/purchase/${purchaseId}`); await b.waitFor(`document.querySelector('#purchase-print-labels')`, 10000); await sleep(1500);
+    const purchaseLines = await b.eval(`[...document.querySelectorAll('table.table tbody tr')].filter(r => r.querySelectorAll('td').length > 5).length`);
+    await b.key('l', 1);
+    await b.waitFor(`location.search.startsWith('?purchase=') && document.querySelector('#labels-list')`, 10000); await sleep(1000);
+    expect('Alt+L on a purchase fills Labels with its lines (one per line)', await b.eval(`document.querySelectorAll('#labels-list tbody tr').length`), purchaseLines);
+    const before = await b.eval(`Number(document.querySelector('#labels-used').value)`);
+    const total = await b.eval(`Number(document.querySelector('#labels-total').innerText.match(/Total: (\\d+)/)[1])`);
+    await b.key('p', 2); await sleep(2000);
+    const after = await b.eval(`Number(document.querySelector('#labels-used').value)`);
+    expect('Ctrl+P pressed the app\'s Print, so the used count moved on', after, (before + total) % 65);
+    await b.goto('/labels'); await b.waitFor(`document.querySelector('.focus-label-product input')`, 10000); await sleep(1000);
+    await b.goto(`/labels?purchase=${purchaseId}`); await b.waitFor(`document.querySelector('#labels-used')`, 10000); await sleep(1000);
+    expect('the used count is still there after reopening (kept in the database)', await b.eval(`Number(document.querySelector('#labels-used').value)`), after);
+    await b.goto(`/purchase/${purchaseId}`); await b.waitFor(`document.querySelector('#activity-log-open')`, 10000); await sleep(1500);
+    await b.click('#activity-log-open');
+    await b.waitFor(`document.querySelector('#activity-panel .activity-group')`, 8000); await sleep(400);
+    const panel = await b.eval(`document.querySelector('#activity-panel').innerText`);
+    expect('the print shows in the purchase\'s activity panel', panel.includes(`Printed ${total} label`), true);
+    await b.key('Escape'); await sleep(500);
+    await b.click('#purchase-print-labels');
+    await b.waitFor(`location.search.startsWith('?purchase=') && document.querySelector('#labels-list')`, 10000); await sleep(800);
+    expect('the Print labels button does the same as Alt+L', await b.eval(`document.querySelectorAll('#labels-list tbody tr').length`), purchaseLines);
+    await b.key('Escape'); await sleep(1500);
+    expect('Esc goes back to the purchase it was opened from', (await b.path()).toLowerCase(), `/purchase/${purchaseId}`.toLowerCase());
+  } else {
+    log('     (set LOG_PURCHASE to check the purchase part)');
+  }
 
   log('--- a user without "Print labels" is refused');
   await loginAs(b, 'UiNoLog');

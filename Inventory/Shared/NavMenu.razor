@@ -36,7 +36,7 @@
             }
             <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">Logout</MudNavLink>
 
-            @if (May(Permissions.ScreenCustomers) || May(Permissions.ScreenSuppliers) || May(Permissions.ScreenProducts))
+            @if (May(Permissions.ScreenCustomers) || May(Permissions.ScreenSuppliers) || May(Permissions.ScreenProducts) || May(Permissions.LabelsPrint))
             {
                 <MudDivider Class="my-2" />
                 <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Masters</MudText>
@@ -52,6 +52,11 @@
             @if (May(Permissions.ScreenProducts))
             {
                 <MudNavLink Icon="@Icons.Material.Filled.ProductionQuantityLimits" Href="/products"><NavText Text="Products" Url="/products" /></MudNavLink>
+            }
+            @if (May(Permissions.LabelsPrint))
+            {
+                @* Stage L (Hiten, 25 Nov 2026): under Masters, after Products; Alt+L. *@
+                <MudNavLink Icon="@Icons.Material.Filled.LocalOffer" Href="/labels"><NavText Text="Labels" Url="/labels" /></MudNavLink>
             }
 
             @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales))
