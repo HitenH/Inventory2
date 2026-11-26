@@ -481,3 +481,20 @@ a, .btn-link {
 .c-place-total { width: 110px; font-weight: 700; }
 .c-place-total .stock-sellable { font-weight: 700; }
 .variant-total-place { margin-right: 14px; font-weight: 400; }
+/* Stage 3, batches 3-5/3-6: moves, receiving, missing pieces (a red flag), stock below zero in red. */
+.stock-negative { color: var(--mud-palette-error) !important; font-weight: 700; }
+.nav-missing { margin-left: 6px; padding: 0 6px; border-radius: 9px; background: var(--mud-palette-error); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.moves-table tr.move-missing > td { background: color-mix(in srgb, var(--mud-palette-error) 10%, transparent); }
+.move-missing-count { color: var(--mud-palette-error); font-weight: 700; }
+.move-status { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12.5px; background: var(--mud-palette-action-default-hover); }
+.move-status-ontheway { background: color-mix(in srgb, var(--mud-palette-warning) 22%, transparent); }
+.move-status-missing { background: var(--mud-palette-error); color: #fff; font-weight: 600; }
+.move-status-received, .move-status-moved { background: color-mix(in srgb, var(--mud-palette-success) 20%, transparent); }
+.move-state { display: flex; gap: 14px; align-items: center; }
+.move-received-by, .move-scan-hint, .move-hint { color: var(--mud-palette-text-secondary); font-size: 13px; }
+.move-sent-table tr.move-line-missing > td { background: color-mix(in srgb, var(--mud-palette-error) 10%, transparent); }
+.move-receive-qty { max-width: 90px; margin-left: auto; }
+.send-table .send-qty { max-width: 90px; margin-left: auto; }
+.move-receive-table .c-check { width: 40px; text-align: center; }
+.move-last-scan { font-weight: 600; color: var(--mud-palette-success); }
+.below-zero-table .c-pid { white-space: nowrap; width: 150px; }

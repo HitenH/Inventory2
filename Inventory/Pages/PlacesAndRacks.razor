@@ -81,6 +81,24 @@
         </MudText>
     </MudPaper>
 
+    @* Stage 3, batch 3-5 (Hiten, 26 Nov 2026): moves in two steps (sent, on the way, received) – on; it can be switched off and
+       then appears nowhere. Moves have their own approval switch – off. Only the Admin changes these. *@
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Stock transfers between places</MudText>
+        <div class="d-flex flex-wrap align-center gap-4">
+            <MudSwitch T="bool" Value="transitOn" ValueChanged="SetTransitAsync" Color="Color.Primary" Class="places-transit" Disabled="@(Access?.HasAdminRole != true)">
+                Two steps: sent, on the way, received
+            </MudSwitch>
+            <MudSwitch T="bool" Value="moveApprovalOn" ValueChanged="SetMoveApprovalAsync" Color="Color.Primary" Class="places-move-approval" Disabled="@(Access?.HasAdminRole != true)">
+                Stock transfers need approval
+            </MudSwitch>
+        </div>
+        <MudText Typo="Typo.caption" Class="d-block mt-1">
+            With two steps on, goods sent are "on the way" until the receiving place confirms them, and pieces that do not arrive are shown as missing.
+            Off: a transfer counts in the new place at once. @(Access?.HasAdminRole == true ? "Only the Admin can switch these." : "Only the Admin can switch these; you can see them.")
+        </MudText>
+    </MudPaper>
+
     @if (Selected is { } sel)
     {
         <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
@@ -168,6 +186,40 @@
 
     private PlaceItem? Selected => places.FirstOrDefault(p => p.Id == selectedId);
     private (int Purchases, int Sales) flow;
+    [Inject] private MoveService MoveService { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    private bool transitOn = true;
+    private bool moveApprovalOn;
+
+    private async Task SetTransitAsync(bool on)
+    {
+        try
+        {
+            await MoveService.SetTransitAsync(on, Access ?? UserAccess.Nobody);
+            Snackbar.Add(on ? "Stock transfers now go in two steps: sent, on the way, received." : "Stock transfers now count in the new place at once.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SetMoveApprovalAsync(bool on)
+    {
+        try
+        {
+            await MoveService.SetApprovalAsync(on, Access ?? UserAccess.Nobody);
+            Snackbar.Add(on ? "Stock transfers now need approval." : "Stock transfers no longer need approval.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        await LoadAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -188,6 +240,7 @@
     {
         places = await PlaceService.AllAsync();
         flow = await PlaceService.FlowAsync();
+        (transitOn, moveApprovalOn) = await MoveService.SwitchesAsync();
     }
 
     private async Task SetFlowAsync(ChangeEventArgs e, bool purchases)

@@ -39,6 +39,13 @@
                     <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => QtyIn(x.Id, place))">@place.Name</MudTableSortLabel>
                 </MudTh>
             }
+            @if (AnyOnTheWay)
+            {
+                @* Stage 3 (Hiten, 26 Nov 2026): on the way is sellable, reported separately. *@
+                <MudTh Class="num c-place-qty">
+                    <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => stockInHand.GetValueOrDefault(x.Id).OnTheWay)">On the way</MudTableSortLabel>
+                </MudTh>
+            }
             <MudTh Class="num c-place-total">
                 <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => stockInHand.GetValueOrDefault(x.Id).Sellable)">Total</MudTableSortLabel>
             </MudTh>
@@ -69,7 +76,11 @@
         {
             @foreach (var p in places)
             {
-                <MudTd Class="num c-place-qty">@QtyIn(context.Id, p)</MudTd>
+                <MudTd Class="@("num c-place-qty" + (QtyIn(context.Id, p) < 0 ? " stock-negative" : ""))">@QtyIn(context.Id, p)</MudTd>
+            }
+            @if (AnyOnTheWay)
+            {
+                <MudTd Class="num c-place-qty">@(stockInHand.GetValueOrDefault(context.Id).OnTheWay is var w && w != 0 ? w.ToString() : "")</MudTd>
             }
             <MudTd Class="num c-place-total"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
         }
@@ -105,6 +116,10 @@
         {
             <span class="variant-total-place">@p.Name @variants.Sum(v => QtyIn(v.Id, p))</span>
         }
+        @if (AnyOnTheWay)
+        {
+            <span class="variant-total-place">On the way @totalStock.OnTheWay</span>
+        }
         <span class="variant-total-place">Total</span>
     }
     <StockFigure Figures="@totalStock" />
@@ -130,6 +145,9 @@
 
     /// <summary>All places shown (no place chosen) and more than one of them: a column per place and a Total.</summary>
     private bool Split => placeFilter is null && places.Count > 1;
+
+    /// <summary>Stage 3: an "On the way" column only while something is on the way.</summary>
+    private bool AnyOnTheWay => Split && stockInHand.Values.Any(s => s.OnTheWay != 0);
 
     /// <summary>The sellable pieces of a variant in one place.</summary>
     private int QtyIn(Guid variantId, PlaceItem place) =>
@@ -192,6 +210,7 @@
     private void CalculateTotalStockInHand()
     {
         totalStock = new Inventory.Domain.StockFigures(
-            stockInHand.Values.Sum(s => s.Sellable), stockInHand.Values.Sum(s => s.Damaged), stockInHand.Values.Sum(s => s.Waiting));
+            stockInHand.Values.Sum(s => s.Sellable), stockInHand.Values.Sum(s => s.Damaged), stockInHand.Values.Sum(s => s.Waiting),
+            stockInHand.Values.Sum(s => s.OnTheWay));
     }
 }

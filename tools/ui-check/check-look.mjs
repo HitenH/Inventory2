@@ -39,6 +39,9 @@ const SCREENS = {
   reasons: '/reasons',
   // Stage 3, batch 3-2.
   places: '/places',
+  // Stage 3, batches 3-5/3-6.
+  transfers: '/transfers',
+  'transfer-new': '/transfer',
 };
 const WIDTHS = [1366, 1920];
 const MODES = ['Light', 'Dark'];

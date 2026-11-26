@@ -442,11 +442,13 @@ public class StockEntryService(IDbContextFactory<AppDbContext> factory, Activity
             {
                 StockChangeKind.SalesReturn => $"/salesreturn/{e.Id}",
                 StockChangeKind.PurchaseReturn => $"/purchasereturn/{e.Id}",
+                _ when MoveService.IsMove(e.Kind) => $"/transfer/{e.Id}",   // stage 3, batch 3-5
+                StockChangeKind.WriteOff when e.SourceStockChangeId is { } m => $"/transfer/{m}",   // missing on a move (3-6)
                 _ when TypeOf(e) is not null => $"/stockchange/{e.Id}",
                 StockChangeKind.Damage when e.SourceStockChangeId is { } r => $"/salesreturn/{r}",
                 _ => "/damage",
             };
-            if (e.PurchaseEntityId is { } p && purchases.TryGetValue(p, out var purchase))
+            if (e.PurchaseEntityId is { } p && purchases.TryGetValue(p, out var purchase) && !MoveService.IsMove(e.Kind))
             {
                 party = $"Purchase {purchase.VoucherId} of {purchase.Date:dd-MM-yyyy}, {purchase.Supplier}";
                 link = $"/purchase/{p}";
@@ -469,6 +471,10 @@ public class StockEntryService(IDbContextFactory<AppDbContext> factory, Activity
         (StockState.Outside, StockState.Damaged) => "into damage",
         (StockState.Sellable, StockState.Outside) => "out of stock",
         (StockState.Damaged, StockState.Outside) => "out of damage",
+        (StockState.Sellable, StockState.InTransit) => "sent, on the way",          // stage 3, batches 3-5/3-6
+        (StockState.InTransit, StockState.Sellable) => "received",
+        (StockState.Sellable, StockState.Sellable) => "moved",
+        (StockState.InTransit, StockState.Outside) => "written off (missing on the way)",
         _ => $"{line.From} → {line.To}",
     };
 

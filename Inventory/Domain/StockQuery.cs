@@ -8,10 +8,14 @@ namespace Inventory.Domain;
 /// only sellable pieces, damaged counted separately: "13 + 3 damaged"). <see cref="Waiting"/> is the pieces on stock
 /// changes waiting for approval; they have not moved yet.
 /// </summary>
-public readonly record struct StockFigures(int Sellable, int Damaged, int Waiting)
+/// <remarks>
+/// Stage 3 (Hiten, 26 Nov 2026: "it is sellable, just on the way … they just have to be reported separately"): pieces on the
+/// way between two places are part of <see cref="Sellable"/>; <see cref="OnTheWay"/> says how many of them are on the way.
+/// </remarks>
+public readonly record struct StockFigures(int Sellable, int Damaged, int Waiting, int OnTheWay = 0)
 {
     /// <summary>True when there is more to show than the sellable figure.</summary>
-    public bool HasBreakdown => Damaged != 0 || Waiting != 0;
+    public bool HasBreakdown => Damaged != 0 || Waiting != 0 || OnTheWay != 0;
 }
 
 /// <summary>Stage 3, batch 3-3: the sellable pieces of one variant in one place, for the breakdown under a stock figure ("Shop 4").</summary>
@@ -55,11 +59,11 @@ public static class StockQuery
             .Select(g => new { g.Key.VariantEntityId, g.Key.From, g.Key.To, g.Key.Status, Qty = g.Sum(x => x.Quantity) })
             .ToListAsync();
 
-        var result = new Dictionary<Guid, (int Sellable, int Damaged, int Waiting)>();
-        void Add(Guid variant, int sellable, int damaged, int waiting)
+        var result = new Dictionary<Guid, (int Sellable, int Damaged, int Waiting, int OnTheWay)>();
+        void Add(Guid variant, int sellable, int damaged, int waiting, int onTheWay = 0)
         {
             var now = result.GetValueOrDefault(variant);
-            result[variant] = (now.Sellable + sellable, now.Damaged + damaged, now.Waiting + waiting);
+            result[variant] = (now.Sellable + sellable, now.Damaged + damaged, now.Waiting + waiting, now.OnTheWay + onTheWay);
         }
 
         foreach (var p in purchased)
@@ -80,11 +84,14 @@ public static class StockQuery
                 continue;
             }
 
-            Add(m.VariantEntityId, Effect(m.To, StockState.Sellable, m.Qty) - Effect(m.From, StockState.Sellable, m.Qty),
-                Effect(m.To, StockState.Damaged, m.Qty) - Effect(m.From, StockState.Damaged, m.Qty), 0);
+            // Stage 3: on the way is still sellable (Hiten), only reported separately.
+            Add(m.VariantEntityId, Effect(m.To, StockState.Sellable, m.Qty) + Effect(m.To, StockState.InTransit, m.Qty)
+                                   - Effect(m.From, StockState.Sellable, m.Qty) - Effect(m.From, StockState.InTransit, m.Qty),
+                Effect(m.To, StockState.Damaged, m.Qty) - Effect(m.From, StockState.Damaged, m.Qty), 0,
+                Effect(m.To, StockState.InTransit, m.Qty) - Effect(m.From, StockState.InTransit, m.Qty));
         }
 
-        return result.ToDictionary(r => r.Key, r => new StockFigures(r.Value.Sellable, r.Value.Damaged, r.Value.Waiting));
+        return result.ToDictionary(r => r.Key, r => new StockFigures(r.Value.Sellable, r.Value.Damaged, r.Value.Waiting, r.Value.OnTheWay));
     }
 
     private static int Effect(StockState state, StockState counted, int qty) => state == counted ? qty : 0;
@@ -174,7 +181,9 @@ public static class StockQuery
         foreach (var variant in totals.Keys.Union(elsewhere.Keys))
         {
             var places = elsewhere.GetValueOrDefault(variant) ?? new Dictionary<int, int>();
-            places[Places.StartingId] = totals.GetValueOrDefault(variant).Sellable - places.Values.Sum();
+            // Pieces on the way are sellable but in no place: the starting place holds the rest without them.
+            var total = totals.GetValueOrDefault(variant);
+            places[Places.StartingId] = total.Sellable - total.OnTheWay - places.Values.Sum();
             result[variant] = places;
         }
 

@@ -46,6 +46,18 @@ public static class Permissions
     public const string StockRacks = "stock.racks";
     /// <summary>Stage 3, batch 3-4 (Hiten, 26 Nov 2026: "maybe some senior can do it"): change a sale's "From" place (e.g. a bulk order straight from the godown).</summary>
     public const string SalesOtherPlace = "sales.other-place";
+    /// <summary>
+    /// Stage 3, batches 3-5/3-6 (Hiten, 26 Nov 2026: "Yes split. One person if they have permission can send and receive. But
+    /// people with only 1 permission can do only 1 task"): send stock to another place (new transfer, starting count, "Send to
+    /// shop" on a purchase) …
+    /// </summary>
+    public const string StockTransferSend = "stock.transfer-send";
+    /// <summary>… and confirm what came in at the receiving place.</summary>
+    public const string StockTransferReceive = "stock.transfer-receive";
+    /// <summary>Not a switch: the Stock transfers screens open with either of the two above (<see cref="UserAccess.AllowsPath"/>).</summary>
+    public const string StockTransfers = "stock.transfers";
+    /// <summary>Stage 3, batch 3-6 (Hiten, 26 Nov 2026: "only for admin as of now"): write off pieces missing on a stock transfer. Admin by default; can be given to a role.</summary>
+    public const string StockTransferWriteOff = "stock.transfer-writeoff";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -76,6 +88,7 @@ public static class Permissions
         ["approvals"] = StockApprove,
         ["reasons"] = AdminSettings,   // the reasons list is kept from Settings
         ["places"] = AdminSettings,    // stage 3: places and racks are kept from Settings
+        ["transfers"] = StockTransfers, ["transfer"] = StockTransfers,   // stage 3, batch 3-5: Send or Receive
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
@@ -128,6 +141,9 @@ public static class Permissions
         new(StockApprove, "Approve stock changes", StockGroup),
         new(StockRacks, "Set where items are kept (racks)", StockGroup),
         new(SalesOtherPlace, "Sell from another place (e.g. the godown)", StockGroup),
+        new(StockTransferSend, "Send stock transfers", StockGroup),
+        new(StockTransferReceive, "Receive stock transfers", StockGroup),
+        new(StockTransferWriteOff, "Write off pieces missing on a stock transfer", StockGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

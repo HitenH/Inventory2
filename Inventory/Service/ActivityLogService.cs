@@ -378,6 +378,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
                 {
                     StockChangeKind.SalesReturn => $"/salesreturn/{r.RecordId}",
                     StockChangeKind.PurchaseReturn => $"/purchasereturn/{r.RecordId}",
+                    StockChangeKind.Move or StockChangeKind.MoveAtOnce or StockChangeKind.StartingCount => $"/transfer/{r.RecordId}",   // stage 3, batch 3-5
                     _ when StockEntryService.TypeOf(k) is not null => $"/stockchange/{r.RecordId}",   // batch 2-7
                     _ => "/damage",
                 },

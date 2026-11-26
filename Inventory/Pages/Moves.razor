@@ -1,0 +1,195 @@
+@page "/transfers"
+@using Inventory.Domain.Entities
+@* Stage 3, batches 3-5/3-6 (Hiten, 26 Nov 2026): All stock transfers, in sections – "Pieces missing" (a red flag, only when
+   there are any), "On the way" (sent, not yet received; also those waiting for approval) and "Received" (received in full,
+   or counted at once) – newest first, only transfers from or to the places this person works in. Below: "Below zero" –
+   items sold in a place before the transfer that brings them was recorded (allowed; red until it is). Rules in
+   Service/MoveService.cs. (The code calls a transfer a "move".) *@
+
+<PageTitle>Stock transfers</PageTitle>
+
+@if (all == null)
+{
+    <Inventory.MudBlazorComponents.LoadingComponent />
+}
+else
+{
+    <MudStack Spacing="4" Row="false">
+        <MudPaper Class="d-inline-flex" Elevation="0">
+            <MudToolBar>
+                <MudButton Class="ma-1" Href="/transfer" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" id="move-new" title="Alt+N">
+                    New transfer
+                </MudButton>
+                <Search SearchItemCallBack="SearchItem" />
+            </MudToolBar>
+        </MudPaper>
+
+        @if (Section(MoveSection.Missing).Count > 0)
+        {
+            <MudPaper Class="pa-3 transfers-section transfers-missing" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.h6" Class="mb-2 transfers-title-missing">Pieces missing</MudText>
+                @Table(Section(MoveSection.Missing))
+            </MudPaper>
+        }
+
+        <MudPaper Class="pa-3 transfers-section transfers-ontheway" Elevation="0" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">On the way</MudText>
+            @if (Section(MoveSection.OnTheWay).Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="transfers-none">Nothing is on the way.</MudText>
+            }
+            else
+            {
+                @Table(Section(MoveSection.OnTheWay))
+            }
+        </MudPaper>
+
+        <MudPaper Class="pa-3 transfers-section transfers-received" Elevation="0" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Received</MudText>
+            @if (Section(MoveSection.Received).Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="transfers-none">Nothing received yet.</MudText>
+            }
+            else
+            {
+                @Table(Section(MoveSection.Received))
+            }
+        </MudPaper>
+
+        @* Batch 3-6: what was sold before the transfer that brings it was recorded. *@
+        <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Below zero</MudText>
+            @if (belowZero.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="below-zero-none">Nothing is below zero.</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="d-block mb-2">
+                    These were sold (or sent on) before the transfer that brings them was recorded. Record the transfer and they come back to 0 or more.
+                </MudText>
+                <table class="table table-sm lines-table below-zero-table">
+                    <thead>
+                        <tr><th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th><th>Place</th><th class="c-qty num">Stock</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in belowZero)
+                        {
+                            <tr>
+                                <td class="c-pid"><a href="@($"/product/{b.ProductEntityId}")">@b.ProductId</a></td>
+                                <td class="c-name" title="@b.ProductName">@b.ProductName</td>
+                                <td class="c-vid">@b.VariantId</td>
+                                <td>@b.Place</td>
+                                <td class="c-qty num stock-negative">@b.Qty</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    [Inject] private MoveService MoveService { get; set; } = default!;
+    [Inject] private ILogger<Moves> Logger { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    private enum MoveSection { Missing, OnTheWay, Received }
+
+    private List<MoveListItem>? all;
+    private List<BelowZeroItem> belowZero = new();
+    private string search = "";
+
+    private static MoveSection SectionOf(MoveListItem m) => m.Status != StockChangeStatus.Approved
+        ? MoveSection.OnTheWay
+        : m.State switch
+        {
+            MoveState.Missing => MoveSection.Missing,
+            MoveState.Received or MoveState.Moved => MoveSection.Received,
+            _ => MoveSection.OnTheWay,
+        };
+
+    private List<MoveListItem> Section(MoveSection section) => (all ?? [])
+        .Where(m => SectionOf(m) == section)
+        .Where(m => search.Length == 0 || m.VoucherId.ToString().Contains(search) || m.From.ToLower().Contains(search) || m.To.ToLower().Contains(search)
+                    || m.Date.ToString("dd-MM-yyyy").Contains(search) || (m.Remarks ?? "").ToLower().Contains(search) || StatusText(m).ToLower().Contains(search))
+        .ToList();
+
+    public static string StatusText(MoveListItem m) => m.Status switch
+    {
+        StockChangeStatus.Waiting => "Waiting for approval",
+        StockChangeStatus.Rejected => "Rejected",
+        _ => m.State switch
+        {
+            MoveState.OnTheWay => "On the way",
+            MoveState.Missing => $"{m.Missing} missing",
+            MoveState.Received => "Received",
+            MoveState.Moved => m.Kind == StockChangeKind.StartingCount ? "Starting count" : "Counted at once",
+            _ => "No lines yet",
+        },
+    };
+
+    /// <summary>One section's table (the same columns in every section).</summary>
+    private RenderFragment Table(List<MoveListItem> items) => __builder =>
+    {
+        <MudTable Items="items" RowsPerPage="ListPaging.DefaultRowsPerPage" Hover="true" Bordered="true" Dense="true" Striped="false" Class="moves-table"
+                  RowClassFunc="@((m, _) => m.State == MoveState.Missing ? "move-missing" : "")">
+            <HeaderContent>
+                <MudTh Style="width:100px"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.VoucherId)">Transfer</MudTableSortLabel></MudTh>
+                <MudTh Style="width:120px"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Date)">Date</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.From + x.To)">From → To</MudTableSortLabel></MudTh>
+                <MudTh Style="width:80px" Class="num"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Lines)">Lines</MudTableSortLabel></MudTh>
+                <MudTh Style="width:80px" Class="num"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Sent)">Sent</MudTableSortLabel></MudTh>
+                <MudTh Style="width:100px" Class="num"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Received)">Received</MudTableSortLabel></MudTh>
+                <MudTh Style="width:100px" Class="num"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Missing)">Missing</MudTableSortLabel></MudTh>
+                <MudTh Style="width:190px"><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => StatusText(x))">Status</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<MoveListItem, object>(x => x.Remarks ?? string.Empty)">Remarks</MudTableSortLabel></MudTh>
+                <MudTh Style="width:90px"></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.VoucherId</MudTd>
+                <MudTd>@context.Date.ToString("dd-MM-yyyy")</MudTd>
+                <MudTd>@context.From → @context.To</MudTd>
+                <MudTd Class="num">@context.Lines</MudTd>
+                <MudTd Class="num">@context.Sent</MudTd>
+                <MudTd Class="num">@(context.Kind == StockChangeKind.Move ? context.Received.ToString() : "")</MudTd>
+                <MudTd Class="num move-missing-count">@(context.Missing > 0 ? context.Missing.ToString() : "")</MudTd>
+                <MudTd><span class="move-status move-status-@context.State.ToString().ToLowerInvariant()">@StatusText(context)</span></MudTd>
+                <MudTd>@context.Remarks</MudTd>
+                <MudTd><MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Size="Size.Small" Href="@($"transfer/{context.Id}")">Info</MudButton></MudTd>
+            </RowTemplate>
+            <PagerContent>
+                @if (items.Count > ListPaging.DefaultRowsPerPage)
+                {
+                    <ListPager />
+                }
+            </PagerContent>
+        </MudTable>
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            all = await MoveService.ListAsync(Access?.Places);
+            belowZero = await MoveService.BelowZeroAsync(Access?.Places);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Stock transfers list failed");
+            Snackbar.Add("Could not load the stock transfers.", Severity.Error);
+            all = new();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SearchItem(ChangeEventArgs e) => search = (e.Value?.ToString() ?? "").Trim().ToLower();
+}

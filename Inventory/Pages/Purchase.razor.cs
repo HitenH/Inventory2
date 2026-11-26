@@ -74,6 +74,23 @@ public partial class Purchase
     [Inject] private PlaceService PlaceService { get; set; } = default!;
     private int arrivesInId;
     private List<PlaceItem> placeChoices = new();
+    private int salesPlaceId;
+    private string SalesPlaceName => placeChoices.FirstOrDefault(p => p.Id == salesPlaceId)?.Name ?? "shop";
+
+    /// <summary>Stage 3, batch 3-5: "Send to shop" on a saved purchase with lines that arrived somewhere else than the shop.</summary>
+    private bool MaySendOn => Access?.Allows(Permissions.StockTransferSend) == true && PurchaseId != null && purchaseEntity.Id != Guid.Empty
+                              && purchaseEntity.PurchaseVariants is { Count: > 0 } && purchaseEntity.PlaceId != salesPlaceId;
+
+    private async Task SendToShopAsync()
+    {
+        var title = $"Send to {SalesPlaceName} – Purchase {purchaseEntity.VoucherId} of {purchaseEntity.Date:dd-MM-yyyy}, {purchaseEntity.Supplier?.Name}";
+        if (await SendToShopDialog.ShowAsync(DialogService, title, purchaseEntity.Id, SalesPlaceName) is { } moveId)
+        {
+            Snackbar.Add("Stock transfer saved.", Severity.Success);
+            navManager.NavigateTo($"/transfer/{moveId}");
+        }
+    }
+
     private bool MayChangePlace => PurchaseId != null && purchaseEntity.Id != Guid.Empty && Access?.HasAdminRole == true;
 
     private async Task ChangePlaceAsync(ChangeEventArgs e)
@@ -129,7 +146,9 @@ public partial class Purchase
         }
 
         placeChoices = await PlaceService.AllAsync();
-        arrivesInId = PurchaseId != null && purchaseEntity.Id != Guid.Empty ? purchaseEntity.PlaceId : (await PlaceService.FlowAsync()).Purchases;
+        var flow = await PlaceService.FlowAsync();
+        salesPlaceId = flow.Sales;
+        arrivesInId = PurchaseId != null && purchaseEntity.Id != Guid.Empty ? purchaseEntity.PlaceId : flow.Purchases;
     }
 
 

@@ -73,6 +73,9 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
 - `check-places.mjs` – stage 3: Settings → Places and racks (add places and racks, levels, deleting refused while in use), the
   address box (0203B + Enter, drop-downs, a wrong address explained) and racks per variant on a product page (★ main, ✕,
   "Same for all variants") (PRODUCT_ID = a product with several variants; changes the test copy).
+- `check-moves.mjs` – stage 3, 3-5/3-6: the two switches, "Send to …" on a purchase in the godown, receiving (a scan, a typed
+  quantity), one piece missing – red on the move, in the list and the menu – written off, a starting count, Esc back
+  (setup-damage-returns.py; DAMAGE_JSON; changes the copy).
 - `check-place-flow.mjs` – stage 3, 3-3/3-4: purchases arrive in the godown and sales leave from the shop, "Arrives in" on a
   purchase, the Sale "From" box (skipped by Tab, needs "Sell from another place"), the Place box on Stock changes, stock per
   place behind the arrow, places per user, a godown-only user (setup-full-suite.py; FLOW_PRODUCT = AJ0120128's id; changes the copy).

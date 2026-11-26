@@ -376,6 +376,8 @@ public static class ActivityLogWriter
         StockChangeKind.OpeningStock => "Opening stock",
         StockChangeKind.SalesReturn => "Sales return",
         StockChangeKind.PurchaseReturn => "Purchase return",
+        StockChangeKind.Move or StockChangeKind.MoveAtOnce => "Stock transfer",   // stage 3, batch 3-5
+        StockChangeKind.StartingCount => "Starting count",
         _ => kind.ToString(),
     };
 

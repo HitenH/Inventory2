@@ -36,8 +36,16 @@ public sealed class UserAccess(string? name, bool signedIn, bool found, bool isD
     /// <summary>Rates and amounts of this kind of voucher: purchases and purchase orders are purchase rates, sales orders sale rates.</summary>
     public bool SeesRates(BulkEntryKind kind) => kind == BulkEntryKind.SalesOrder ? SeesSaleRates : SeesPurchaseRates;
 
+    /// <summary>Stage 3: may send or receive stock transfers (the Stock transfers screens open with either switch).</summary>
+    public bool MayUseTransfers => Allows(Permissions.StockTransferSend) || Allows(Permissions.StockTransferReceive);
+
     /// <summary>True when the address may be opened (null = open to everyone who is logged in).</summary>
-    public bool AllowsPath(string path) => Permissions.ForPath(path) is not { } needed || Allows(needed);
+    public bool AllowsPath(string path) => Permissions.ForPath(path) switch
+    {
+        null => true,
+        Permissions.StockTransfers => MayUseTransfers,
+        var needed => Allows(needed),
+    };
 }
 
 /// <summary>Version 3.0, batch 1b-4: loads the logged-in person's roles so screens and the menu can ask <see cref="UserAccess.Allows"/>.</summary>

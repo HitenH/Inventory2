@@ -49,9 +49,15 @@ namespace Inventory.Domain.Repository
             }
 
             // Stage 2: damage recorded on this purchase refers to it and its lines.
-            if (await context.StockChanges.AnyAsync(s => s.PurchaseEntityId == existing.Id))
+            if (await context.StockChanges.AnyAsync(s => s.PurchaseEntityId == existing.Id && s.Kind == StockChangeKind.Damage))
             {
                 throw new Inventory.Service.StockChangeRefused(Inventory.Service.StockChangeRules.DamagedPurchaseCannotBeDeleted);
+            }
+
+            // Stage 3, batch 3-5: goods of this purchase were sent on to another place.
+            if (await context.StockChanges.AnyAsync(s => s.PurchaseEntityId == existing.Id))
+            {
+                throw new Inventory.Service.StockChangeRefused("Goods of this purchase were sent on to another place (a stock transfer), so the purchase cannot be deleted. Delete the transfer first.");
             }
 
             context.Purchases.Remove(existing);

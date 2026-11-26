@@ -100,6 +100,18 @@
                 @* Stage 2, batch 2-7: damage found in the shop, count corrections, write-offs, opening stock. *@
                 <MudNavLink Icon="@Icons.Material.Filled.Inventory" Href="/stockchanges"><NavText Text="Stock changes" Url="/stockchanges" /></MudNavLink>
             }
+            @if (!access.SignedIn || access.MayUseTransfers)
+            {
+                @* Stage 3, batches 3-5/3-6 (Hiten, 26 Nov 2026): one "Stock Transfer" link (New transfer is a button on that page);
+                   a red count when pieces are missing (Hiten: a red flag). *@
+                <MudNavLink Icon="@Icons.Material.Filled.LocalShipping" Href="/transfers" Class="nav-transfers">
+                    <NavText Text="Stock Transfer" Url="/transfers" />
+                    @if (missingMoves > 0)
+                    {
+                        <span class="nav-missing" title="Stock transfers with pieces missing">@missingMoves missing</span>
+                    }
+                </MudNavLink>
+            }
             @if (access.SignedIn && access.Allows(Permissions.StockApprove))
             {
                 @* Stage 2, batch 2-8: stock changes waiting for approval. *@
@@ -115,6 +127,13 @@
 @code {
     [Inject] private AuthenticationStateProvider authStateProvider { get; set; } = default!;
     [Inject] private AccessService AccessService { get; set; } = default!;
+    [Inject] private MoveService MoveService { get; set; } = default!;
+
+    // Stage 3, batch 3-6: moves to this person's places with pieces missing.
+    private int missingMoves;
+
+    private async Task LoadMissingAsync() =>
+        missingMoves = access.SignedIn && access.MayUseTransfers ? await MoveService.MissingCountAsync(access.Places) : 0;
 
     // Batch 1b-4: the menu shows only what the person's roles allow, read again on every screen change.
     private UserAccess access = UserAccess.Nobody;
@@ -126,11 +145,13 @@
     {
         NavigationManager.LocationChanged += OnLocationChanged;
         access = await AccessService.CurrentAsync();
+        await LoadMissingAsync();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(async () =>
     {
         access = await AccessService.CurrentAsync();
+        await LoadMissingAsync();
         StateHasChanged();
     });
 

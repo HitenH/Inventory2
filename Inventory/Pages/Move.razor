@@ -1,0 +1,741 @@
+@page "/transfer/{moveId?}"
+@using Inventory.Domain.Entities
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Shared.Selectors
+@* Stage 3, batches 3-5/3-6 (Hiten, 26 Nov 2026): one stock transfer from one place to another.
+   A NEW transfer is only a list on the screen until Send (Hiten: "it should confirm by at least having a send button to click
+   to officially save it to database"): choose Transfer or Starting count, From and To; scan labels (each adds one piece) or
+   pick product, variant and quantity; every quantity box stays open (scan 1, type 100); Send (Ctrl+S) saves everything in one
+   go and gives the number. Needs "Send stock transfers".
+   A SENT transfer: what was sent; with two steps (the transit switch on) the receiving place confirms what came – scan, type,
+   or tick a line (or all lines) to take everything still to come; needs "Receive stock transfers" and the receiving place.
+   Pieces not received are missing – a red flag – until they turn up or are written off (switch "Write off pieces missing on a
+   stock transfer", Admin by default). Only the Admin changes the places of a sent transfer. Rules in Service/MoveService.cs. *@
+
+<FocusOnOpen Selector="@(MoveId == null ? "#transfer-send-product" : "#move-scan-product")" />
+
+<EditForm Model="@header" class="card-header mt-2 head-card" OnValidSubmit="UpdateAsync">
+    <div class="head-row">
+        <div class="field">
+            <label for="move-kind" class="form-label"><h4>Type</h4></label>
+            <select id="move-kind" class="form-control" style="min-width:170px;" value="@(header.StartingCount ? "start" : "move")" @onchange="OnKindChanged" disabled="@(move != null)">
+                <option value="move">Transfer</option>
+                <option value="start">Starting count</option>
+            </select>
+        </div>
+        <div class="field field-place">
+            <label for="move-from" class="form-label"><h4>From</h4></label>
+            <select id="move-from" class="form-control" value="@header.FromPlaceId" @onchange="e => OnPlaceChangedAsync(e, from: true)" disabled="@(!MayChangePlaces)">
+                @foreach (var p in fromPlaces)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
+        <div class="field field-place">
+            <label for="move-to" class="form-label"><h4>To</h4></label>
+            <select id="move-to" class="form-control" value="@header.ToPlaceId" @onchange="e => OnPlaceChangedAsync(e, from: false)" disabled="@(!MayChangePlaces)">
+                @foreach (var p in allPlaces)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
+        <div class="field field-voucher">
+            <label for="voucher" class="form-label"><h4>Transfer</h4></label>
+            <input id="voucher" class="form-control text-center" value="@(move?.VoucherId.ToString() ?? "")" disabled title="Given when sent" />
+        </div>
+        <div class="field field-date">
+            <label for="date" class="form-label"><h4>Date</h4></label>
+            <DateBox TValue="DateOnly" @bind-Value="header.Date" Style="width:168px;" OpenLeft="true" />
+        </div>
+        <div class="head-actions">
+            @if (move != null)
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
+            }
+            <NavLink type="button" href="/transfers" id="button-close" class="btn btn-info">Close</NavLink>
+            @if (move != null && MaySend && !Received)
+            {
+                <button type="button" class="btn btn-danger" @onclick="DeleteAsync">Delete</button>
+            }
+            @if (move != null)
+            {
+                <ActivityLogButton RecordType="@nameof(StockChangeEntity)" RecordId="@MoveId" Title="Stock transfer" />
+            }
+            <NavLink class="btn btn-secondary" href="/">Home</NavLink>
+        </div>
+    </div>
+</EditForm>
+
+@if (MoveId == null)
+{
+    @if (!MaySend)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-2" Dense="true">You may receive stock transfers but not send them (switch "Send stock transfers").</MudAlert>
+    }
+    else
+    {
+        <div class="move-hint mt-2">
+            @if (header.StartingCount)
+            {
+                <span>A <b>starting count</b> moves what the count finds from the shop to the godown at once (all stock started in the shop).</span>
+            }
+            else if (transitOn)
+            {
+                <span>Nothing is saved until <b>Send</b>. Then the goods are <b>on the way</b> until the receiving place confirms what came.</span>
+            }
+            else
+            {
+                <span>Nothing is saved until <b>Send</b>. Then the goods count in the new place at once (two-step transfers are switched off).</span>
+            }
+        </div>
+
+        <div class="card-header mt-3 move-send-card">
+            <div class="exchange-title">What is sent</div>
+            @* Scan: each label adds one piece (read like the Sale screen's scan boxes). *@
+            <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <div class="field field-scan">
+                    <label for="transfer-send-product" class="form-label">Product ID</label>
+                    <input id="transfer-send-product" class="form-control" @bind-value="sendProduct" autocomplete="off" />
+                </div>
+                <div class="field field-scan">
+                    <label for="transfer-send-variant" class="form-label">Variant ID</label>
+                    <input id="transfer-send-variant" class="form-control" @bind-value="sendVariant" @onkeyup="OnSendScanKeyAsync" autocomplete="off" />
+                </div>
+                <span class="move-scan-hint">Scan a label: one piece (one more on its line, or a new line).</span>
+                @if (lastScan is not null)
+                {
+                    <span class="move-last-scan">@lastScan</span>
+                }
+            </div>
+            @* Or pick: product → variant → quantity, Enter moves on and adds (like the Labels screen). *@
+            <div class="d-flex flex-row flex-wrap gap-3 align-items-end mb-3">
+                <div style="min-width:280px;" class="flex-grow-1">
+                    <label class="form-label">Product</label>
+                    <ProductAutocomplete T="ProductModel" Class="focus-transfer-product" SelectedProduct="pickedProduct" SelectedProductChanged="OnProductPicked" EnterPressed="OnProductEnter" />
+                </div>
+                <div>
+                    <label class="form-label" for="transfer-add-variant">Variant</label>
+                    <select id="transfer-add-variant" class="form-control text-center" style="min-width:170px;" @bind="pickedVariant" @onkeydown="OnVariantKey">
+                        <option value="">-</option>
+                        @foreach (var v in pickedVariants)
+                        {
+                            <option value="@v.Id">@v.DisplayText</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="transfer-add-qty">Qty</label>
+                    <input id="transfer-add-qty" type="number" min="1" class="form-control text-center" style="width:100px;" @bind="pickedQty" @bind:event="oninput" @onkeydown="OnQtyKey" autocomplete="off" />
+                </div>
+                <button type="button" id="transfer-add" class="btn btn-success" @onclick="() => AddPicked()">Add</button>
+            </div>
+
+            @if (draft.Count == 0)
+            {
+                <MudText Class="mud-text-secondary transfer-draft-empty">Nothing in the list yet.</MudText>
+            }
+            else
+            {
+                <table class="table table-sm mb-0 lines-table transfer-draft-table">
+                    <thead><tr><th class="c-sl num">Sl.</th><th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th><th class="c-qty num">Qty</th><th class="c-act"></th></tr></thead>
+                    <tbody>
+                        @for (var i = 0; i < draft.Count; i++)
+                        {
+                            var line = draft[i];
+                            var index = i;
+                            <tr>
+                                <td class="c-sl num">@(index + 1)</td>
+                                <td class="c-pid">@line.Item.ProductId</td>
+                                <td class="c-name" title="@line.Item.ProductName">@line.Item.ProductName</td>
+                                <td class="c-vid">@line.Item.VariantId</td>
+                                @* Hiten: the quantity box stays open – scan 1 piece, type 100. *@
+                                <td class="c-qty num"><input id="@($"transfer-draft-qty-{index}")" type="number" min="1" class="form-control text-center transfer-draft-qty"
+                                                             @bind="line.Quantity" @bind:event="oninput" onfocus="this.select()" autocomplete="off" /></td>
+                                <td class="c-act"><button type="button" class="vr-remove transfer-draft-remove" title="Take off the list" @onclick="() => draft.Remove(line)">✕</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="card-header mt-3">
+            <div class="totals-bar">
+                <div class="totals-actions">
+                    <MudButton id="transfer-send" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Send"
+                               OnClick="SendAsync" Disabled="busy" data-shortcut="save" title="Ctrl+S">Send</MudButton>
+                </div>
+                <div class="field totals-remarks">
+                    <label for="Remarks" class="form-label">Remarks / Narration</label>
+                    <InputText @bind-Value="header.Remarks" id="Remarks" class="form-control text-start" />
+                </div>
+                <div class="field totals-field">
+                    <label for="totalquantity" class="form-label">Pieces</label>
+                    <input id="totalquantity" class="form-control text-center" value="@draft.Sum(l => l.Quantity ?? 0)" disabled />
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@if (MoveId != null && move != null)
+{
+    <ApprovalBanner Entry="move" />
+    <div class="move-state mt-2">
+        <span class="move-status move-status-@state.ToString().ToLowerInvariant()">@StateText</span>
+        @if (move.ReceivedAt is { } at)
+        {
+            <span class="move-received-by">Received @at.ToString("dd-MM-yyyy HH:mm")@(move.ReceivedBy is { } by ? $" by {by}" : "")</span>
+        }
+    </div>
+
+    @if (state == MoveState.Missing)
+    {
+        @* Hiten: a missing piece is a red flag and must be highlighted. *@
+        <MudAlert Severity="Severity.Error" Class="mt-2 move-missing-alert" Dense="true">
+            <b>@Missing @(Missing == 1 ? "piece is" : "pieces are") missing on this transfer.</b>
+            They were sent but not received. If they turn up, receive them below; if not, write them off.
+            @if (MayWriteOff)
+            {
+                <MudButton id="move-writeoff" Class="ms-3" Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="WriteOffAsync">Write off missing</MudButton>
+            }
+        </MudAlert>
+    }
+
+    <div class="card-header mt-3">
+        <div class="exchange-title">Sent</div>
+        <table class="table table-sm mb-0 lines-table move-sent-table">
+            <thead><tr>
+                <th class="c-sl num">Sl.</th><th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th><th class="c-qty num">Sent</th>
+                @if (move.Kind == StockChangeKind.Move)
+                {
+                    <th class="c-qty num">Received</th><th class="c-qty num">Written off</th><th class="c-qty num">To come</th>
+                }
+            </tr></thead>
+            <tbody>
+                @foreach (var p in progress)
+                {
+                    <tr class="@(p.Outstanding > 0 && state == MoveState.Missing ? "move-line-missing" : "")">
+                        <td class="c-sl num">@p.SerialNumber</td><td class="c-pid">@p.ProductId</td><td class="c-name" title="@p.ProductName">@p.ProductName</td><td class="c-vid">@p.VariantId</td>
+                        <td class="c-qty num">@p.Sent</td>
+                        @if (move.Kind == StockChangeKind.Move)
+                        {
+                            <td class="c-qty num">@p.Received</td><td class="c-qty num">@(p.WrittenOff == 0 ? "" : p.WrittenOff)</td><td class="c-qty num">@(p.Outstanding == 0 ? "" : p.Outstanding)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (MayReceive)
+    {
+        @* Batch 3-6: the receiving place confirms what came. *@
+        <div class="card-header mt-3 move-receive-card">
+            <div class="exchange-title">Receive in @PlaceName(move.ToPlaceId) – what came?</div>
+            <div class="d-flex flex-wrap align-items-end gap-2 mb-2 move-scan">
+                <div class="field field-scan">
+                    <label for="move-scan-product" class="form-label">Product ID</label>
+                    <input id="move-scan-product" class="form-control" @bind-value="scanProduct" autocomplete="off" />
+                </div>
+                <div class="field field-scan">
+                    <label for="move-scan-variant" class="form-label">Variant ID</label>
+                    <input id="move-scan-variant" class="form-control" @bind-value="scanVariant" @onkeyup="OnScanKeyAsync" autocomplete="off" />
+                </div>
+                <span class="move-scan-hint">Scan a label (or type product and variant, Enter) to count one piece, or tick what came in full.</span>
+            </div>
+            <table class="table table-sm mb-2 lines-table move-receive-table">
+                <thead><tr>
+                    <th class="c-check" title="Tick: every line came in full">
+                        <input type="checkbox" id="transfer-receive-all" class="form-check-input" checked="@AllTicked" @onchange="e => TickAll(e.Value is true)" />
+                    </th>
+                    <th class="c-sl num">Sl.</th><th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th><th class="c-qty num">To come</th><th class="c-qty num">Received now</th>
+                </tr></thead>
+                <tbody>
+                    @foreach (var p in progress.Where(p => p.Outstanding > 0))
+                    {
+                        var line = p;
+                        <tr>
+                            <td class="c-check">
+                                <input type="checkbox" class="form-check-input transfer-receive-line" checked="@(receiving.GetValueOrDefault(line.LineId) == line.Outstanding)"
+                                       @onchange="e => Tick(line, e.Value is true)" title="Came in full" />
+                            </td>
+                            <td class="c-sl num">@line.SerialNumber</td><td class="c-pid">@line.ProductId</td><td class="c-name" title="@line.ProductName">@line.ProductName</td><td class="c-vid">@line.VariantId</td>
+                            <td class="c-qty num">@line.Outstanding</td>
+                            <td class="c-qty num"><input class="form-control text-end move-receive-qty" type="number" min="0" max="@line.Outstanding"
+                                                         value="@receiving.GetValueOrDefault(line.LineId)" @onchange="e => SetReceiving(line, e.Value?.ToString())" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <MudButton id="move-confirm-received" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="ConfirmReceivedAsync">Confirm received</MudButton>
+            <span class="move-scan-hint ms-2">Pieces not received are shown as missing until they turn up or are written off.</span>
+        </div>
+    }
+
+    <div class="card-header mt-3">
+        <div class="totals-bar">
+            <div class="field totals-remarks">
+                <label for="Remarks" class="form-label">Remarks / Narration</label>
+                <InputText @bind-Value="header.Remarks" id="Remarks" class="form-control text-start" />
+            </div>
+            <div class="field totals-field">
+                <label for="totalquantity" class="form-label">Pieces sent</label>
+                <input id="totalquantity" class="form-control text-center" value="@MoveService.SentLines(move).Sum(l => l.Quantity)" disabled />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? MoveId { get; set; }
+
+    [Inject] private MoveService Moves { get; set; } = default!;
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [Inject] private IProductRepository ProductRepository { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ILogger<Move> Logger { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    private sealed class Header
+    {
+        public bool StartingCount { get; set; }
+        public int FromPlaceId { get; set; }
+        public int ToPlaceId { get; set; }
+        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public string? Remarks { get; set; }
+    }
+
+    /// <summary>One line of a new transfer's list – on the screen only until Send.</summary>
+    private sealed class DraftLine(TransferItem item, int quantity)
+    {
+        public TransferItem Item { get; } = item;
+        public int? Quantity { get; set; } = quantity;
+    }
+
+    private readonly Header header = new();
+    private StockChangeEntity? move;
+    private string? loadedId;
+    private List<MoveLineProgress> progress = new();
+    private MoveState state;
+    private List<PlaceItem> allPlaces = new();
+    private List<PlaceItem> fromPlaces = new();
+    private bool transitOn = true;
+    private bool busy;
+    private (int Purchases, int Sales) flow;
+    private readonly Dictionary<Guid, int> receiving = new();
+    private string? scanProduct;
+    private string? scanVariant;
+
+    // A new transfer's list.
+    private readonly List<DraftLine> draft = new();
+    private string? sendProduct;
+    private string? sendVariant;
+    private string? lastScan;
+    private ProductModel pickedProduct = new();
+    private List<VariantModel> pickedVariants = new();
+    private string pickedVariant = "";
+    private int? pickedQty = 1;
+
+    private bool Received => move?.ReceivedAt is not null || progress.Any(p => p.Received > 0 && move?.Kind == StockChangeKind.Move);
+    private int Missing => progress.Sum(p => p.Outstanding);
+    private bool MaySend => Access?.Allows(Permissions.StockTransferSend) == true;
+    private bool MayChangePlaces => move is null ? MaySend : Access?.HasAdminRole == true;
+    private bool MayWriteOff => Access?.Allows(Permissions.StockTransferWriteOff) == true;   // Hiten: Admin only for now; can be given to a role
+    private bool MayReceive => move is { Kind: StockChangeKind.Move, Status: StockChangeStatus.Approved } && state is MoveState.OnTheWay or MoveState.Missing
+                               && Access?.Allows(Permissions.StockTransferReceive) == true && Access?.SeesPlace(move.ToPlaceId ?? 0) != false;
+
+    private string StateText => move?.Status switch
+    {
+        StockChangeStatus.Waiting => "Waiting for approval",
+        StockChangeStatus.Rejected => "Rejected",
+        _ => state switch
+        {
+            MoveState.OnTheWay => $"On the way from {PlaceName(move?.PlaceId)} to {PlaceName(move?.ToPlaceId)}",
+            MoveState.Missing => $"{Missing} missing",
+            MoveState.Received => $"Received in {PlaceName(move?.ToPlaceId)}",
+            MoveState.Moved => $"Moved from {PlaceName(move?.PlaceId)} to {PlaceName(move?.ToPlaceId)}",
+            _ => "Nothing was sent on this transfer",
+        },
+    };
+
+    private string PlaceName(int? id) => allPlaces.FirstOrDefault(p => p.Id == id)?.Name ?? "?";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allPlaces = await PlaceService.AllAsync();
+        fromPlaces = allPlaces.Where(p => Access?.HasAdminRole == true || Access?.SeesPlace(p.Id) != false).ToList();
+        flow = await PlaceService.FlowAsync();
+        transitOn = (await Moves.SwitchesAsync()).Transit;
+        SetDefaultPlaces();
+    }
+
+    /// <summary>Opening a transfer (also right after Send, when the address changes to the new transfer).</summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (MoveId != null && MoveId != loadedId)
+        {
+            loadedId = MoveId;
+            await ReloadAsync();
+        }
+    }
+
+    /// <summary>A transfer goes from where purchases arrive (the godown) to where sales leave from (the shop); a starting count the other way.</summary>
+    private void SetDefaultPlaces()
+    {
+        var (from, to) = header.StartingCount ? (flow.Sales, flow.Purchases) : (flow.Purchases, flow.Sales);
+        header.FromPlaceId = fromPlaces.Any(p => p.Id == from) ? from : fromPlaces.FirstOrDefault()?.Id ?? from;
+        header.ToPlaceId = to != header.FromPlaceId ? to : allPlaces.FirstOrDefault(p => p.Id != header.FromPlaceId)?.Id ?? to;
+    }
+
+    private void OnKindChanged(ChangeEventArgs e)
+    {
+        header.StartingCount = e.Value?.ToString() == "start";
+        SetDefaultPlaces();
+    }
+
+    private async Task OnPlaceChangedAsync(ChangeEventArgs e, bool from)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id))
+        {
+            return;
+        }
+
+        var (newFrom, newTo) = from ? (id, header.ToPlaceId) : (header.FromPlaceId, id);
+        if (move is null)
+        {
+            (header.FromPlaceId, header.ToPlaceId) = (newFrom, newTo);
+            return;
+        }
+
+        try
+        {
+            await Moves.ChangePlacesAsync(move.Id, newFrom, newTo, Access ?? UserAccess.Nobody);
+            Snackbar.Add("The places of this transfer were changed.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (!Guid.TryParse(MoveId, out var id) || await Moves.GetAsync(id) is not { } loaded)
+        {
+            Snackbar.Add("This transfer was not found.", Severity.Warning);
+            Nav.NavigateTo("/transfers");
+            return;
+        }
+
+        move = loaded;
+        header.StartingCount = loaded.Kind == StockChangeKind.StartingCount;
+        header.FromPlaceId = loaded.PlaceId ?? 0;
+        header.ToPlaceId = loaded.ToPlaceId ?? 0;
+        header.Date = loaded.Date;
+        header.Remarks = loaded.Remarks;
+        if (fromPlaces.All(p => p.Id != header.FromPlaceId))
+        {
+            fromPlaces = allPlaces.Where(p => p.Id == header.FromPlaceId).Concat(fromPlaces).ToList();
+        }
+
+        progress = await Moves.ProgressAsync(loaded);
+        state = MoveService.StateOf(loaded, progress);
+        receiving.Clear();
+    }
+
+    // ---------------------------------------------------------------- a new transfer: the list, then Send
+
+    private void AddToDraft(TransferItem item, int quantity)
+    {
+        var line = draft.FirstOrDefault(l => l.Item.VariantEntityId == item.VariantEntityId);
+        if (line is null)
+        {
+            draft.Add(new DraftLine(item, quantity));
+        }
+        else
+        {
+            line.Quantity = (line.Quantity ?? 0) + quantity;
+        }
+    }
+
+    /// <summary>A scanned label adds one piece. Read like the Sale screen's scan boxes: saved on "change", acted on when Enter comes up.</summary>
+    private async Task OnSendScanKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter")
+        {
+            return;
+        }
+
+        var product = (sendProduct ?? "").Trim();
+        var variant = (sendVariant ?? "").Trim();
+        if (await Moves.FindItemAsync(product, variant) is { } item)
+        {
+            AddToDraft(item, 1);
+            lastScan = $"{item.ProductId} / {item.VariantId}: {draft.First(l => l.Item.VariantEntityId == item.VariantEntityId).Quantity}";
+        }
+        else
+        {
+            lastScan = null;
+            Snackbar.Add(product.Length == 0 || variant.Length == 0 ? "Scan (or type) the product ID and the variant ID." : $"{product} / {variant} was not found.", Severity.Warning);
+        }
+
+        sendProduct = sendVariant = null;
+        await JS.FocusBoxAsync("#transfer-send-product");
+    }
+
+    private async Task OnProductPicked(ProductModel picked)
+    {
+        pickedVariant = "";
+        if (picked is null || picked.Id == Guid.Empty)
+        {
+            pickedProduct = new();
+            pickedVariants = new();
+            return;
+        }
+
+        pickedProduct = picked;
+        pickedVariants = (await ProductRepository.GetProductWithVariantsById(picked.Id)).ToModel().Variants;
+        if (pickedVariants.Count == 1)
+        {
+            pickedVariant = pickedVariants[0].Id.ToString();
+        }
+    }
+
+    private async Task OnProductEnter(ProductModel picked) => await JS.FocusBoxAsync("#transfer-add-variant");
+
+    private async Task OnVariantKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter")
+        {
+            await JS.FocusBoxAsync("#transfer-add-qty");
+        }
+    }
+
+    private async Task OnQtyKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter" && AddPicked())
+        {
+            await JS.FocusBoxAsync(".focus-transfer-product");
+        }
+    }
+
+    /// <summary>Adds the picked product and variant with its quantity; the boxes empty for the next one.</summary>
+    private bool AddPicked()
+    {
+        var variant = pickedVariants.FirstOrDefault(v => v.Id.ToString() == pickedVariant);
+        if (pickedProduct.Id == Guid.Empty || variant is null)
+        {
+            Snackbar.Add("Choose a product and a variant first.", Severity.Warning);
+            return false;
+        }
+
+        if (pickedQty is null or <= 0)
+        {
+            Snackbar.Add("The quantity to transfer must be more than 0.", Severity.Warning);
+            return false;
+        }
+
+        AddToDraft(new TransferItem(pickedProduct.Id, variant.Id, pickedProduct.ProductId ?? "", pickedProduct.Name ?? "", variant.VariantId ?? "", variant.Name ?? ""), pickedQty.Value);
+        pickedProduct = new();
+        pickedVariants = new();
+        pickedVariant = "";
+        pickedQty = 1;
+        return true;
+    }
+
+    /// <summary>Hiten: only Send makes it official – the whole transfer is saved in one go and gets its number.</summary>
+    private async Task SendAsync()
+    {
+        if (draft.Any(l => l.Quantity is null or <= 0))
+        {
+            Snackbar.Add("Every quantity must be more than 0 (take a line off with ✕).", Severity.Warning);
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var sent = await Moves.SendAsync(header.FromPlaceId, header.ToPlaceId, header.Date, header.Remarks, header.StartingCount,
+                draft.Select(l => (l.Item.ProductEntityId, l.Item.VariantEntityId, l.Quantity!.Value, (string?)null)).ToList(), Access ?? UserAccess.Nobody);
+            draft.Clear();
+            Snackbar.Add(sent.Status == StockChangeStatus.Waiting ? "Stock transfer sent; it waits for approval." : "Stock transfer sent.", Severity.Success);
+            Nav.NavigateTo($"/transfer/{sent.Id}");
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Send stock transfer failed");
+            Snackbar.Add($"Could not send the stock transfer: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    // ---------------------------------------------------------------- a sent transfer
+
+    private async Task UpdateAsync()
+    {
+        if (move is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await Moves.UpdateAsync(move.Id, header.Date, header.Remarks);
+            await ReloadAsync();
+            Snackbar.Add("Transfer updated.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (move is null || !await DialogService.ConfirmDeleteAsync())
+        {
+            return;
+        }
+
+        try
+        {
+            await Moves.DeleteAsync(move.Id);
+            Snackbar.Add("Transfer deleted", Severity.Success);
+            Nav.NavigateTo("/transfers");
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    // ---------------------------------------------------------------- receiving (batch 3-6)
+
+    private void SetReceiving(MoveLineProgress line, string? text)
+    {
+        if (int.TryParse(text, out var n) && n > 0)
+        {
+            receiving[line.LineId] = Math.Min(n, line.Outstanding);
+        }
+        else
+        {
+            receiving.Remove(line.LineId);
+        }
+    }
+
+    /// <summary>Hiten, 26 Nov 2026: a tick fills "Received now" with what is still to come; taking it off empties it.</summary>
+    private void Tick(MoveLineProgress line, bool on)
+    {
+        if (on)
+        {
+            receiving[line.LineId] = line.Outstanding;
+        }
+        else
+        {
+            receiving.Remove(line.LineId);
+        }
+    }
+
+    private bool AllTicked => progress.Where(p => p.Outstanding > 0).All(p => receiving.GetValueOrDefault(p.LineId) == p.Outstanding);
+
+    private void TickAll(bool on)
+    {
+        foreach (var p in progress.Where(p => p.Outstanding > 0))
+        {
+            Tick(p, on);
+        }
+    }
+
+    /// <summary>
+    /// A scanned (or typed) product and variant count one piece on the first line of it that still has pieces to come. Read like
+    /// the Sale screen's scan boxes (proven at the counter): saved on "change", acted on when Enter comes up.
+    /// </summary>
+    private async Task OnScanKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter")
+        {
+            return;
+        }
+
+        var product = (scanProduct ?? "").Trim();
+        var variant = (scanVariant ?? "").Trim();
+        var line = progress.FirstOrDefault(p => p.Outstanding > receiving.GetValueOrDefault(p.LineId)
+            && string.Equals(p.ProductId, product, StringComparison.OrdinalIgnoreCase) && string.Equals(p.VariantId, variant, StringComparison.OrdinalIgnoreCase));
+        if (line is null)
+        {
+            Snackbar.Add(progress.Any(p => string.Equals(p.ProductId, product, StringComparison.OrdinalIgnoreCase) && string.Equals(p.VariantId, variant, StringComparison.OrdinalIgnoreCase))
+                ? $"{product} / {variant}: every piece sent is already counted."
+                : $"{product} / {variant} was not sent on this transfer.", Severity.Warning);
+        }
+        else
+        {
+            receiving[line.LineId] = receiving.GetValueOrDefault(line.LineId) + 1;
+        }
+
+        scanProduct = scanVariant = null;
+        await JS.FocusBoxAsync("#move-scan-product");
+    }
+
+    private async Task ConfirmReceivedAsync()
+    {
+        if (move is null)
+        {
+            return;
+        }
+
+        var toCome = progress.Sum(p => p.Outstanding);
+        var now = receiving.Values.Sum();
+        if (now < toCome && !await DialogService.ConfirmAsync("Confirm received",
+                $"{now} of {toCome} {(toCome == 1 ? "piece" : "pieces")} received now. The other {toCome - now} will show as missing until they turn up or are written off. Confirm?",
+                "Confirm", Color.Primary))
+        {
+            return;
+        }
+
+        try
+        {
+            await Moves.ReceiveAsync(move.Id, receiving.Select(r => (r.Key, r.Value)).ToList(), Access ?? UserAccess.Nobody);
+            Snackbar.Add(now == toCome ? "Received: every piece came." : $"Received {now}; {toCome - now} missing.", now == toCome ? Severity.Success : Severity.Warning);
+            await ReloadAsync();
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    private async Task WriteOffAsync()
+    {
+        if (move is null || !await DialogService.ConfirmAsync("Write off missing",
+                $"Write off the {Missing} missing {(Missing == 1 ? "piece" : "pieces")} of this transfer (lost on the way)?", "Write off", Color.Error))
+        {
+            return;
+        }
+
+        try
+        {
+            var writeOff = await Moves.WriteOffMissingAsync(move.Id, null, Access ?? UserAccess.Nobody);
+            Snackbar.Add(writeOff.Status == StockChangeStatus.Waiting ? "Write-off saved; it waits for approval." : "The missing pieces were written off.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+}

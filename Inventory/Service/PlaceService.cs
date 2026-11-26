@@ -204,7 +204,7 @@ public class PlaceService(IDbContextFactory<AppDbContext> factory, ActivityLogSe
 
         var old = purchase.PlaceId;
         purchase.PlaceId = placeId;
-        foreach (var damage in await db.StockChanges.Include(s => s.Lines).Where(s => s.PurchaseEntityId == purchaseId).ToListAsync())
+        foreach (var damage in await db.StockChanges.Include(s => s.Lines).Where(s => s.PurchaseEntityId == purchaseId && s.Kind == StockChangeKind.Damage).ToListAsync())
         {
             MoveEntry(damage, old, placeId);
         }

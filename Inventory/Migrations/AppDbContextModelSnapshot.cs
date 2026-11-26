@@ -908,6 +908,12 @@ namespace Inventory.Migrations
                     b.Property<string>("Reason")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReceivedBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Remarks")
                         .HasColumnType("TEXT");
 
@@ -921,6 +927,9 @@ namespace Inventory.Migrations
 
                     b.Property<Guid?>("SupplierEntityId")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ToPlaceId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("VoucherId")
                         .HasColumnType("INTEGER");

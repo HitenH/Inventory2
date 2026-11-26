@@ -49,6 +49,7 @@ namespace Inventory.Service
             new("Purchase Returns", '\0', "/purchasereturns", "/purchasereturn", ["purchasereturns", "purchasereturn"]),
             new("Damage report", '\0', "/damage", null, ["damage"]),
             new("Stock changes", '\0', "/stockchanges", "/stockchange", ["stockchanges", "stockchange"]),
+            new("Stock transfers", '\0', "/transfers", "/transfer", ["transfers", "transfer"]),   // stage 3, batch 3-5 (Hiten: "Stock Transfer")
         ];
 
         private static IEnumerable<ScreenShortcut> AllScreens => Screens.Concat(ScreensWithoutKey);

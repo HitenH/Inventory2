@@ -1,0 +1,135 @@
+@* Stage 3, batch 3-5 (Hiten, 26 Nov 2026): "Send to shop" on a saved purchase. Goods arrive in the godown; after checking,
+   some are arranged there and some sent to the shop. Every line of the purchase is listed with how many came in and how
+   many of that item were already sent on; type how many go now. Saving makes one stock transfer (godown → shop, linked to the
+   purchase) and opens it; with two-step moves the goods are "on the way" until the shop confirms them.
+   Enter moves down the "Send" column, Ctrl+S sends, Esc cancels. Rules in Service/MoveService.cs. *@
+@using Inventory.Service
+
+<MudDialog>
+    <DialogContent>
+        <div class="send-to-shop">
+            @if (lines is null)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (lines.Count == 0)
+            {
+                <p>This purchase has no lines yet.</p>
+            }
+            else
+            {
+                <small class="text-muted d-block mb-2">Type how many pieces of each line go to @To now. Enter moves down; Ctrl+S sends.</small>
+                <table class="table table-sm mb-0 lines-table send-table">
+                    <thead>
+                        <tr>
+                            <th class="c-sl num">#</th>
+                            <th class="c-pid">Product ID</th>
+                            <th class="c-name">Product Name</th>
+                            <th class="c-vid">Variant</th>
+                            <th class="c-qty num">Came in</th>
+                            <th class="c-qty num">Sent so far</th>
+                            <th class="c-qty num">Send</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < lines.Count; i++)
+                        {
+                            var line = lines[i];
+                            var index = i;
+                            <tr>
+                                <td class="c-sl num">@line.SerialNumber</td>
+                                <td class="c-pid">@line.ProductId</td>
+                                <td class="c-name" title="@line.ProductName">@line.ProductName</td>
+                                <td class="c-vid">@line.VariantId</td>
+                                <td class="c-qty num">@line.CameIn</td>
+                                <td class="c-qty num">@(line.AlreadySent == 0 ? "" : line.AlreadySent)</td>
+                                <td class="c-qty num">
+                                    <input id="@($"send-qty-{index}")" class="form-control text-center send-qty" type="number" min="0" max="@line.CameIn" step="1"
+                                           @bind="sendQty[index]" @bind:event="oninput" @onkeydown="e => OnQuantityKeyAsync(e, index)" autocomplete="off" onfocus="this.select()" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        <MudButton id="send-to-shop-save" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="SendAsync" Disabled="busy" data-shortcut="save">Send</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Guid PurchaseId { get; set; }
+    /// <summary>The receiving place's name ("Shop").</summary>
+    [Parameter] public string To { get; set; } = "the shop";
+    [Inject] private MoveService Moves { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<PurchaseSendLine>? lines;
+    private int?[] sendQty = [];
+    private bool busy;
+    private bool focused;
+
+    protected override async Task OnInitializedAsync()
+    {
+        lines = await Moves.PurchaseSendLinesAsync(PurchaseId);
+        sendQty = new int?[lines.Count];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (lines is { Count: > 0 } && !focused)
+        {
+            focused = true;
+            await JS.FocusBoxAsync("#send-qty-0");
+        }
+    }
+
+    /// <summary>Enter moves down the Send column, like the Record damage pop-up.</summary>
+    private async Task OnQuantityKeyAsync(KeyboardEventArgs e, int index)
+    {
+        if (e.Key == "Enter" && lines is not null && index + 1 < lines.Count)
+        {
+            await JS.FocusBoxAsync($"#send-qty-{index + 1}");
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        if (lines is null)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var send = lines.Select((l, i) => (l.LineId, sendQty[i] ?? 0)).Where(s => s.Item2 != 0).ToList();
+            var move = await Moves.SendFromPurchaseAsync(PurchaseId, send, Access ?? UserAccess.Nobody);
+            MudDialog.Close(DialogResult.Ok(move.Id));
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    /// <summary>Opens the pop-up; the new move's id, or null when cancelled.</summary>
+    public static async Task<Guid?> ShowAsync(IDialogService dialogService, string title, Guid purchaseId, string to)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true, Position = DialogPosition.Center, DefaultFocus = DefaultFocus.None };
+        var dialog = await dialogService.ShowAsync<SendToShopDialog>(title,
+            new DialogParameters<SendToShopDialog> { { x => x.PurchaseId, purchaseId }, { x => x.To, to } }, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: Guid id } ? id : null;
+    }
+}

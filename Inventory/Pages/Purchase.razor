@@ -100,6 +100,12 @@
                     <MudButton id="purchase-record-damage" Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.BrokenImage" OnClick="RecordDamageAsync">Record damage</MudButton>
                 }
+                @if (MaySendOn)
+                {
+                    @* Stage 3, batch 3-5 (Hiten): goods arrive in the godown; some are sent on to the shop. *@
+                    <MudButton id="purchase-send-to-shop" Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.LocalShipping" OnClick="SendToShopAsync">Send to @SalesPlaceName</MudButton>
+                }
                 <button type="submit" id="button-submit" class="btn btn-success" @onclick="AddTotalAmount">Save Total Amount</button>
             </div>
             @* Batch 17 round 3: Remarks/Narration moved here from the top card; saved by Update and by Save Total Amount. *@

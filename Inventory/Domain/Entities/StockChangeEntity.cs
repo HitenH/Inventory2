@@ -13,6 +13,8 @@ namespace Inventory.Domain.Entities
         Outside = 0,
         Sellable = 1,
         Damaged = 2,
+        /// <summary>Stage 3, batch 3-5: sent from one place, not yet received at the other ("on the way"); not sellable.</summary>
+        InTransit = 3,
     }
 
     /// <summary>Stage 2: the kinds of stock change. Stored as text, so never rename a value once it has shipped.</summary>
@@ -32,6 +34,18 @@ namespace Inventory.Domain.Entities
         SalesReturn = 5,
         /// <summary>Goods sent back to a supplier: Damaged or Sellable → Outside.</summary>
         PurchaseReturn = 6,
+        /// <summary>
+        /// Stage 3, batch 3-5: goods sent from one place to another in two steps (the transit switch on): Sellable in the
+        /// sending place → InTransit, then, when received, InTransit → Sellable in the receiving place.
+        /// </summary>
+        Move = 7,
+        /// <summary>Stage 3, batch 3-5: goods moved in one step (the transit switch off): Sellable here → Sellable there.</summary>
+        MoveAtOnce = 8,
+        /// <summary>
+        /// Stage 3, batch 3-5 (Hiten, 26 Nov 2026): all stock started in the shop; what the first count finds in the godown is
+        /// moved there in one step, rack by rack.
+        /// </summary>
+        StartingCount = 9,
     }
 
     /// <summary>
@@ -84,6 +98,11 @@ namespace Inventory.Domain.Entities
         /// before stage 3 (their lines already say the shop).
         /// </summary>
         public int? PlaceId { get; set; }
+        /// <summary>Stage 3, batch 3-5: a move's receiving place (<see cref="PlaceId"/> is the sending place).</summary>
+        public int? ToPlaceId { get; set; }
+        /// <summary>Stage 3, batch 3-6: when and by whom a two-step move was first confirmed as received (pieces not received then are missing).</summary>
+        public DateTime? ReceivedAt { get; set; }
+        public string? ReceivedBy { get; set; }
         /// <summary>Stage 2, batch 2-7: the reason of an entry made on the Stock changes screen (copied onto each of its lines).</summary>
         public string? Reason { get; set; }
         /// <summary>Who approved or rejected it, and when (blank when it was approved at once because the switch is off).</summary>
