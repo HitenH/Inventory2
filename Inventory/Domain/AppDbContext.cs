@@ -36,6 +36,7 @@ namespace Inventory.Domain
         public DbSet<StockChangeEntity> StockChanges { get; set; }
         public DbSet<StockChangeLineEntity> StockChangeLines { get; set; }
         public DbSet<StockChangeReasonEntity> StockChangeReasons { get; set; }
+        public DbSet<AppSettingEntity> AppSettings { get; set; }
 
         /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
         public string? ActivityNote { get; set; }
@@ -190,6 +191,7 @@ namespace Inventory.Domain
             modelBuilder.Entity<StockChangeLineEntity>().HasOne(l => l.ProductVariant).WithMany().HasForeignKey(l => l.VariantEntityId).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<StockChangeLineEntity>().HasIndex(l => l.SourceLineId);
             modelBuilder.Entity<StockChangeLineEntity>().HasIndex(l => l.PurchaseVariantId);
+            modelBuilder.Entity<AppSettingEntity>().ToTable("AppSettings");   // batch 2-8: e.g. the approval switch
             modelBuilder.Entity<StockChangeReasonEntity>().Property(r => r.Name).UseCollation("NOCASE");
             modelBuilder.Entity<StockChangeReasonEntity>().HasIndex(r => r.Name).IsUnique();
             // A starting list (Hiten keeps it on the reasons list in Settings, batch 2-7).

@@ -10,8 +10,12 @@ namespace Inventory.Service;
 /// </summary>
 public sealed record DamagedLot(
     Guid Key, Guid ProductEntityId, string ProductId, string ProductName, Guid VariantEntityId, string VariantId, string? VariantName,
-    int Pieces, DateOnly Since, string From, string? FromLink, string Reasons, Guid? SupplierId, string? SupplierName, bool ReadyToSend)
+    int Pieces, DateOnly Since, string From, string? FromLink, string Reasons, Guid? SupplierId, string? SupplierName, bool ReadyToSend,
+    int Waiting = 0)
 {
+    // Pieces: lying in damage and free to act on. Waiting (batch 2-8): pieces of this row on stock changes waiting for approval
+    // (damage recorded or lowered, repairs, write-offs, sending back) - they move only when approved.
+
     /// <summary>"Ready to send", "Supplier assigned" or "No supplier yet".</summary>
     public string Status => ReadyToSend ? "Ready to send" : SupplierId is null ? "No supplier yet" : "Supplier assigned";
 }
@@ -62,6 +66,7 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
         return groups.Select(g =>
         {
             var product = products.GetValueOrDefault(g.Product);
+            // Batch 2-7: damage found in the shop links to its stock change entry.
             var variant = variants.GetValueOrDefault(g.Variant);
             string from;
             string? link = null;
@@ -77,12 +82,13 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             }
             else
             {
-                from = "Found in the shop";
+                from = $"Damaged in the shop, entry {g.ShopVoucher} of {g.Since:dd-MM-yyyy}";
+                link = $"/stockchange/{g.StockChange}?from=damage";
             }
 
             return new DamagedLot(g.Key, g.Product, product?.ProductId ?? "", product?.Name ?? "", g.Variant, variant?.VariantId ?? "", variant?.Name,
                 g.Remaining, g.Since, from, link, string.Join(", ", g.Reasons), g.Supplier,
-                g.Supplier is { } s ? suppliers.GetValueOrDefault(s) : null, g.Ready);
+                g.Supplier is { } s ? suppliers.GetValueOrDefault(s) : null, g.Ready, g.Waiting);
         })
         .OrderBy(l => l.Since).ThenBy(l => l.ProductName).ThenBy(l => l.VariantId)
         .ToList();
@@ -91,20 +97,23 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
     /// <summary>One group of damage lines belonging to the same purchase line / returned line / shop damage entry.</summary>
     private sealed record Group(
         Guid Key, Guid Product, Guid Variant, int Remaining, DateOnly Since, List<string> Reasons, Guid? Supplier, bool Ready,
-        Guid? Purchase, Guid? SalesReturn, Guid FirstDamageLine, List<Guid> UpLines);
+        Guid? Purchase, Guid? SalesReturn, Guid FirstDamageLine, List<Guid> UpLines, int Waiting, Guid StockChange, int ShopVoucher);
 
     /// <summary>
-    /// The damage lines (approved), grouped by what they were found on, minus what later stock changes already took from them
-    /// (repaired, written off, sent back – approved or waiting). Only groups with pieces left are returned.
+    /// The damage lines, grouped by what they were found on (a purchase line, a returned line, or a damage entry made in the
+    /// shop). Remaining: approved damage minus what later stock changes took from it (repaired, written off, sent back –
+    /// approved or waiting, so waiting ones are not taken twice). Waiting: pieces on stock changes still waiting for approval.
+    /// Rejected ones count for nothing. Groups with nothing left and nothing waiting are left out.
     /// </summary>
     private static async Task<List<Group>> GroupsAsync(AppDbContext db, IReadOnlyCollection<Guid>? keys = null)
     {
         var lines = await db.StockChangeLines.AsNoTracking()
-            .Where(d => d.StockChange!.Kind == StockChangeKind.Damage && d.StockChange.Status == StockChangeStatus.Approved)
+            .Where(d => d.StockChange!.Kind == StockChangeKind.Damage && d.StockChange.Status != StockChangeStatus.Rejected)
             .Select(d => new
             {
                 d.Id, d.PurchaseVariantId, d.SourceLineId, d.ProductEntityId, d.VariantEntityId, d.To, d.Quantity, d.Reason,
                 d.ReturnSupplierEntityId, d.ReadyToSend, d.StockChange!.Date, d.StockChange.PurchaseEntityId, d.StockChange.SourceStockChangeId, d.StockChange.CreatedAt,
+                d.StockChange.Status, d.StockChangeEntityId, d.StockChange.VoucherId,
             })
             .ToListAsync();
         var grouped = lines.GroupBy(d => d.PurchaseVariantId ?? d.SourceLineId ?? d.Id)
@@ -119,16 +128,19 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
         var taken = (await db.StockChangeLines.AsNoTracking()
                 .Where(t => t.SourceLineId != null && damageIds.Contains(t.SourceLineId.Value)
                             && t.StockChange!.Kind != StockChangeKind.Damage && t.StockChange.Status != StockChangeStatus.Rejected)
-                .Select(t => new { Damage = t.SourceLineId!.Value, t.Quantity })
+                .Select(t => new { Damage = t.SourceLineId!.Value, t.Quantity, t.StockChange!.Status })
                 .ToListAsync())
-            .GroupBy(t => t.Damage).ToDictionary(g => g.Key, g => g.Sum(t => t.Quantity));
+            .GroupBy(t => t.Damage).ToDictionary(g => g.Key, g => (All: g.Sum(t => t.Quantity), Waiting: g.Where(t => t.Status == StockChangeStatus.Waiting).Sum(t => t.Quantity)));
 
         var result = new List<Group>();
         foreach (var g in grouped)
         {
-            var net = g.Sum(d => d.To == StockState.Damaged ? d.Quantity : -d.Quantity);
-            var remaining = net - g.Sum(d => taken.GetValueOrDefault(d.Id));
-            if (remaining <= 0)
+            static int Signed(StockState to, int quantity) => to == StockState.Damaged ? quantity : -quantity;
+            var approved = g.Where(d => d.Status == StockChangeStatus.Approved).Sum(d => Signed(d.To, d.Quantity));
+            var waitingDamage = g.Where(d => d.Status == StockChangeStatus.Waiting).Sum(d => Math.Abs(Signed(d.To, d.Quantity)));
+            var remaining = approved - g.Sum(d => taken.GetValueOrDefault(d.Id).All);
+            var waiting = waitingDamage + g.Sum(d => taken.GetValueOrDefault(d.Id).Waiting);
+            if (remaining <= 0 && waiting == 0)
             {
                 continue;
             }
@@ -137,10 +149,10 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             var latest = up.LastOrDefault() ?? g.First();
             var first = up.FirstOrDefault() ?? g.First();
             result.Add(new Group(
-                g.Key, first.ProductEntityId, first.VariantEntityId, remaining, first.Date,
+                g.Key, first.ProductEntityId, first.VariantEntityId, Math.Max(0, remaining), first.Date,
                 up.Select(d => d.Reason).Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r!).Distinct().ToList(),
                 latest.ReturnSupplierEntityId, latest.ReadyToSend, first.PurchaseEntityId, first.SourceStockChangeId,
-                first.Id, up.Select(d => d.Id).ToList()));
+                first.Id, up.Select(d => d.Id).ToList(), waiting, first.StockChangeEntityId, first.VoucherId));
         }
 
         return result;
@@ -246,7 +258,7 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             Kind = kind,
             Date = today,
             VoucherId = await StockChangeService.NextVoucherAsync(db, kind, today),
-            Status = StockChangeService.NewStatus(),
+            Status = await StockChangeService.NewStatusAsync(db),
             SupplierEntityId = supplier,
             Remarks = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
         };
@@ -357,7 +369,7 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             Kind = StockChangeKind.PurchaseReturn,
             Date = date,
             VoucherId = await StockChangeService.NextVoucherAsync(db, StockChangeKind.PurchaseReturn, date),
-            Status = StockChangeService.NewStatus(),
+            Status = await StockChangeService.NewStatusAsync(db),
             SupplierEntityId = supplierId,
             Remarks = string.IsNullOrWhiteSpace(remarks) ? null : remarks.Trim(),
         };
@@ -414,11 +426,14 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
         }
 
         await using var db = await factory.CreateDbContextAsync();
-        if (!await db.StockChanges.AnyAsync(s => s.Id == returnId && s.Kind == StockChangeKind.PurchaseReturn))
+        var header = await db.StockChanges.FirstOrDefaultAsync(s => s.Id == returnId && s.Kind == StockChangeKind.PurchaseReturn);
+        if (header is null)
         {
             db.ThrowIfGoneWhileOpen<StockChangeEntity>(returnId);
             throw new StockChangeRefused("This purchase return was not found.");
         }
+
+        await StockChangeService.NeedsApprovalAgainAsync(db, header);
 
         foreach (var l in lines)
         {
@@ -454,6 +469,11 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             return;
         }
 
+        if (existing.ProductEntityId != productId || existing.VariantEntityId != variantId || existing.Quantity != quantity)
+        {
+            await StockChangeService.NeedsApprovalAgainAsync(db, await db.StockChanges.FirstAsync(s => s.Id == existing.StockChangeEntityId));
+        }
+
         existing.ProductEntityId = productId;
         existing.VariantEntityId = variantId;
         existing.Quantity = quantity!.Value;
@@ -471,6 +491,7 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             return;
         }
 
+        await StockChangeService.NeedsApprovalAgainAsync(db, await db.StockChanges.FirstAsync(s => s.Id == existing.StockChangeEntityId));
         db.StockChangeLines.Remove(existing);
         await db.SaveChangesAsync();
     }

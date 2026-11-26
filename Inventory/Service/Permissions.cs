@@ -25,6 +25,8 @@ public static class Permissions
     public const string ScreenPurchaseReturns = "screen.purchase-returns";
     /// <summary>Stage 2, batch 2-5: the damage report (assign supplier, ready to send, repaired, written off, sent).</summary>
     public const string ScreenDamageReport = "screen.damage-report";
+    /// <summary>Stage 2, batch 2-7: the Stock changes list and an entry (damage in the shop, count corrections, write-offs, opening stock).</summary>
+    public const string ScreenStockChanges = "screen.stock-changes";
 
     public const string AdminUsers = "admin.users";
     public const string AdminImport = "admin.import";
@@ -38,6 +40,8 @@ public static class Permissions
 
     /// <summary>Stage 2, batch 2-3: the "Record damage" pop-up on a purchase and a sales return.</summary>
     public const string StockDamage = "stock.damage";
+    /// <summary>Stage 2, batch 2-8: the "Waiting for approval" list - approve or reject stock changes.</summary>
+    public const string StockApprove = "stock.approve";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -64,6 +68,9 @@ public static class Permissions
         ["salesreturns"] = ScreenSalesReturns, ["salesreturn"] = ScreenSalesReturns,
         ["purchasereturns"] = ScreenPurchaseReturns, ["purchasereturn"] = ScreenPurchaseReturns,
         ["damage"] = ScreenDamageReport,
+        ["stockchanges"] = ScreenStockChanges, ["stockchange"] = ScreenStockChanges,
+        ["approvals"] = StockApprove,
+        ["reasons"] = AdminSettings,   // the reasons list is kept from Settings
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
@@ -104,6 +111,7 @@ public static class Permissions
         new(ScreenSalesReturns, "Open the Sales Returns screen", ScreensGroup),
         new(ScreenPurchaseReturns, "Open the Purchase Returns screen", ScreensGroup),
         new(ScreenDamageReport, "Open the Damage report", ScreensGroup),
+        new(ScreenStockChanges, "Open the Stock changes screen", ScreensGroup),
         new(ScreenReports, "Open the Reports screen", ScreensGroup),
         new(LabelsPrint, "Print labels", ScreensGroup),
         new(AdminUsers, "Manage users and roles", AdminGroup),
@@ -112,6 +120,7 @@ public static class Permissions
         new(ActivitySee, "See activity log", AdminGroup),
         new(LabelsSettings, "Change label settings", AdminGroup),
         new(StockDamage, "Record damage", StockGroup),
+        new(StockApprove, "Approve stock changes", StockGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

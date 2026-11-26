@@ -354,7 +354,9 @@ wb.save(sys.argv[1])`;
   await b.type(prod); await sleep(1500);
   const stockRows = await b.eval(`[...document.querySelectorAll('.mud-table-body tr')].map(r => r.innerText.replace(/\\s+/g,' ').trim())`);
   const rowFor = v => stockRows.find(r => r.includes(prod) && new RegExp('\\b' + v + '\\b').test(r)) || '';
-  check('12 stock report on screen shows the new stock for both variants', rowFor(var1).trim().endsWith(String(stockOf(vid1))) && rowFor(var2).trim().endsWith(String(stockOf(vid2))),
+  // Stage 2 (batch 2-2): the report's last column is now Damaged (0 here), so the stock is the figure just before it.
+  const endsWithStock = (row, stock) => new RegExp(' ' + stock + ' 0$').test(row.trim());
+  check('12 stock report on screen shows the new stock for both variants', endsWithStock(rowFor(var1), stockOf(vid1)) && endsWithStock(rowFor(var2), stockOf(vid2)),
     `${rowFor(var1)} || ${rowFor(var2)}`);
   await shot('12-stock-report');
 

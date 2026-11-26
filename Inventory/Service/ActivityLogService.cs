@@ -358,7 +358,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         existing.UnionWith(await db.Sales.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         existing.UnionWith(await db.PurchaseOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         // Stage 2: sales and purchase returns have their own screens; other stock changes (damage, repairs ...) are on the damage report.
-        var stockKinds = await db.StockChanges.Where(x => guids.Contains(x.Id)).Select(x => new { x.Id, x.Kind }).ToDictionaryAsync(x => x.Id, x => x.Kind);
+        var stockKinds = await db.StockChanges.Where(x => guids.Contains(x.Id)).Include(x => x.Lines).ToDictionaryAsync(x => x.Id);
         existing.UnionWith(stockKinds.Keys);
 
         return rows.Select(r =>
@@ -374,10 +374,11 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
                 nameof(PurchaseOrderEntity) => "/purchaseorder",
                 nameof(UserEntity) => "/users",
                 nameof(RoleEntity) => "/roles",
-                nameof(StockChangeEntity) when Guid.TryParse(r.RecordId, out var sc) && stockKinds.TryGetValue(sc, out var k) => k switch
+                nameof(StockChangeEntity) when Guid.TryParse(r.RecordId, out var sc) && stockKinds.TryGetValue(sc, out var k) => k.Kind switch
                 {
                     StockChangeKind.SalesReturn => $"/salesreturn/{r.RecordId}",
                     StockChangeKind.PurchaseReturn => $"/purchasereturn/{r.RecordId}",
+                    _ when StockEntryService.TypeOf(k) is not null => $"/stockchange/{r.RecordId}",   // batch 2-7
                     _ => "/damage",
                 },
                 _ => null,

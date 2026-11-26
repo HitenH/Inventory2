@@ -1,0 +1,121 @@
+@page "/approvals"
+@* Stage 2, batch 2-8 (Hiten, 25-26 Nov 2026): stock changes waiting for approval, oldest first - damage recorded or lowered,
+   sales and purchase returns, repairs, write-offs, sending back, stock change entries. Approve: its stock moves now.
+   Reject: its stock never moves (it stays in the activity log). Needs the switch "Approve stock changes". *@
+
+<Inventory.MudBlazorComponents.PagesHeader Title="Waiting for approval" SubTitle="Stock changes move stock only when approved" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    @if (!approvalOn)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3" id="approval-off-note">
+            Approval is switched off in Settings, so new stock changes count at once. Anything still listed here waits until it is approved or rejected.
+        </MudAlert>
+    }
+
+    @if (waiting is null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (waiting.Count == 0)
+    {
+        <MudText Class="mt-2" id="approvals-empty">Nothing is waiting for approval.</MudText>
+    }
+    else
+    {
+        <table class="table table-striped table-bordered table-sm lines-table approvals-table">
+            <thead>
+                <tr>
+                    <th class="c-approval-entry">Entry</th>
+                    <th class="c-approval-by">Made by</th>
+                    <th>Lines</th>
+                    <th class="c-approval-actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var w in waiting)
+                {
+                    <tr class="approval-row">
+                        <td class="c-approval-entry">
+                            @if (w.Link is not null)
+                            {
+                                <a href="@w.Link">@w.Label</a>
+                            }
+                            else
+                            {
+                                @w.Label
+                            }
+                            @if (w.Party is not null)
+                            {
+                                <div class="approval-party">@w.Party</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(w.Remarks))
+                            {
+                                <div class="approval-party">@w.Remarks</div>
+                            }
+                        </td>
+                        <td class="c-approval-by">@(w.By ?? "–")<div class="approval-party">@w.At?.ToString("dd-MM-yyyy HH:mm")</div></td>
+                        <td class="approval-lines">
+                            @if (w.Lines.Count == 0)
+                            {
+                                <span class="approval-party">No lines yet</span>
+                            }
+                            @foreach (var line in w.Lines)
+                            {
+                                <div>@line</div>
+                            }
+                        </td>
+                        <td class="c-approval-actions">
+                            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => DecideAsync(w, true)" Class="approval-approve">Approve</MudButton>
+                            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => DecideAsync(w, false)" Class="approval-reject ms-1">Reject</MudButton>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</MudContainer>
+
+@code {
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    [Inject] private StockEntryService Entries { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private ILogger<Approvals> Logger { get; set; } = default!;
+
+    private List<WaitingEntry>? waiting;
+    private bool approvalOn = true;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        approvalOn = await Entries.IsApprovalOnAsync();
+        waiting = await Entries.WaitingAsync();
+    }
+
+    private async Task DecideAsync(WaitingEntry w, bool approve)
+    {
+        if (!approve && !await DialogService.ConfirmAsync("Reject?", $"{w.Label} will not move any stock. It stays in the activity log.", "Reject", Color.Error, enterConfirms: true))
+        {
+            return;
+        }
+
+        try
+        {
+            await Entries.DecideAsync(w.Id, approve, Access ?? UserAccess.Nobody);
+            Snackbar.Add(approve ? $"{w.Label} approved: its stock has moved." : $"{w.Label} rejected.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Approving a stock change failed");
+            Snackbar.Add("Could not save. Nothing was changed.", Severity.Error);
+        }
+
+        await ReloadAsync();
+    }
+}

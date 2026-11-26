@@ -33,16 +33,16 @@ public sealed record DamageCandidate(
 public sealed record DamageEntry(Guid LineId, int? Damaged, string? Reason);
 
 /// <summary>What one save of the pop-up did: pieces newly damaged, and pieces found not damaged after all.</summary>
-public sealed record DamageResult(int MoreDamaged, int NotDamaged)
+public sealed record DamageResult(int MoreDamaged, int NotDamaged, bool Waiting = false)
 {
     public bool Changed => MoreDamaged > 0 || NotDamaged > 0;
 
-    /// <summary>"Damage recorded: 2 more damaged, 1 not damaged after all."</summary>
+    /// <summary>"Damage recorded: 2 more damaged, 1 not damaged after all." (and "Waiting for approval." with approval on).</summary>
     public string Text => "Damage recorded: " + string.Join(", ", new[]
     {
         MoreDamaged > 0 ? $"{MoreDamaged} more damaged" : null,
         NotDamaged > 0 ? $"{NotDamaged} not damaged after all" : null,
-    }.Where(t => t is not null)) + ".";
+    }.Where(t => t is not null)) + "." + (Waiting ? " Waiting for approval." : "");
 }
 
 /// <summary>One row of the Sales Returns list: pieces that came back, and pieces given in exchange.</summary>
@@ -56,11 +56,33 @@ public sealed record SalesReturnListItem(Guid Id, int VoucherId, DateOnly Date, 
 /// </summary>
 public class StockChangeService(IDbContextFactory<AppDbContext> factory)
 {
+    /// <summary>Stage 2, batch 2-8: the key of the approval switch in the AppSettings table ("on" / "off").</summary>
+    public const string ApprovalSetting = "StockApproval";
+
+    /// <summary>True when stock changes need approval (the Admin's switch in Settings; off unless switched on).</summary>
+    internal static async Task<bool> ApprovalOnAsync(AppDbContext db) =>
+        await db.AppSettings.AsNoTracking().Where(s => s.Key == ApprovalSetting).Select(s => s.Value).FirstOrDefaultAsync() == "on";
+
     /// <summary>
-    /// Stage 2 (Hiten, 25 Nov 2026): approval is built but switched off, so a stock change counts at once.
-    /// Batch 2-8 adds the switch; with it on, new stock changes wait for approval.
+    /// The status of a new stock change - the one place this is decided (Hiten, 25-26 Nov 2026): with the approval switch off
+    /// it counts at once; with it on it waits for approval and moves no stock until approved.
     /// </summary>
-    internal static StockChangeStatus NewStatus() => StockChangeStatus.Approved;
+    internal static async Task<StockChangeStatus> NewStatusAsync(AppDbContext db) =>
+        await ApprovalOnAsync(db) ? StockChangeStatus.Waiting : StockChangeStatus.Approved;
+
+    /// <summary>
+    /// The lines of an entry were added, changed or removed: with the approval switch on, an entry already approved (or
+    /// rejected) waits for approval again, so nothing moves stock unseen. Its header (date, remarks, customer) does not count.
+    /// </summary>
+    internal static async Task NeedsApprovalAgainAsync(AppDbContext db, StockChangeEntity header)
+    {
+        if (header.Status != StockChangeStatus.Waiting && await ApprovalOnAsync(db))
+        {
+            header.Status = StockChangeStatus.Waiting;
+            header.DecidedBy = null;
+            header.DecidedAt = null;
+        }
+    }
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 
@@ -180,7 +202,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             Kind = StockChangeKind.Damage,
             Date = today,
             VoucherId = await NextVoucherAsync(db, StockChangeKind.Damage, today),
-            Status = NewStatus(),
+            Status = await NewStatusAsync(db),
             PurchaseEntityId = source == DamageSource.Purchase ? sourceId : null,
             SourceStockChangeId = source == DamageSource.SalesReturn ? sourceId : null,
             Remarks = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
@@ -225,7 +247,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
         db.StockChanges.Add(change);
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
-        return new DamageResult(more, back);
+        return new DamageResult(more, back, change.Status == StockChangeStatus.Waiting);
     }
 
     internal static async Task<int> NextVoucherAsync(AppDbContext db, StockChangeKind kind, DateOnly date) =>
@@ -279,7 +301,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             Kind = StockChangeKind.SalesReturn,
             Date = date,
             VoucherId = await NextVoucherAsync(db, StockChangeKind.SalesReturn, date),
-            Status = NewStatus(),
+            Status = await NewStatusAsync(db),
             CustomerEntityId = customerId,
             Remarks = string.IsNullOrWhiteSpace(remarks) ? null : remarks.Trim(),
         };
@@ -372,6 +394,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             throw new StockChangeRefused("This sales return was not found.");
         }
 
+        await NeedsApprovalAgainAsync(db, header);
         foreach (var l in lines)
         {
             db.StockChangeLines.Add(new StockChangeLineEntity
@@ -412,6 +435,11 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             throw new StockChangeRefused(refused);
         }
 
+        if (existing.ProductEntityId != productId || existing.VariantEntityId != variantId || existing.Quantity != quantity)
+        {
+            await NeedsApprovalAgainAsync(db, await db.StockChanges.FirstAsync(s => s.Id == existing.StockChangeEntityId));
+        }
+
         existing.ProductEntityId = productId;
         existing.VariantEntityId = variantId;
         existing.Quantity = quantity!.Value;
@@ -434,6 +462,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             throw new StockChangeRefused(StockChangeRules.DamagedLineCannotBeDeleted);
         }
 
+        await NeedsApprovalAgainAsync(db, await db.StockChanges.FirstAsync(s => s.Id == existing.StockChangeEntityId));
         db.StockChangeLines.Remove(existing);
         await db.SaveChangesAsync();
     }

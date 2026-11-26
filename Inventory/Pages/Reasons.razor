@@ -1,0 +1,110 @@
+@page "/reasons"
+@* Stage 2, batch 2-7: the reasons offered when stock changes (Record damage, the Stock changes screen), kept from Settings.
+   Add, rename (saved when the box is left), move up or down, take off the list or put back. A reason is never deleted, and
+   entries made earlier keep the words they were saved with. Esc goes back to Settings. *@
+
+<Inventory.MudBlazorComponents.PagesHeader Title="Reasons for stock changes" SubTitle="The choices offered when damage or another stock change is recorded" />
+
+<MudContainer>
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <table class="table table-sm lines-table reasons-table mb-3">
+            <thead>
+                <tr>
+                    <th class="c-sl num">#</th>
+                    <th>Reason</th>
+                    <th class="c-reason-move"></th>
+                    <th class="c-reason-state">On the list</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < reasons.Count; i++)
+                {
+                    var r = reasons[i];
+                    var index = i;
+                    <tr class="reason-row @(r.IsActive ? "" : "reason-off")">
+                        <td class="c-sl num">@(index + 1)</td>
+                        <td><input class="form-control reason-name" value="@r.Name" @onchange="e => RenameAsync(r, e.Value?.ToString())" autocomplete="off" /></td>
+                        <td class="c-reason-move">
+                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Disabled="index == 0" title="Move up" OnClick="() => MoveAsync(r, -1)" Class="reason-up" />
+                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" Disabled="index == reasons.Count - 1" title="Move down" OnClick="() => MoveAsync(r, 1)" Class="reason-down" />
+                        </td>
+                        <td class="c-reason-state">
+                            @if (r.IsActive)
+                            {
+                                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small" OnClick="() => SetActiveAsync(r, false)" Class="reason-off-button">Take off</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small" OnClick="() => SetActiveAsync(r, true)" Class="reason-on-button">Put back</MudButton>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="d-flex gap-2 align-items-end">
+            <div class="flex-grow-1">
+                <label class="form-label" for="reason-new">New reason</label>
+                <input id="reason-new" class="form-control" @bind="newReason" @bind:event="oninput" @onkeydown="OnNewKeyAsync" autocomplete="off" />
+            </div>
+            <MudButton id="reason-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddAsync" StartIcon="@Icons.Material.Filled.Add">Add</MudButton>
+        </div>
+        <MudText Typo="Typo.caption" Class="mt-2 d-block">A reason taken off the list is no longer offered; entries that used it keep it.</MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Inject] private StockEntryService Entries { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<ReasonItem> reasons = new();
+    private string? newReason;
+
+    protected override async Task OnInitializedAsync() => reasons = await Entries.AllReasonsAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.FocusBoxAsync("#reason-new");
+        }
+    }
+
+    private async Task RunAsync(Func<Task> action, string? done = null)
+    {
+        try
+        {
+            await action();
+            if (done is not null)
+            {
+                Snackbar.Add(done, Severity.Success);
+            }
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        reasons = await Entries.AllReasonsAsync();
+    }
+
+    private async Task AddAsync()
+    {
+        var name = newReason;
+        await RunAsync(async () => { await Entries.AddReasonAsync(name); newReason = null; }, "Reason added.");
+        await JS.FocusBoxAsync("#reason-new");
+    }
+
+    private async Task OnNewKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddAsync();
+        }
+    }
+
+    private Task RenameAsync(ReasonItem r, string? name) => RunAsync(() => Entries.RenameReasonAsync(r.Id, name), "Reason renamed.");
+    private Task MoveAsync(ReasonItem r, int step) => RunAsync(() => Entries.MoveReasonAsync(r.Id, step));
+    private Task SetActiveAsync(ReasonItem r, bool active) => RunAsync(() => Entries.SetReasonActiveAsync(r.Id, active), active ? "Put back on the list." : "Taken off the list.");
+}

@@ -229,6 +229,61 @@ namespace Inventory.Shared
         public override Task Delete(Guid lineId) => service.DeletePurchaseReturnLineAsync(lineId);
     }
 
+    /// <summary>
+    /// Stage 2, batch 2-7: the lines of an entry on the Stock changes screen (quantities only; Remarks is the line's note).
+    /// A count correction takes "3" for found more and "-2" for found fewer.
+    /// </summary>
+    public sealed class StockEntryLines : TransactionLines
+    {
+        private readonly StockChangeEntity entry;
+        private readonly Inventory.Service.StockEntryType type;
+        private readonly Inventory.Service.StockEntryService service;
+
+        public StockEntryLines(StockChangeEntity entry, Inventory.Service.StockEntryType type, Inventory.Service.StockEntryService service)
+        {
+            this.entry = entry;
+            this.type = type;
+            this.service = service;
+        }
+
+        public override string Kind => "stock change";
+        public override bool HasRemarks => true;
+        public override bool HasRates => false;
+        // No Bulk Entry button here; the kind only matters for rates, which a stock change does not have.
+        public override Inventory.Service.BulkEntryKind BulkKind => Inventory.Service.BulkEntryKind.Purchase;
+        public override Guid HeaderId => entry.Id;
+
+        public override string? ExtraProblem(LineEditorModel line) => Inventory.Service.StockEntryService.QuantityProblem(type, line.Quantity);
+
+        public override List<LineEditorModel> Load() =>
+            entry.Lines
+                .OrderBy(l => l.SerialNumber)
+                .Select(l => new LineEditorModel
+                {
+                    Id = l.Id,
+                    SerialNumber = l.SerialNumber,
+                    ProductEntityId = l.ProductEntityId,
+                    ProductId = l.Product?.ProductId ?? "",
+                    ProductName = l.Product?.Name ?? "",
+                    VariantEntityId = l.VariantEntityId,
+                    ProductVariantId = l.ProductVariant?.VariantId ?? "",
+                    Quantity = Inventory.Service.StockEntryService.Shown(l),
+                    Remarks = l.Note,
+                    ProductRate = null, Amount = null, DiscountPercent = null, AmountAfterDiscount = null,
+                }).ToList();
+
+        public override Task Create(LineEditorModel line, Guid productEntityId, int serialNumber) =>
+            service.AddLinesAsync(entry.Id, [(productEntityId, line.VariantEntityId!.Value, line.Quantity, serialNumber, line.Remarks)]);
+
+        public override Task Update(LineEditorModel line, Guid productEntityId) =>
+            service.UpdateLineAsync(line.Id, productEntityId, line.VariantEntityId!.Value, line.Quantity, line.SerialNumber, line.Remarks);
+
+        public override Task CreateRange(List<LineEditorModel> newLines) =>
+            service.AddLinesAsync(entry.Id, newLines.Select(l => (l.ProductEntityId, l.VariantEntityId!.Value, l.Quantity, l.SerialNumber, l.Remarks)).ToList());
+
+        public override Task Delete(Guid lineId) => service.DeleteLineAsync(lineId);
+    }
+
     public sealed class SalesOrderLines : TransactionLines
     {
         private readonly SalesOrderEntity salesOrder;

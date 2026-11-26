@@ -6,6 +6,7 @@
 @inject IDialogService DialogService
 @inject Microsoft.JSInterop.IJSRuntime JS
 @inject ActivityLogService Activity
+@inject StockEntryService StockEntries
 @inject ILogger<Settings> Logger
 
 <PagesHeader Title="Settings" SubTitle="Reports, backups, overview" />
@@ -45,6 +46,24 @@
         <MudButton id="settings-users" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="/users">Users</MudButton>
         <MudButton id="settings-roles" Class="ml-2" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="/roles">Roles</MudButton>
         <MudText Typo="Typo.caption" Class="ml-2">Add users, give them roles, reset passwords; decide what each role may do.</MudText>
+    </MudPaper>
+
+    @* Stage 2, batches 2-7/2-8 (Hiten, 25-26 Nov 2026): the reasons list, and the Admin's approval switch (off unless switched on). *@
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Stock changes</MudText>
+        <div class="d-flex flex-wrap align-center gap-3">
+            <MudButton id="settings-reasons" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="/reasons">Reasons</MudButton>
+            <MudSwitch T="bool" Value="approvalOn" ValueChanged="SetApprovalAsync" Color="Color.Primary" Class="settings-approval"
+                       Disabled="@(Access?.HasAdminRole != true || busy)">Stock changes need approval</MudSwitch>
+            @if (waitingCount > 0)
+            {
+                <a href="/approvals" id="settings-waiting">@waitingCount waiting for approval</a>
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="d-block mt-1">
+            With approval on, damage, returns, repairs, write-offs, sending back and stock change entries move stock only after someone with
+            "Approve stock changes" approves them. @(Access?.HasAdminRole == true ? "Only the Admin can switch this." : "Only the Admin can switch this; you can see it.")
+        </MudText>
     </MudPaper>
 
     <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
@@ -124,6 +143,39 @@
 
     // Batch 17: appearance (colour and mode), set by MainLayout's CascadingValue.
     [CascadingParameter] public AppThemeState? Theme { get; set; }
+    [CascadingParameter] public UserAccess? Access { get; set; }
+
+    // Stage 2, batch 2-8: the approval switch.
+    private bool approvalOn;
+    private int waitingCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        approvalOn = await StockEntries.IsApprovalOnAsync();
+        waitingCount = await StockEntries.WaitingCountAsync();
+    }
+
+    private async Task SetApprovalAsync(bool on)
+    {
+        var text = on
+            ? "From now on every stock change waits for approval before it moves stock."
+            : "From now on stock changes count at once. Anything already waiting still needs approving or rejecting.";
+        if (!await DialogService.ConfirmAsync(on ? "Switch approval on?" : "Switch approval off?", text, on ? "Switch on" : "Switch off", Color.Primary, enterConfirms: true))
+        {
+            return;
+        }
+
+        try
+        {
+            await StockEntries.SetApprovalAsync(on, Access ?? UserAccess.Nobody);
+            approvalOn = on;
+            snackbar.Add(on ? "Stock changes now need approval." : "Stock changes no longer need approval.", Severity.Success);
+        }
+        catch (StockChangeRefused ex)
+        {
+            snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
 
     private async Task PickColour(string colour)
     {

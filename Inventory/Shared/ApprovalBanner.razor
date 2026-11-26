@@ -1,0 +1,22 @@
+@using Inventory.Domain.Entities
+@* Stage 2, batch 2-8: on a sales return, purchase return or stock change entry - says when it is waiting for approval (its stock
+   has not moved yet) or was rejected (its stock never moved). Nothing is shown for an approved entry. *@
+
+@if (Entry is { Status: StockChangeStatus.Waiting })
+{
+    <div class="approval-banner approval-waiting" id="approval-banner">
+        <MudIcon Icon="@Icons.Material.Filled.HourglassTop" Size="Size.Small" />
+        <span><b>Waiting for approval.</b> Its stock moves when it is approved.</span>
+    </div>
+}
+else if (Entry is { Status: StockChangeStatus.Rejected })
+{
+    <div class="approval-banner approval-rejected" id="approval-banner">
+        <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
+        <span><b>Rejected</b>@(Entry.DecidedBy is { } by ? $" by {by}" : "")@(Entry.DecidedAt is { } at ? $" on {at:dd-MM-yyyy HH:mm}" : ""). Its stock did not move. Changing a line sends it for approval again.</span>
+    </div>
+}
+
+@code {
+    [Parameter] public StockChangeEntity? Entry { get; set; }
+}

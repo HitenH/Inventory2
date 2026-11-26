@@ -67,6 +67,19 @@ namespace Inventory.Migrations
                     b.ToTable("ActivityLog", (string)null);
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.AppSettingEntity", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings", (string)null);
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -815,6 +828,9 @@ namespace Inventory.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("PurchaseEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Remarks")

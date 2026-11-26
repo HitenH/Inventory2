@@ -43,6 +43,7 @@
 
 @if (ReturnId != null && purchaseReturn != null)
 {
+    <ApprovalBanner Entry="purchaseReturn" />
     @if (FromDamage.Count > 0)
     {
         <div class="card-header mt-3 exchange-card">

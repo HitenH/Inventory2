@@ -59,7 +59,7 @@
                 <MudNavLink Icon="@Icons.Material.Filled.LocalOffer" Href="/labels"><NavText Text="Labels" Url="/labels" /></MudNavLink>
             }
 
-            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns) || May(Permissions.ScreenPurchaseReturns) || May(Permissions.ScreenDamageReport))
+            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns) || May(Permissions.ScreenPurchaseReturns) || May(Permissions.ScreenDamageReport) || May(Permissions.ScreenStockChanges) || May(Permissions.StockApprove))
             {
                 <MudDivider Class="my-2" />
                 <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
@@ -94,6 +94,16 @@
             {
                 @* Stage 2, batch 2-5: everything lying in damage. *@
                 <MudNavLink Icon="@Icons.Material.Filled.BrokenImage" Href="/damage"><NavText Text="Damage report" Url="/damage" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenStockChanges))
+            {
+                @* Stage 2, batch 2-7: damage found in the shop, count corrections, write-offs, opening stock. *@
+                <MudNavLink Icon="@Icons.Material.Filled.Inventory" Href="/stockchanges"><NavText Text="Stock changes" Url="/stockchanges" /></MudNavLink>
+            }
+            @if (access.SignedIn && access.Allows(Permissions.StockApprove))
+            {
+                @* Stage 2, batch 2-8: stock changes waiting for approval. *@
+                <MudNavLink Icon="@Icons.Material.Filled.FactCheck" Href="/approvals">Waiting for approval</MudNavLink>
             }
         </Authorized>
         <NotAuthorized>

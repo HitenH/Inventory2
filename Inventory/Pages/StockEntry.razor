@@ -1,0 +1,219 @@
+@page "/stockchange/{entryId?}"
+@using Inventory.Domain.Entities
+@* Stage 2, batch 2-7 (Hiten, 25 Nov 2026): one stock change made by hand - damage found in the shop, a count correction
+   (found more: 3, found fewer: -2), good stock written off, or opening stock. Laid out like a purchase: type, voucher, date
+   and reason on top (Ctrl+S saves); then the lines (the same line editor, quantities only, Remarks = a note per line).
+   With approval switched on it waits for approval before stock moves (batch 2-8). Rules in Service/StockEntryService.cs. *@
+
+<FocusOnOpen Selector="@(EntryId == null ? "#stockchange-type" : ".focus-line-product")" />
+
+<EditForm Model="@header" class="card-header mt-2 head-card" OnValidSubmit="SaveHeaderAsync">
+    <div class="head-row">
+        <div class="field">
+            <label for="stockchange-type" class="form-label"><h4>Type</h4></label>
+            <select id="stockchange-type" class="form-control" style="min-width:210px;" @bind="header.Type" disabled="@(entry != null)">
+                @foreach (var t in Enum.GetValues<StockEntryType>())
+                {
+                    <option value="@t">@StockEntryService.TypeName(t)</option>
+                }
+            </select>
+        </div>
+        <div class="field field-voucher">
+            <label for="voucher" class="form-label"><h4>Voucher</h4></label>
+            <input id="voucher" class="form-control text-center" value="@(entry?.VoucherId.ToString() ?? "")" disabled title="Given when saved" />
+        </div>
+        <div class="field field-date">
+            <label for="date" class="form-label"><h4>Date</h4></label>
+            <DateBox TValue="DateOnly" @bind-Value="header.Date" Style="width:168px;" OpenLeft="true" />
+        </div>
+        <div class="field">
+            <label for="stockchange-reason" class="form-label"><h4>Reason</h4></label>
+            <select id="stockchange-reason" class="form-control" style="min-width:220px;" @bind="header.Reason">
+                @foreach (var r in reasons)
+                {
+                    <option value="@r">@r</option>
+                }
+                @if (!string.IsNullOrEmpty(header.Reason) && !reasons.Contains(header.Reason))
+                {
+                    <option value="@header.Reason">@header.Reason</option>
+                }
+            </select>
+        </div>
+        <div class="head-actions">
+            @if (EntryId == null)
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-success">Save</button>
+            }
+            else
+            {
+                <button type="submit" data-shortcut="save" id="button-submit" class="btn btn-warning">Update</button>
+            }
+            <NavLink type="button" href="/stockchanges" id="button-close" class="btn btn-info">Close</NavLink>
+            @if (EntryId != null)
+            {
+                <button type="button" class="btn btn-danger" @onclick="DeleteAsync">Delete</button>
+                <ActivityLogButton RecordType="@nameof(StockChangeEntity)" RecordId="@EntryId" Title="Stock change" />
+            }
+            <NavLink class="btn btn-secondary" href="/">Home</NavLink>
+        </div>
+    </div>
+</EditForm>
+
+@if (EntryId != null && entry != null)
+{
+    <ApprovalBanner Entry="entry" />
+    @if (header.Type == StockEntryType.CountCorrection)
+    {
+        <div class="stockchange-hint mt-2">Count correction: type <b>3</b> when the count found 3 more than the app, <b>-2</b> when it found 2 fewer.</div>
+    }
+    <TransactionLineEditor Lines="lines" ChangeState="LinesChangedAsync" />
+
+    <div class="card-header mt-3">
+        <div class="totals-bar">
+            <div class="totals-actions">
+                <button type="button" id="stockchange-save-close" class="btn btn-success" @onclick="SaveAndCloseAsync">Save</button>
+            </div>
+            <div class="field totals-remarks">
+                <label for="Remarks" class="form-label">Remarks / Narration</label>
+                <InputText @bind-Value="header.Remarks" id="Remarks" class="form-control text-start" />
+            </div>
+            <div class="field totals-field">
+                <label for="totalquantity" class="form-label">Pieces</label>
+                <input id="totalquantity" class="form-control text-center" value="@entry.Lines.Sum(l => l.Quantity)" disabled />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? EntryId { get; set; }
+
+    [Inject] private StockEntryService Entries { get; set; } = default!;
+    [Inject] private StockChangeService StockChanges { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ILogger<StockEntry> Logger { get; set; } = default!;
+
+    private sealed class Header
+    {
+        public StockEntryType Type { get; set; } = StockEntryType.DamagedInShop;
+        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public string? Reason { get; set; }
+        public string? Remarks { get; set; }
+    }
+
+    private readonly Header header = new();
+    private StockChangeEntity? entry;
+    private TransactionLines lines = default!;
+    private List<string> reasons = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        reasons = await StockChanges.ReasonsAsync();
+        header.Reason = reasons.FirstOrDefault();
+        if (EntryId != null)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (!Guid.TryParse(EntryId, out var id) || await Entries.GetAsync(id) is not { } loaded || StockEntryService.TypeOf(loaded) is not { } type)
+        {
+            Snackbar.Add("This stock change was not found.", Severity.Warning);
+            Nav.NavigateTo("/stockchanges");
+            return;
+        }
+
+        entry = loaded;
+        header.Type = type;
+        header.Date = loaded.Date;
+        header.Reason = loaded.Reason;
+        header.Remarks = loaded.Remarks;
+        lines = new StockEntryLines(loaded, type, Entries);
+    }
+
+    private async Task SaveHeaderAsync()
+    {
+        try
+        {
+            if (EntryId == null)
+            {
+                var created = await Entries.CreateAsync(header.Type, header.Date, header.Reason, header.Remarks);
+                EntryId = created.Id.ToString();
+                await ReloadAsync();
+                await JS.FocusBoxAsync(".focus-line-product");
+            }
+            else
+            {
+                await Entries.UpdateAsync(entry!.Id, header.Date, header.Reason, header.Remarks);
+                await ReloadAsync();
+                Snackbar.Add("Stock change updated.", Severity.Success);
+            }
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Save stock change failed");
+            Snackbar.Add($"Could not save the stock change: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SaveAndCloseAsync()
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await Entries.UpdateAsync(entry.Id, header.Date, header.Reason, header.Remarks);
+            Nav.NavigateTo("/stockchanges");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Save stock change failed");
+            Snackbar.Add($"Could not save the stock change: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (entry is null || !await DialogService.ConfirmDeleteAsync())
+        {
+            return;
+        }
+
+        try
+        {
+            await Entries.DeleteAsync(entry.Id);
+            Snackbar.Add("Stock change deleted", Severity.Success);
+            Nav.NavigateTo("/stockchanges");
+        }
+        catch (StockChangeRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Delete stock change failed");
+            Snackbar.Add("Could not delete the stock change.", Severity.Error);
+        }
+    }
+
+    private async Task LinesChangedAsync(bool changed)
+    {
+        if (changed)
+        {
+            await ReloadAsync();
+            StateHasChanged();
+        }
+    }
+}

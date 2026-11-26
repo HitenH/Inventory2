@@ -67,7 +67,14 @@
                         <td class="c-pid">@lot.ProductId</td>
                         <td class="c-name" title="@lot.ProductName">@lot.ProductName</td>
                         <td class="c-vid" title="@lot.VariantName">@lot.VariantId</td>
-                        <td class="c-qty num">@lot.Pieces</td>
+                        <td class="c-qty num">
+                            @lot.Pieces
+                            @if (lot.Waiting > 0)
+                            {
+                                @* Batch 2-8: pieces of this row on stock changes still waiting for approval. *@
+                                <div class="damage-waiting" title="On stock changes waiting for approval">@lot.Waiting waiting</div>
+                            }
+                        </td>
                         <td class="c-dmg num">
                             <input type="number" class="form-control text-center damage-take" min="1" max="@lot.Pieces" step="1" autocomplete="off"
                                    value="@Take(lot)" @onchange="e => SetTake(lot, e.Value?.ToString())" title="@($"How many of the {lot.Pieces} to take (all by default)")" />
@@ -133,6 +140,8 @@
 
 @code {
     [Inject] private DamagedGoodsService DamagedGoods { get; set; } = default!;
+    [Inject] private StockEntryService StockEntries { get; set; } = default!;
+    private bool approvalOn;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
@@ -183,6 +192,7 @@
         {
             lots = await DamagedGoods.LotsAsync();
             suppliers = await DamagedGoods.SuppliersAsync();
+            approvalOn = await StockEntries.IsApprovalOnAsync();
             ticked.IntersectWith(lots.Select(l => l.Key));
             foreach (var key in takes.Keys.Except(lots.Select(l => l.Key)).ToList())
             {
@@ -244,12 +254,12 @@
         return true;
     }
 
-    private async Task RunAsync(Func<Task<string>> action)
+    private async Task RunAsync(Func<Task<string>> action, bool movesStock = true)
     {
         try
         {
             var done = await action();
-            Snackbar.Add(done, Severity.Success);
+            Snackbar.Add(done + (movesStock && approvalOn ? " Waiting for approval." : ""), Severity.Success);
             ticked.Clear();
             takes.Clear();
         }
@@ -284,7 +294,7 @@
         {
             await DamagedGoods.AssignSupplierAsync(keys, supplier.Id);
             return $"Supplier {supplier.Name} assigned to {keys.Count} row{(keys.Count == 1 ? "" : "s")}.";
-        });
+        }, movesStock: false);
     }
 
     private async Task SetReadyAsync()
@@ -299,7 +309,7 @@
         {
             await DamagedGoods.SetReadyAsync(keys, true);
             return "Marked ready to send.";
-        });
+        }, movesStock: false);
     }
 
     /// <summary>Hiten, 26 Nov 2026: the Supplier drop-down of one row, saved at once (ticked rows stay ticked).</summary>
@@ -339,7 +349,7 @@
 
             var lots = new List<LotPieces> { new(lot.Key, pieces) };
             await RowAsync(() => repaired ? DamagedGoods.RepairAsync(lots) : DamagedGoods.WriteOffAsync(lots),
-                repaired ? $"Repaired: {pieces} back in stock." : $"Written off: {pieces}.");
+                (repaired ? $"Repaired: {pieces} back in stock." : $"Written off: {pieces}.") + (approvalOn ? " Waiting for approval." : ""));
             statusVersion++;
             return;
         }

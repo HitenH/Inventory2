@@ -77,6 +77,8 @@ namespace Inventory.Domain.Entities
         public Guid? SourceStockChangeId { get; set; }
 
         public string? Remarks { get; set; }
+        /// <summary>Stage 2, batch 2-7: the reason of an entry made on the Stock changes screen (copied onto each of its lines).</summary>
+        public string? Reason { get; set; }
         /// <summary>Who approved or rejected it, and when (blank when it was approved at once because the switch is off).</summary>
         public string? DecidedBy { get; set; }
         public DateTime? DecidedAt { get; set; }
@@ -128,5 +130,16 @@ namespace Inventory.Domain.Entities
         public int SortOrder { get; set; }
         /// <summary>A reason taken off the list stays in the table, so nothing that used it changes.</summary>
         public bool IsActive { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Stage 2, batch 2-8: a setting kept in the database (so it survives restarts, travels with backups and is the same for
+    /// everyone), e.g. whether stock changes need approval. Changed only through the app.
+    /// </summary>
+    public class AppSettingEntity
+    {
+        [Key]
+        public string Key { get; set; } = "";
+        public string? Value { get; set; }
     }
 }

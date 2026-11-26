@@ -40,7 +40,7 @@ public static class ActivityLogWriter
             new("ContentDownMm", "Content down mm"), new("ContentLeftMm", "Content left mm"), new("QrMm", "QR size mm"),
             new("NameFontPt", "Name text pt"), new("VariantFontPt", "Variant text pt"), new("IdFontPt", "ID text pt")],
         // Stage 2: a sales return, a damage record ... (StockChangeEntity.Kind says which).
-        [typeof(StockChangeEntity)] = [new("CustomerEntityId", "Customer"), new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("Status", "Status")],
+        [typeof(StockChangeEntity)] = [new("CustomerEntityId", "Customer"), new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Reason", "Reason"), new("Remarks", "Remarks"), new("Status", "Status")],
     };
 
     private static readonly Dictionary<Type, Field[]> LineFields = new()
@@ -49,7 +49,7 @@ public static class ActivityLogWriter
         [typeof(SalesOrderVariantEntity)] = [new("Quantity", "Quantity"), new("Remarks", "Remarks"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
         [typeof(SalesVariantEntity)] = [new("Quantity", "Quantity")],
         [typeof(SalesSummaryEntity)] = [new("Quantity", "Quantity"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
-        [typeof(StockChangeLineEntity)] = [new("Quantity", "Quantity"), new("Reason", "Reason"), new("ReturnSupplierEntityId", "Return supplier"), new("ReadyToSend", "Ready to send")],
+        [typeof(StockChangeLineEntity)] = [new("Quantity", "Quantity"), new("Reason", "Reason"), new("Note", "Note"), new("ReturnSupplierEntityId", "Return supplier"), new("ReadyToSend", "Ready to send")],
     };
 
     private static readonly Field[] VariantFields = [new("VariantId", "Variant ID"), new("Name", "Name"), new("ReorderLevel", "Reorder level")];

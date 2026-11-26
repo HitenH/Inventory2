@@ -48,6 +48,7 @@ namespace Inventory.Service
             new("Sales Returns", '\0', "/salesreturns", "/salesreturn", ["salesreturns", "salesreturn"]),
             new("Purchase Returns", '\0', "/purchasereturns", "/purchasereturn", ["purchasereturns", "purchasereturn"]),
             new("Damage report", '\0', "/damage", null, ["damage"]),
+            new("Stock changes", '\0', "/stockchanges", "/stockchange", ["stockchanges", "stockchange"]),
         ];
 
         private static IEnumerable<ScreenShortcut> AllScreens => Screens.Concat(ScreensWithoutKey);
@@ -106,6 +107,10 @@ namespace Inventory.Service
             if (CameFromDamageReport(currentPath))
             {
                 return "/damage";
+            }
+            if (segment.Equals("reasons", StringComparison.OrdinalIgnoreCase))
+            {
+                return "/settings";   // the reasons list is kept from Settings
             }
             if (segment.Equals("category", StringComparison.OrdinalIgnoreCase))
             {

@@ -32,6 +32,11 @@ const SCREENS = {
   purchasereturns: '/purchasereturns',
   'purchasereturn-new': '/purchasereturn',
   damage: '/damage',
+  // Stage 2, batches 2-7/2-8.
+  stockchanges: '/stockchanges',
+  'stockchange-new': '/stockchange',
+  approvals: '/approvals',
+  reasons: '/reasons',
 };
 const WIDTHS = [1366, 1920];
 const MODES = ['Light', 'Dark'];

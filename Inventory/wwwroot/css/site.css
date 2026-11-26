@@ -405,3 +405,22 @@ a, .btn-link {
 .damage-report-table select.damage-row-status.damage-status-ready { background-color: hsl(150 45% 92%); color: hsl(150 60% 22%); }
 .app-dark .damage-report-table select.damage-row-status.damage-status-assigned { background-color: hsl(35 30% 24%); color: hsl(40 70% 80%); }
 .app-dark .damage-report-table select.damage-row-status.damage-status-ready { background-color: hsl(150 25% 22%); color: hsl(150 45% 80%); }
+/* Stage 2, batch 2-8: approval. */
+.approval-banner { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 6px; font-size: 0.9rem; }
+.approval-waiting { background: hsl(40 85% 92%); color: hsl(30 70% 25%); }
+.approval-rejected { background: hsl(0 0% 92%); color: hsl(0 0% 30%); }
+.app-dark .approval-waiting { background: hsl(35 30% 24%); color: hsl(40 70% 82%); }
+.app-dark .approval-rejected { background: hsl(0 0% 24%); color: hsl(0 0% 82%); }
+.damage-report-table .damage-waiting { font-size: 0.75rem; color: hsl(30 70% 32%); white-space: nowrap; }
+.app-dark .damage-report-table .damage-waiting { color: hsl(40 70% 72%); }
+.approvals-table .c-approval-entry { width: 26%; }
+.approvals-table .c-approval-by { width: 13%; }
+.approvals-table .c-approval-actions { width: 190px; white-space: nowrap; text-align: right; }
+.approvals-table td { vertical-align: top; }
+.approvals-table .approval-lines div { white-space: normal; }
+.approval-party { font-size: 0.8rem; color: var(--mud-palette-text-secondary); }
+/* Stage 2, batch 2-7: the Stock changes screen and the reasons list. */
+.stockchange-hint { font-size: 0.85rem; color: var(--mud-palette-text-secondary); }
+.reasons-table .c-reason-move { width: 90px; white-space: nowrap; }
+.reasons-table .c-reason-state { width: 130px; }
+.reasons-table .reason-off input { color: var(--mud-palette-text-disabled); text-decoration: line-through; }

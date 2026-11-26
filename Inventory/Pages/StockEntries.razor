@@ -1,0 +1,109 @@
+@page "/stockchanges"
+@* Stage 2, batch 2-7: the Stock changes list - damage found in the shop, count corrections, write-offs, opening stock -
+   newest first. Laid out like Purchases. *@
+
+@if (entriesAfterSearch == null)
+{
+    <Inventory.MudBlazorComponents.LoadingComponent />
+}
+else
+{
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
+            <MudPaper>
+                <MudToolBar>
+                    <MudButton Class="ma-1" Href="/stockchange" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" id="stockchange-new" title="Alt+N">
+                        Add New Stock Change
+                    </MudButton>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
+
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="entriesAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true" Class="stockchanges-table">
+            <HeaderContent>
+                <MudTh Style="width:110px">
+                    <MudTableSortLabel SortBy="new Func<StockEntryListItem, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel>
+                </MudTh>
+                <MudTh Style="width:130px">
+                    <MudTableSortLabel SortBy="new Func<StockEntryListItem, object>(x => x.Date)">Date</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<StockEntryListItem, object>(x => x.Type)">Type</MudTableSortLabel>
+                </MudTh>
+                <MudTh>Reason</MudTh>
+                <MudTh Style="width:100px" Class="num">
+                    <MudTableSortLabel SortBy="new Func<StockEntryListItem, object>(x => x.Pieces)">Pieces</MudTableSortLabel>
+                </MudTh>
+                <MudTh Style="width:170px">Status</MudTh>
+                <MudTh>Remarks</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+                <MudTd DataLabel="Date">@context.Date</MudTd>
+                <MudTd DataLabel="Type">@StockEntryService.TypeName(context.Type)</MudTd>
+                <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                <MudTd DataLabel="Pieces" Class="num">@context.Pieces</MudTd>
+                <MudTd DataLabel="Status">@StatusText(context.Status)</MudTd>
+                <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"stockchange/{context.Id}")">Info</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="text-center">Not Found!</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
+        </MudTable>
+    </MudStack>
+}
+
+@code {
+    [Inject] private StockEntryService Entries { get; set; } = default!;
+    [Inject] private ILogger<StockEntries> Logger { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private List<StockEntryListItem> entries = new();
+    private List<StockEntryListItem>? entriesAfterSearch;
+    private MudTable<StockEntryListItem>? listTable;
+
+    private static string StatusText(Inventory.Domain.Entities.StockChangeStatus status) => status switch
+    {
+        Inventory.Domain.Entities.StockChangeStatus.Waiting => "Waiting for approval",
+        Inventory.Domain.Entities.StockChangeStatus.Rejected => "Rejected",
+        _ => "Done",
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            entries = await Entries.EntriesAsync();
+            entriesAfterSearch = entries;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Stock changes list failed");
+            Snackbar.Add("Could not load the stock changes.", Severity.Error);
+            entriesAfterSearch = new();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SearchItem(ChangeEventArgs e)
+    {
+        listTable?.NavigateTo(0);
+        var search = (e.Value?.ToString() ?? "").Trim().ToLower();
+        entriesAfterSearch = entries.Where(r => r.VoucherId.ToString().Contains(search) || StockEntryService.TypeName(r.Type).ToLower().Contains(search)
+                                                || r.Date.ToString().Contains(search) || (r.Reason ?? "").ToLower().Contains(search) || (r.Remarks ?? "").ToLower().Contains(search)).ToList();
+    }
+}
