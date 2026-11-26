@@ -60,7 +60,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
     /// Stage 2 (Hiten, 25 Nov 2026): approval is built but switched off, so a stock change counts at once.
     /// Batch 2-8 adds the switch; with it on, new stock changes wait for approval.
     /// </summary>
-    private static StockChangeStatus NewStatus() => StockChangeStatus.Approved;
+    internal static StockChangeStatus NewStatus() => StockChangeStatus.Approved;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
 
@@ -228,7 +228,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
         return new DamageResult(more, back);
     }
 
-    private static async Task<int> NextVoucherAsync(AppDbContext db, StockChangeKind kind, DateOnly date) =>
+    internal static async Task<int> NextVoucherAsync(AppDbContext db, StockChangeKind kind, DateOnly date) =>
         (await db.StockChanges.Where(s => s.Kind == kind && s.Date == date).MaxAsync(s => (int?)s.VoucherId) ?? 0) + 1;
 
     // ---------------------------------------------------------------- sales returns (batch 2-4)

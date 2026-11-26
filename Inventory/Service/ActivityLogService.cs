@@ -128,6 +128,45 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         return new RecordHistory(groups, !created, rows.FirstOrDefault()?.RecordLabel);
     }
 
+    /// <summary>The "record id" the damage report's "See activity log" button passes (Hiten, 26 Nov 2026: a button like every other screen).</summary>
+    public const string DamageReportId = "damage-report";
+
+    /// <summary>What the shop calls the stock changes the damage report deals with (labels start with these).</summary>
+    private static readonly string[] DamageLabels = ["Damage ", "Repair ", "Write-off ", "Purchase return "];
+
+    /// <summary>
+    /// Stage 2, batch 2-5: the history behind the damage report - damage recorded or taken back, suppliers assigned, ready to
+    /// send, repairs, write-offs and purchase returns - newest first, the newest 300 entries, each with the record it belongs to.
+    /// </summary>
+    public async Task<RecordHistory> ForDamageReportAsync(UserAccess access)
+    {
+        if (!access.Allows(Permissions.ActivitySee))
+        {
+            return new RecordHistory([], false);
+        }
+
+        await using var db = await factory.CreateDbContextAsync();
+        var rows = (await db.ActivityLog.AsNoTracking()
+                .Where(a => a.RecordType == nameof(StockChangeEntity) && a.RecordLabel != null)
+                .OrderByDescending(a => a.At).ThenBy(a => a.Id)
+                .ToListAsync())
+            .Where(a => DamageLabels.Any(p => a.RecordLabel!.StartsWith(p, StringComparison.Ordinal)) && MaySee(a, access))
+            .ToList();
+        var groups = rows
+            .GroupBy(r => r.Action == "Created" ? $"created|{r.RecordId}" : $"{r.SaveId}|{r.RecordId}")
+            .Select(g =>
+            {
+                var group = Group(g.OrderBy(r => r.Id).ToList(), fold: g.First().Action == "Created");
+                var lines = group.Lines.ToList();
+                lines[0] = $"{g.First().RecordLabel} – {lines[0]}";
+                return group with { Lines = lines };
+            })
+            .OrderByDescending(g => g.At)
+            .Take(300)
+            .ToList();
+        return new RecordHistory(groups, false, "Damage report");
+    }
+
     /// <summary>More added lines than this in one save are folded under a summary.</summary>
     public const int FoldAbove = 3;
 
@@ -318,9 +357,9 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         existing.UnionWith(await db.SalesOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         existing.UnionWith(await db.Sales.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         existing.UnionWith(await db.PurchaseOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
-        // Stage 2: a sales return has its own screen; other stock changes (damage ...) have none yet.
-        var salesReturns = (await db.StockChanges.Where(x => guids.Contains(x.Id) && x.Kind == StockChangeKind.SalesReturn).Select(x => x.Id).ToListAsync()).ToHashSet();
-        existing.UnionWith(salesReturns);
+        // Stage 2: sales and purchase returns have their own screens; other stock changes (damage, repairs ...) are on the damage report.
+        var stockKinds = await db.StockChanges.Where(x => guids.Contains(x.Id)).Select(x => new { x.Id, x.Kind }).ToDictionaryAsync(x => x.Id, x => x.Kind);
+        existing.UnionWith(stockKinds.Keys);
 
         return rows.Select(r =>
         {
@@ -335,7 +374,12 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
                 nameof(PurchaseOrderEntity) => "/purchaseorder",
                 nameof(UserEntity) => "/users",
                 nameof(RoleEntity) => "/roles",
-                nameof(StockChangeEntity) when Guid.TryParse(r.RecordId, out var sr) && salesReturns.Contains(sr) => $"/salesreturn/{r.RecordId}",
+                nameof(StockChangeEntity) when Guid.TryParse(r.RecordId, out var sc) && stockKinds.TryGetValue(sc, out var k) => k switch
+                {
+                    StockChangeKind.SalesReturn => $"/salesreturn/{r.RecordId}",
+                    StockChangeKind.PurchaseReturn => $"/purchasereturn/{r.RecordId}",
+                    _ => "/damage",
+                },
                 _ => null,
             };
             var exists = r.RecordType is nameof(UserEntity) or nameof(RoleEntity)

@@ -34,6 +34,7 @@ builder.Services.AddScoped<ActivityLogService>();
 builder.Services.AddScoped<LabelLayoutService>();   // stage L: named label set-ups
 builder.Services.AddScoped<LabelSourceService>();   // stage L-2: labels from a purchase, used count per sheet   // batch 1c-3/1c-4: logins, backups, and the activity panel
 builder.Services.AddScoped<StockChangeService>();   // stage 2: damage, sales returns (the rule book for stock changes)
+builder.Services.AddScoped<DamagedGoodsService>();   // stage 2: damage report and purchase returns
 
 // Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
 // Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).

@@ -1,0 +1,61 @@
+@* Stage 2, batch 2-5: "Assign supplier" on the damage report - pick the supplier the ticked damaged goods go back to.
+   Enter on a picked supplier (or the OK button) confirms; Esc cancels. *@
+@using Inventory.Shared.Selectors
+
+<MudDialog>
+    <DialogContent>
+        <div class="pick-supplier" style="min-width:420px;">
+            <label class="form-label">Supplier</label>
+            <SupplierAutocomplete T="SupplierModel" Class="focus-pick-supplier" EnterPressed="OnEnter"
+                                  SelectedSupplier="supplier" SelectedSupplierChanged="s => supplier = s" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        <MudButton id="pick-supplier-ok" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="Ok" data-shortcut="save">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SupplierModel? Initial { get; set; }
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private SupplierModel? supplier;
+
+    protected override void OnInitialized() => supplier = Initial;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.FocusBoxAsync(".focus-pick-supplier");
+        }
+    }
+
+    private void OnEnter(SupplierModel picked)
+    {
+        supplier = picked;
+        Ok();
+    }
+
+    private void Ok()
+    {
+        if (supplier is null || supplier.Id == Guid.Empty)
+        {
+            Snackbar.Add("Please select a supplier.", Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(supplier));
+    }
+
+    public static async Task<SupplierModel?> ShowAsync(IDialogService dialogService, string title, SupplierModel? initial = null)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true, Position = DialogPosition.Center, DefaultFocus = DefaultFocus.None };
+        var dialog = await dialogService.ShowAsync<PickSupplierDialog>(title, new DialogParameters<PickSupplierDialog> { { x => x.Initial, initial } }, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: SupplierModel s } ? s : null;
+    }
+}

@@ -59,7 +59,7 @@
                 <MudNavLink Icon="@Icons.Material.Filled.LocalOffer" Href="/labels"><NavText Text="Labels" Url="/labels" /></MudNavLink>
             }
 
-            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns))
+            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns) || May(Permissions.ScreenPurchaseReturns) || May(Permissions.ScreenDamageReport))
             {
                 <MudDivider Class="my-2" />
                 <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
@@ -84,6 +84,16 @@
             {
                 @* Stage 2, batch 2-4: goods customers bring back. No Alt + letter chosen yet. *@
                 <MudNavLink Icon="@Icons.Material.Filled.AssignmentReturn" Href="/salesreturns"><NavText Text="Sales Returns" Url="/salesreturns" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenPurchaseReturns))
+            {
+                @* Stage 2, batch 2-6: goods sent back to suppliers. *@
+                <MudNavLink Icon="@Icons.Material.Filled.AssignmentReturned" Href="/purchasereturns"><NavText Text="Purchase Returns" Url="/purchasereturns" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenDamageReport))
+            {
+                @* Stage 2, batch 2-5: everything lying in damage. *@
+                <MudNavLink Icon="@Icons.Material.Filled.BrokenImage" Href="/damage"><NavText Text="Damage report" Url="/damage" /></MudNavLink>
             }
         </Authorized>
         <NotAuthorized>

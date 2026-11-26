@@ -49,7 +49,7 @@ public static class ActivityLogWriter
         [typeof(SalesOrderVariantEntity)] = [new("Quantity", "Quantity"), new("Remarks", "Remarks"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
         [typeof(SalesVariantEntity)] = [new("Quantity", "Quantity")],
         [typeof(SalesSummaryEntity)] = [new("Quantity", "Quantity"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
-        [typeof(StockChangeLineEntity)] = [new("Quantity", "Quantity"), new("Reason", "Reason")],
+        [typeof(StockChangeLineEntity)] = [new("Quantity", "Quantity"), new("Reason", "Reason"), new("ReturnSupplierEntityId", "Return supplier"), new("ReadyToSend", "Ready to send")],
     };
 
     private static readonly Field[] VariantFields = [new("VariantId", "Variant ID"), new("Name", "Name"), new("ReorderLevel", "Reorder level")];
@@ -166,7 +166,7 @@ public static class ActivityLogWriter
             var owner = group.First().Owner;
             // Lines added to a record this tab is still creating are part of creating it (owner, 25 Nov 2026).
             var action = seen?.IsCreating(SeenVersions.KeyOf(owner)) == true ? "Created" : "Changed";
-            foreach (var line in PartLines(group.Select(p => p.Entry).ToList(), names))
+            foreach (var line in PartLines(group.Select(p => p.Entry).ToList(), names, owner.Entity))
             {
                 Add(owner, action, line.Text, line.Rate, line.Detail, line.Pieces);
             }
@@ -178,7 +178,7 @@ public static class ActivityLogWriter
     /// <summary>What changed among the parts of one record, matching a removed and re-added line as one changed line.</summary>
     private sealed record PartLine(string Text, string? Rate, bool Detail = false, int? Pieces = null);
 
-    private static IEnumerable<PartLine> PartLines(List<EntityEntry> parts, Names names)
+    private static IEnumerable<PartLine> PartLines(List<EntityEntry> parts, Names names, object owner)
     {
         foreach (var byType in parts.GroupBy(p => p.Metadata.ClrType))
         {
@@ -190,7 +190,7 @@ public static class ActivityLogWriter
                 {
                     // Stage 2: on a sales return, a line given in exchange (Sellable -> Outside) is named as such.
                     var noun = type == typeof(SalesSummaryEntity) ? "Summary line"
-                        : (line.New ?? line.Old)!.Entity is StockChangeLineEntity { To: StockState.Outside, From: StockState.Sellable } ? "Exchange line"
+                        : owner is StockChangeEntity { Kind: StockChangeKind.SalesReturn } && (line.New ?? line.Old)!.Entity is StockChangeLineEntity { To: StockState.Outside } ? "Exchange line"
                         : "Line";
                     if (line.Old is null)
                     {
@@ -439,6 +439,7 @@ public static class ActivityLogWriter
             SalesEntity s => $"Created: customer {names.CustomerName(s.CustomerEntityId)}" + Lines(),
             RoleEntity r => "Created" + (r.Permissions.Count > 0 ? ": " + string.Join(", ", r.Permissions.Select(k => Inventory.Service.Permissions.Describe(k.Permission))) : ""),
             StockChangeEntity { Kind: StockChangeKind.SalesReturn } s => $"Created: customer {names.CustomerName(s.CustomerEntityId)}" + Lines(),
+            StockChangeEntity { Kind: StockChangeKind.PurchaseReturn } s => $"Created: supplier {names.SupplierName(s.SupplierEntityId)}" + Lines(),
             StockChangeEntity { Kind: StockChangeKind.Damage, PurchaseEntityId: { } p } => $"Created: damage on {names.PurchaseLabel(p)}" + Lines(),
             StockChangeEntity { Kind: StockChangeKind.Damage, SourceStockChangeId: { } r } => $"Created: damage on {names.StockChangeLabel(r)}" + Lines(),
             StockChangeEntity s => $"Created: {KindName(s.Kind).ToLowerInvariant()}" + Lines(),
@@ -457,6 +458,7 @@ public static class ActivityLogWriter
             SalesOrderEntity or SalesEntity => $"Deleted: customer {names.CustomerName((Guid?)record.Property("CustomerEntityId").OriginalValue)}" + count,
             PurchaseOrderEntity => $"Deleted: {Value(record, "ProductId")}/{Value(record, "VariantId")}, quantity {Value(record, "Quantity")}, supplier {Value(record, "SupplierId")}",
             StockChangeEntity { Kind: StockChangeKind.SalesReturn } => $"Deleted: customer {names.CustomerName((Guid?)record.Property("CustomerEntityId").OriginalValue)}" + count,
+            StockChangeEntity { Kind: StockChangeKind.PurchaseReturn } => $"Deleted: supplier {names.SupplierName((Guid?)record.Property("SupplierEntityId").OriginalValue)}" + count,
             StockChangeEntity => "Deleted" + count,
             _ => "Deleted",
         };
@@ -538,7 +540,7 @@ public static class ActivityLogWriter
         bool b => b ? "yes" : "no",
         DateOnly d => d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture),
         DateTime d => d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture),
-        Guid g when field == "SupplierEntityId" => names.SupplierName(g),
+        Guid g when field is "SupplierEntityId" or "ReturnSupplierEntityId" => names.SupplierName(g),
         Guid g when field == "CustomerEntityId" => names.CustomerName(g),
         Guid g when field == "CategoryId" => names.CategoryName(g),
         _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? "",

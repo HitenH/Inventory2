@@ -21,6 +21,10 @@ public static class Permissions
     public const string ScreenReports = "screen.reports";
     /// <summary>Stage 2, batch 2-4: the Sales Returns list and a sales return.</summary>
     public const string ScreenSalesReturns = "screen.sales-returns";
+    /// <summary>Stage 2, batch 2-6: the Purchase Returns list and a purchase return.</summary>
+    public const string ScreenPurchaseReturns = "screen.purchase-returns";
+    /// <summary>Stage 2, batch 2-5: the damage report (assign supplier, ready to send, repaired, written off, sent).</summary>
+    public const string ScreenDamageReport = "screen.damage-report";
 
     public const string AdminUsers = "admin.users";
     public const string AdminImport = "admin.import";
@@ -58,6 +62,8 @@ public static class Permissions
         ["salesorders"] = ScreenSalesOrders, ["salesorder"] = ScreenSalesOrders,
         ["sales"] = ScreenSales, ["sale"] = ScreenSales, ["salessummary"] = ScreenSales,
         ["salesreturns"] = ScreenSalesReturns, ["salesreturn"] = ScreenSalesReturns,
+        ["purchasereturns"] = ScreenPurchaseReturns, ["purchasereturn"] = ScreenPurchaseReturns,
+        ["damage"] = ScreenDamageReport,
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
@@ -96,6 +102,8 @@ public static class Permissions
         new(ScreenSalesOrders, "Open the Sales Orders screen", ScreensGroup),
         new(ScreenSales, "Open the Sales screen", ScreensGroup),
         new(ScreenSalesReturns, "Open the Sales Returns screen", ScreensGroup),
+        new(ScreenPurchaseReturns, "Open the Purchase Returns screen", ScreensGroup),
+        new(ScreenDamageReport, "Open the Damage report", ScreensGroup),
         new(ScreenReports, "Open the Reports screen", ScreensGroup),
         new(LabelsPrint, "Print labels", ScreensGroup),
         new(AdminUsers, "Manage users and roles", AdminGroup),

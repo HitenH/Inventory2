@@ -176,6 +176,59 @@ namespace Inventory.Shared
         public override Task Delete(Guid lineId) => service.DeleteSalesReturnLineAsync(lineId);
     }
 
+    /// <summary>
+    /// Stage 2, batch 2-6: good stock sent back to a supplier on a purchase return (quantities only). Lines that came from the
+    /// damage report are listed apart on the screen and are not edited here.
+    /// </summary>
+    public sealed class PurchaseReturnLines : TransactionLines
+    {
+        private readonly StockChangeEntity purchaseReturn;
+        private readonly Inventory.Service.DamagedGoodsService service;
+
+        public PurchaseReturnLines(StockChangeEntity purchaseReturn, Inventory.Service.DamagedGoodsService service)
+        {
+            this.purchaseReturn = purchaseReturn;
+            this.service = service;
+        }
+
+        public override string Kind => "purchase return";
+        public override bool HasRemarks => false;
+        public override bool HasRates => false;
+        // No Bulk Entry button on purchase returns; the kind only matters for rates, which a return does not have.
+        public override Inventory.Service.BulkEntryKind BulkKind => Inventory.Service.BulkEntryKind.Purchase;
+        public override Guid HeaderId => purchaseReturn.Id;
+
+        public override string? ExtraProblem(LineEditorModel line) => line.Quantity is null or <= 0 ? "The quantity sent back must be more than 0." : null;
+
+        public override List<LineEditorModel> Load() =>
+            purchaseReturn.Lines
+                .Where(l => l.From == StockState.Sellable)
+                .OrderBy(l => l.SerialNumber)
+                .Select(l => new LineEditorModel
+                {
+                    Id = l.Id,
+                    SerialNumber = l.SerialNumber,
+                    ProductEntityId = l.ProductEntityId,
+                    ProductId = l.Product?.ProductId ?? "",
+                    ProductName = l.Product?.Name ?? "",
+                    VariantEntityId = l.VariantEntityId,
+                    ProductVariantId = l.ProductVariant?.VariantId ?? "",
+                    Quantity = l.Quantity,
+                    ProductRate = null, Amount = null, DiscountPercent = null, AmountAfterDiscount = null,
+                }).ToList();
+
+        public override Task Create(LineEditorModel line, Guid productEntityId, int serialNumber) =>
+            service.AddPurchaseReturnLinesAsync(purchaseReturn.Id, [(productEntityId, line.VariantEntityId!.Value, line.Quantity, serialNumber)]);
+
+        public override Task Update(LineEditorModel line, Guid productEntityId) =>
+            service.UpdatePurchaseReturnLineAsync(line.Id, productEntityId, line.VariantEntityId!.Value, line.Quantity, line.SerialNumber);
+
+        public override Task CreateRange(List<LineEditorModel> newLines) =>
+            service.AddPurchaseReturnLinesAsync(purchaseReturn.Id, newLines.Select(l => (l.ProductEntityId, l.VariantEntityId!.Value, l.Quantity, l.SerialNumber)).ToList());
+
+        public override Task Delete(Guid lineId) => service.DeletePurchaseReturnLineAsync(lineId);
+    }
+
     public sealed class SalesOrderLines : TransactionLines
     {
         private readonly SalesOrderEntity salesOrder;

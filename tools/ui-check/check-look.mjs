@@ -26,6 +26,12 @@ const SCREENS = {
   users: '/users',
   roles: '/roles',
   reports: '/reports',
+  // Stage 2 (26 Nov 2026): returns and the damage report.
+  salesreturns: '/salesreturns',
+  'salesreturn-new': '/salesreturn',
+  purchasereturns: '/purchasereturns',
+  'purchasereturn-new': '/purchasereturn',
+  damage: '/damage',
 };
 const WIDTHS = [1366, 1920];
 const MODES = ['Light', 'Dark'];

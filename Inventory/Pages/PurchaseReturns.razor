@@ -1,0 +1,101 @@
+@page "/purchasereturns"
+@* Stage 2, batch 2-6: the list of purchase returns (goods sent back to suppliers), newest first. Laid out like Purchases. *@
+
+@if (returnsAfterSearch == null)
+{
+    <Inventory.MudBlazorComponents.LoadingComponent />
+}
+else
+{
+    <MudStack Spacing="20" Row="false">
+        <div class="position-fixed z-3">
+            <MudPaper>
+                <MudToolBar>
+                    <MudButton Class="ma-1" Href="/purchasereturn" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" id="purchasereturn-new" title="Alt+N">
+                        Add New Purchase Return
+                    </MudButton>
+                    <Search SearchItemCallBack="SearchItem" />
+                </MudToolBar>
+            </MudPaper>
+        </div>
+
+        <MudTable @ref="listTable" RowsPerPage="ListPaging.DefaultRowsPerPage" style="margin-top:6rem" Items="returnsAfterSearch" Hover="true" Bordered="true" Dense="true" Striped="true" Class="purchasereturns-table">
+            <HeaderContent>
+                <MudTh Style="width:110px">
+                    <MudTableSortLabel SortBy="new Func<PurchaseReturnListItem, object>(x => x.VoucherId)">Voucher ID</MudTableSortLabel>
+                </MudTh>
+                <MudTh Style="width:130px">
+                    <MudTableSortLabel SortBy="new Func<PurchaseReturnListItem, object>(x => x.Date)">Date</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<PurchaseReturnListItem, object>(x => x.SupplierName)">Supplier Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh Style="width:120px" Class="num">
+                    <MudTableSortLabel SortBy="new Func<PurchaseReturnListItem, object>(x => x.FromDamage)">From damage</MudTableSortLabel>
+                </MudTh>
+                <MudTh Style="width:120px" Class="num">
+                    <MudTableSortLabel SortBy="new Func<PurchaseReturnListItem, object>(x => x.GoodStock)">Good stock</MudTableSortLabel>
+                </MudTh>
+                <MudTh>Remarks</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Voucher ID">@context.VoucherId</MudTd>
+                <MudTd DataLabel="Date">@context.Date</MudTd>
+                <MudTd DataLabel="Supplier Name">@context.SupplierName</MudTd>
+                <MudTd DataLabel="From damage" Class="num">@context.FromDamage</MudTd>
+                <MudTd DataLabel="Good stock" Class="num">@context.GoodStock</MudTd>
+                <MudTd DataLabel="Remarks">@context.Remarks</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="@($"purchasereturn/{context.Id}")">Info</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="text-center">Not Found!</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <ListPager />
+            </PagerContent>
+        </MudTable>
+    </MudStack>
+}
+
+@code {
+    [Inject] private DamagedGoodsService DamagedGoods { get; set; } = default!;
+    [Inject] private ILogger<PurchaseReturns> Logger { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    private List<PurchaseReturnListItem> returns = new();
+    private List<PurchaseReturnListItem>? returnsAfterSearch;
+    private MudTable<PurchaseReturnListItem>? listTable;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            returns = await DamagedGoods.PurchaseReturnsAsync();
+            returnsAfterSearch = returns;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Purchase returns list failed");
+            Snackbar.Add("Could not load the purchase returns.", Severity.Error);
+            returnsAfterSearch = new();
+        }
+
+        StateHasChanged();
+    }
+
+    private void SearchItem(ChangeEventArgs e)
+    {
+        listTable?.NavigateTo(0);
+        var search = (e.Value?.ToString() ?? "").Trim().ToLower();
+        returnsAfterSearch = returns.Where(r => r.VoucherId.ToString().Contains(search) || r.SupplierName.ToLower().Contains(search)
+                                                || r.Date.ToString().Contains(search) || (r.Remarks ?? "").ToLower().Contains(search)).ToList();
+    }
+}

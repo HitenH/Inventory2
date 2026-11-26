@@ -81,7 +81,9 @@
         heading = Fallback;
         try
         {
-            history = await Activity.ForRecordAsync(RecordType, RecordId, Access);
+            history = RecordId == ActivityLogService.DamageReportId
+                ? await Activity.ForDamageReportAsync(Access)   // stage 2: the damage report's button
+                : await Activity.ForRecordAsync(RecordType, RecordId, Access);
             heading = history.Label ?? Fallback;
         }
         catch (Exception ex)

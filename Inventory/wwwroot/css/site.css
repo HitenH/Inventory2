@@ -373,3 +373,35 @@ a, .btn-link {
 .damage-table .damage-not { font-size: 0.85rem; color: var(--mud-palette-text-secondary); }
 /* Stage 2: "Given in exchange" on a sales return (Pages/SalesReturn.razor). */
 .exchange-title { font-weight: 600; margin-bottom: 6px; }
+/* Stage 2, batch 2-5: the damage report (Pages/DamageReport.razor). */
+.lines-table.damage-report-table .c-tick { width: 34px; text-align: center; }
+.lines-table.damage-report-table th { white-space: normal; text-overflow: clip; line-height: 1.2; vertical-align: bottom; }
+.lines-table.damage-report-table .c-pid { width: 100px; }
+.lines-table.damage-report-table .c-vid { width: 70px; }
+.lines-table.damage-report-table .c-qty { width: 76px; }
+.lines-table.damage-report-table .c-dmg { width: 76px; }
+.lines-table.damage-report-table .c-dmg input { width: 60px; margin-left: auto; padding: 2px 6px; }
+/* The product name takes the spare width (Hiten's rule); these share the rest and show "…" when long (full text on hover). */
+.lines-table.damage-report-table .c-from { width: 13%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table.damage-report-table .c-reason { width: 8%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table.damage-report-table .c-supplier { width: 14%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lines-table.damage-report-table .c-status { width: 140px; white-space: nowrap; }
+.damage-report-table .damage-lot-ticked td { background: color-mix(in srgb, var(--mud-palette-primary) 10%, transparent); }
+.damage-status { display: inline-block; padding: 0 7px; border-radius: 10px; font-size: 0.78rem; }
+.damage-status-none { background: hsl(0 0% 92%); color: hsl(0 0% 35%); }
+.damage-status-assigned { background: hsl(40 80% 90%); color: hsl(30 70% 28%); }
+.damage-status-ready { background: hsl(150 45% 88%); color: hsl(150 60% 22%); }
+.app-dark .damage-status-none { background: hsl(0 0% 25%); color: hsl(0 0% 80%); }
+.app-dark .damage-status-assigned { background: hsl(35 30% 26%); color: hsl(40 70% 80%); }
+.app-dark .damage-status-ready { background: hsl(150 25% 24%); color: hsl(150 45% 80%); }
+.damage-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; padding: 8px 12px;
+                  border: 1px solid var(--mud-palette-lines-default); border-radius: 6px; background: var(--mud-palette-surface); }
+.damage-ticked-count { color: var(--mud-palette-text-secondary); }
+/* Hiten, 26 Nov 2026: Supplier and Status changed in the row itself. */
+.damage-report-table select.damage-row-supplier, .damage-report-table select.damage-row-status { font-size: 0.85rem; padding: 2px 6px; }   /* no arrow in this app's drop-downs (theme.css), so no space kept for one */
+.damage-report-table select.damage-row-status.damage-status-none { background-color: hsl(0 0% 94%); color: hsl(0 0% 32%); }
+.app-dark .damage-report-table select.damage-row-status.damage-status-none { background-color: hsl(0 0% 24%); color: hsl(0 0% 82%); }
+.damage-report-table select.damage-row-status.damage-status-assigned { background-color: hsl(40 80% 94%); color: hsl(30 70% 28%); }
+.damage-report-table select.damage-row-status.damage-status-ready { background-color: hsl(150 45% 92%); color: hsl(150 60% 22%); }
+.app-dark .damage-report-table select.damage-row-status.damage-status-assigned { background-color: hsl(35 30% 24%); color: hsl(40 70% 80%); }
+.app-dark .damage-report-table select.damage-row-status.damage-status-ready { background-color: hsl(150 25% 22%); color: hsl(150 45% 80%); }
