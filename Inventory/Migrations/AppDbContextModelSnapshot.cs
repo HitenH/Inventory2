@@ -899,6 +899,9 @@ namespace Inventory.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PlaceId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid?>("PurchaseEntityId")
                         .HasColumnType("TEXT");
 
@@ -1150,6 +1153,21 @@ namespace Inventory.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.UserPlaceEntity", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlaceId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "PlaceId");
+
+                    b.HasIndex("PlaceId");
+
+                    b.ToTable("UserPlaces");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.UserRoleEntity", b =>
@@ -1458,6 +1476,21 @@ namespace Inventory.Migrations
                     b.Navigation("ProductVariant");
 
                     b.Navigation("StockChange");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.UserPlaceEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.PlaceEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.UserRoleEntity", b =>

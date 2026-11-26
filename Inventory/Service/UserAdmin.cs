@@ -7,7 +7,11 @@ namespace Inventory.Service;
 
 public sealed record UserRoleView(int RoleId, string RoleName, DateTime? ExpiresAt);
 
-public sealed record UserRow(int Id, string Name, bool IsDisabled, IReadOnlyList<UserRoleView> Roles);
+public sealed record UserRow(int Id, string Name, bool IsDisabled, IReadOnlyList<UserRoleView> Roles)
+{
+    /// <summary>Stage 3, batch 3-3: the places the user works in; empty = every place.</summary>
+    public IReadOnlyList<int> PlaceIds { get; init; } = [];
+}
 
 public sealed record RoleChoice(int Id, string Name);
 
@@ -35,9 +39,50 @@ public class UserAdmin(IDbContextFactory<AppDbContext> factory, PasswordService 
         var grants = await (from ur in db.UserRoles.AsNoTracking()
                             join r in db.Roles.AsNoTracking() on ur.RoleId equals r.Id
                             select new { ur.UserId, ur.RoleId, r.Name, ur.ExpiresAt }).ToListAsync();
+        var places = await db.UserPlaces.AsNoTracking().ToListAsync();
         return users.Select(u => new UserRow(u.Id, u.Name, u.IsDisabled,
             grants.Where(g => g.UserId == u.Id).OrderBy(g => g.Name)
-                  .Select(g => new UserRoleView(g.RoleId, g.Name, g.ExpiresAt)).ToList())).ToList();
+                  .Select(g => new UserRoleView(g.RoleId, g.Name, g.ExpiresAt)).ToList())
+            {
+                PlaceIds = places.Where(p => p.UserId == u.Id).Select(p => p.PlaceId).ToList(),
+            }).ToList();
+    }
+
+    /// <summary>
+    /// Stage 3, batch 3-3 (Hiten, 26 Nov 2026): the places a user works in and sees stock of. Ticking every place (or none)
+    /// is stored as "every place", so places added later are included. The Admin role always works in every place.
+    /// </summary>
+    public async Task<UserAdminResult> SetPlacesAsync(int userId, IReadOnlyCollection<int> placeIds)
+    {
+        if (placeIds.Count == 0)
+        {
+            return UserAdminResult.Refuse("Tick at least one place.");
+        }
+
+        await using var db = await factory.CreateDbContextAsync();
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+        {
+            return UserAdminResult.Refuse("That user was not found.");
+        }
+
+        var all = await db.Places.Select(p => p.Id).ToListAsync();
+        var chosen = placeIds.Distinct().ToHashSet();
+        if (!chosen.IsSubsetOf(all))
+        {
+            return UserAdminResult.Refuse("One of those places is no longer there.");
+        }
+
+        var keep = chosen.SetEquals(all) ? new HashSet<int>() : chosen;
+        var now = await db.UserPlaces.Where(p => p.UserId == userId).ToListAsync();
+        db.UserPlaces.RemoveRange(now.Where(p => !keep.Contains(p.PlaceId)));
+        db.UserPlaces.AddRange(keep.Where(id => now.All(p => p.PlaceId != id)).Select(id => new UserPlaceEntity { UserId = userId, PlaceId = id }));
+        if (await TrySaveAsync(db) is { } refused)
+        {
+            return refused;
+        }
+
+        return UserAdminResult.Success($"Places saved for {user.Name}.");
     }
 
     public async Task<List<RoleChoice>> ListRolesAsync()

@@ -27,6 +27,8 @@ public partial class Variant
     private List<VariantModel> variants = new();
     // Stage 2: sellable, damaged and waiting pieces per variant (shown by StockFigure).
     private Dictionary<Guid, Inventory.Domain.StockFigures> stockInHand = new();
+    // Stage 3, batch 3-3: the sellable pieces per place (only the places this person sees), behind the stock arrow.
+    private Dictionary<Guid, List<Inventory.Domain.PlaceStock>> placeStock = new();
     // Stage 3: the racks each variant is kept on.
     private Dictionary<Guid, List<VariantRackItem>> racksByVariant = new();
     private EditContext? editContext;
@@ -304,11 +306,14 @@ public partial class Variant
         if (Product?.Variants is not { Count: > 0 })
         {
             stockInHand = new Dictionary<Guid, Inventory.Domain.StockFigures>();
+            placeStock = new Dictionary<Guid, List<Inventory.Domain.PlaceStock>>();
             return;
         }
 
-        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(
-            Product.Variants.Select(v => v.Id));
+        // Stage 3, batch 3-3 (Hiten): a person limited to some places sees the stock of those places only.
+        var ids = Product.Variants.Select(v => v.Id).ToList();
+        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(ids, Access?.Places);
+        placeStock = await ProductRepository.GetPlaceStockAsync(ids, Access?.Places);
     }
 
     public void Dispose()

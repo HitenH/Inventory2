@@ -70,6 +70,32 @@ public partial class Purchase
 
     private PurchaseEntity purchaseEntity = new();
 
+    // Stage 3, batch 3-4: the place this purchase's goods are counted in (a new one: where purchases arrive).
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    private int arrivesInId;
+    private List<PlaceItem> placeChoices = new();
+    private bool MayChangePlace => PurchaseId != null && purchaseEntity.Id != Guid.Empty && Access?.HasAdminRole == true;
+
+    private async Task ChangePlaceAsync(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id) || id == arrivesInId)
+        {
+            return;
+        }
+
+        try
+        {
+            await PlaceService.ChangePurchasePlaceAsync(purchaseEntity.Id, id, Access ?? UserAccess.Nobody);
+            arrivesInId = id;
+            Snackbar.Add($"This purchase now counts in {placeChoices.FirstOrDefault(p => p.Id == id)?.Name}.", Severity.Success);
+            await ReloadPurchaseAsync();
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
     private ComponentTotalData PurchaseTotalData = new();
 
     private bool IsDisabled { get; set; }
@@ -102,6 +128,8 @@ public partial class Purchase
 
         }
 
+        placeChoices = await PlaceService.AllAsync();
+        arrivesInId = PurchaseId != null && purchaseEntity.Id != Guid.Empty ? purchaseEntity.PlaceId : (await PlaceService.FlowAsync()).Purchases;
     }
 
 

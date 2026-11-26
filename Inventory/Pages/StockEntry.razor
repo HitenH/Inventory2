@@ -26,6 +26,17 @@
             <label for="date" class="form-label"><h4>Date</h4></label>
             <DateBox TValue="DateOnly" @bind-Value="header.Date" Style="width:168px;" OpenLeft="true" />
         </div>
+        @* Stage 3, batch 3-4 (Hiten, 26 Nov 2026): the place the stock was counted, found damaged or written off in. On a saved
+           entry only the Admin can change it (saved at once; its lines move with it). *@
+        <div class="field field-place">
+            <label for="stockchange-place" class="form-label"><h4>Place</h4></label>
+            <select id="stockchange-place" class="form-control" value="@header.PlaceId" @onchange="OnPlaceAsync" disabled="@(entry != null && Access?.HasAdminRole != true)">
+                @foreach (var p in places)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
         <div class="field">
             <label for="stockchange-reason" class="form-label"><h4>Reason</h4></label>
             <select id="stockchange-reason" class="form-control" style="min-width:220px;" @bind="header.Reason">
@@ -95,6 +106,8 @@
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private ILogger<StockEntry> Logger { get; set; } = default!;
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
 
     private sealed class Header
     {
@@ -102,20 +115,52 @@
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public string? Reason { get; set; }
         public string? Remarks { get; set; }
+        public int PlaceId { get; set; }
     }
 
     private readonly Header header = new();
     private StockChangeEntity? entry;
     private TransactionLines lines = default!;
     private List<string> reasons = new();
+    private List<PlaceItem> places = new();
 
     protected override async Task OnInitializedAsync()
     {
         reasons = await StockChanges.ReasonsAsync();
         header.Reason = reasons.FirstOrDefault();
+        // Stage 3: the places this person works in; where sales leave from first when it is one of them.
+        var all = await PlaceService.AllAsync();
+        places = all.Where(p => Access?.SeesPlace(p.Id) != false || Access?.HasAdminRole == true).ToList();
+        var sales = (await PlaceService.FlowAsync()).Sales;
+        header.PlaceId = places.Any(p => p.Id == sales) ? sales : places.FirstOrDefault()?.Id ?? sales;
         if (EntryId != null)
         {
             await ReloadAsync();
+        }
+    }
+
+    private async Task OnPlaceAsync(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id) || id == header.PlaceId)
+        {
+            return;
+        }
+
+        if (entry is null)
+        {
+            header.PlaceId = id;
+            return;
+        }
+
+        try
+        {
+            await PlaceService.ChangeEntryPlaceAsync(entry.Id, id, Access ?? UserAccess.Nobody);
+            Snackbar.Add($"This entry now counts in {places.FirstOrDefault(p => p.Id == id)?.Name}.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
         }
     }
 
@@ -133,6 +178,12 @@
         header.Date = loaded.Date;
         header.Reason = loaded.Reason;
         header.Remarks = loaded.Remarks;
+        header.PlaceId = loaded.PlaceId ?? Inventory.Domain.Entities.Places.StartingId;
+        if (places.All(p => p.Id != header.PlaceId))
+        {
+            places = (await PlaceService.AllAsync()).Where(p => p.Id == header.PlaceId).Concat(places).ToList();
+        }
+
         lines = new StockEntryLines(loaded, type, Entries);
     }
 
@@ -142,7 +193,7 @@
         {
             if (EntryId == null)
             {
-                var created = await Entries.CreateAsync(header.Type, header.Date, header.Reason, header.Remarks);
+                var created = await Entries.CreateAsync(header.Type, header.Date, header.Reason, header.Remarks, header.PlaceId);
                 EntryId = created.Id.ToString();
                 await ReloadAsync();
                 await JS.FocusBoxAsync(".focus-line-product");

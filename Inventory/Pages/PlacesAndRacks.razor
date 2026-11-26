@@ -50,6 +50,31 @@
             </div>
             <MudButton id="place-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddPlaceAsync" StartIcon="@Icons.Material.Filled.Add">Add place</MudButton>
         </div>
+        @* Stage 3, batch 3-4 (Hiten, 26 Nov 2026): purchases arrive in the godown, sales leave from the shop. *@
+        <div class="d-flex flex-wrap gap-3 align-items-center mt-3 places-flow">
+            <div class="field" style="width:230px;">
+                <label for="place-purchases" class="form-label"><h4>Purchases arrive in</h4></label>
+                <select id="place-purchases" class="form-control" value="@flow.Purchases" @onchange="e => SetFlowAsync(e, purchases: true)">
+                    @foreach (var p in places)
+                    {
+                        <option value="@p.Id">@p.NumberText @p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field" style="width:230px;">
+                <label for="place-sales" class="form-label"><h4>Sales leave from</h4></label>
+                <select id="place-sales" class="form-control" value="@flow.Sales" @onchange="e => SetFlowAsync(e, purchases: false)">
+                    @foreach (var p in places)
+                    {
+                        <option value="@p.Id">@p.NumberText @p.Name</option>
+                    }
+                </select>
+            </div>
+            <MudText Typo="Typo.caption">
+                New purchases arrive in the first place. Sales leave from the second unless someone allowed to changes "From" on the sale;
+                sales returns and repaired goods come back to it.
+            </MudText>
+        </div>
         <MudText Typo="Typo.caption" Class="mt-2 d-block">
             Stock is counted per place. Racks and levels only say where to look; they are not counted.
             The first place (where all stock started) cannot be deleted, nor a place that holds stock entries.
@@ -142,6 +167,7 @@
     private int rackLevels = 4;
 
     private PlaceItem? Selected => places.FirstOrDefault(p => p.Id == selectedId);
+    private (int Purchases, int Sales) flow;
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,7 +184,22 @@
         }
     }
 
-    private async Task LoadAsync() => places = await PlaceService.AllAsync();
+    private async Task LoadAsync()
+    {
+        places = await PlaceService.AllAsync();
+        flow = await PlaceService.FlowAsync();
+    }
+
+    private async Task SetFlowAsync(ChangeEventArgs e, bool purchases)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id))
+        {
+            return;
+        }
+
+        await RunAsync(() => purchases ? PlaceService.SetPurchasePlaceAsync(id) : PlaceService.SetSalesPlaceAsync(id),
+            purchases ? "New purchases now arrive there." : "Sales now leave from there.");
+    }
 
     private void Select(PlaceItem place)
     {

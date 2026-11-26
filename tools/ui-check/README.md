@@ -73,5 +73,8 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
 - `check-places.mjs` – stage 3: Settings → Places and racks (add places and racks, levels, deleting refused while in use), the
   address box (0203B + Enter, drop-downs, a wrong address explained) and racks per variant on a product page (★ main, ✕,
   "Same for all variants") (PRODUCT_ID = a product with several variants; changes the test copy).
+- `check-place-flow.mjs` – stage 3, 3-3/3-4: purchases arrive in the godown and sales leave from the shop, "Arrives in" on a
+  purchase, the Sale "From" box (skipped by Tab, needs "Sell from another place"), the Place box on Stock changes, stock per
+  place behind the arrow, places per user, a godown-only user (setup-full-suite.py; FLOW_PRODUCT = AJ0120128's id; changes the copy).
 - `check-look.mjs` – every screen at 1366 and 1920 px, light and dark; fails on a sideways scroll bar, a product name
   wrapping to two lines, or a control sticking out of its box. Screenshots to `<SCRATCH>shots`.

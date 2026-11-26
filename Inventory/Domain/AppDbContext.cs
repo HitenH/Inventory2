@@ -40,6 +40,7 @@ namespace Inventory.Domain
         public DbSet<PlaceEntity> Places { get; set; }
         public DbSet<RackEntity> Racks { get; set; }
         public DbSet<VariantRackEntity> VariantRacks { get; set; }
+        public DbSet<UserPlaceEntity> UserPlaces { get; set; }
 
         /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
         public string? ActivityNote { get; set; }
@@ -51,7 +52,7 @@ namespace Inventory.Domain
         /// </summary>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            StockPlaces.FillStartingPlace(this);
+            StockPlaces.FillPlaces(this);
             try
             {
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -65,7 +66,7 @@ namespace Inventory.Domain
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            StockPlaces.FillStartingPlace(this);
+            StockPlaces.FillPlaces(this);
             try
             {
                 return base.SaveChanges(acceptAllChangesOnSuccess);
@@ -213,6 +214,10 @@ namespace Inventory.Domain
             modelBuilder.Entity<VariantRackEntity>().HasOne(v => v.Rack).WithMany().HasForeignKey(v => v.RackId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<PurchaseEntity>().Property(p => p.PlaceId).HasDefaultValue(Entities.Places.StartingId);
             modelBuilder.Entity<SalesEntity>().Property(s => s.PlaceId).HasDefaultValue(Entities.Places.StartingId);
+            // Batch 3-3: the places each user works in (none = every place).
+            modelBuilder.Entity<UserPlaceEntity>().HasKey(u => new { u.UserId, u.PlaceId });
+            modelBuilder.Entity<UserPlaceEntity>().HasOne<UserEntity>().WithMany().HasForeignKey(u => u.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserPlaceEntity>().HasOne<PlaceEntity>().WithMany().HasForeignKey(u => u.PlaceId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<PlaceEntity>().HasData(
                 new PlaceEntity { Id = Entities.Places.StartingId, Number = 1, Name = "Shop" },
                 new PlaceEntity { Id = Entities.Places.GodownId, Number = 2, Name = "Godown" });

@@ -77,6 +77,13 @@ namespace Inventory.Domain.Entities
         public Guid? SourceStockChangeId { get; set; }
 
         public string? Remarks { get; set; }
+        /// <summary>
+        /// Stage 3, batch 3-4: the place this entry's sellable pieces are in (a purchase's damage: the purchase's place; a sales
+        /// return: where sales leave from; a repair: where sales leave from; the Stock changes screen: the place chosen).
+        /// Its lines take it when they have none of their own (<see cref="Inventory.Domain.StockPlaces"/>). Blank on entries made
+        /// before stage 3 (their lines already say the shop).
+        /// </summary>
+        public int? PlaceId { get; set; }
         /// <summary>Stage 2, batch 2-7: the reason of an entry made on the Stock changes screen (copied onto each of its lines).</summary>
         public string? Reason { get; set; }
         /// <summary>Who approved or rejected it, and when (blank when it was approved at once because the switch is off).</summary>

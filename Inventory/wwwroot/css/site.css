@@ -473,3 +473,11 @@ a, .btn-link {
 .variant-more-racks { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: 6px; font-size: 13px; }
 .variant-more-label { color: var(--mud-palette-primary); font-weight: 600; }
 .variant-more-rack.vr-main { font-weight: 600; }
+
+/* Stage 3, batch 3-4: "Arrives in" on a purchase, "From" on a sale (narrow, beside the date). */
+.head-row .field-place, .card-header .field-place { flex: 0 0 140px; width: 140px; }
+/* Stage 3 (Hiten, 26 Nov 2026): Variant Report – Stock In Hand split per place, the Total in bold. */
+.c-place-qty { width: 90px; }
+.c-place-total { width: 110px; font-weight: 700; }
+.c-place-total .stock-sellable { font-weight: 700; }
+.variant-total-place { margin-right: 14px; font-weight: 400; }

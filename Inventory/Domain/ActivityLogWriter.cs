@@ -29,9 +29,9 @@ public static class ActivityLogWriter
         [typeof(ProductEntity)] = [new("ProductId", "Product ID"), new("Name", "Name"), new("Description", "Description"), new("CategoryId", "Category"), new("Rate", "Rate", SaleSide)],
         [typeof(CategoryEntity)] = [new("CategoryId", "Category ID"), new("Name", "Name"), new("Description", "Description")],
         [typeof(PurchaseOrderEntity)] = [new("SupplierId", "Supplier"), new("ProductId", "Product"), new("ProductName", "Product name"), new("VariantId", "Variant"), new("Quantity", "Quantity"), new("Date", "Date"), new("DueDate", "Due date"), new("OrderStatus", "Status"), new("Remarks", "Remarks"), new("ProductRate", "Rate", PurchaseSide)],
-        [typeof(PurchaseEntity)] = [new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("DiscountAmount", "Discount", PurchaseSide)],
+        [typeof(PurchaseEntity)] = [new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("DiscountAmount", "Discount", PurchaseSide), new("PlaceId", "Place")],
         [typeof(SalesOrderEntity)] = [new("CustomerEntityId", "Customer"), new("Date", "Date"), new("DueDate", "Due date"), new("VoucherId", "Voucher"), new("OrderStatus", "Status"), new("DiscountAmount", "Discount", SaleSide)],
-        [typeof(SalesEntity)] = [new("CustomerEntityId", "Customer"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("DiscountAmount", "Discount", SaleSide)],
+        [typeof(SalesEntity)] = [new("CustomerEntityId", "Customer"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("DiscountAmount", "Discount", SaleSide), new("PlaceId", "Place")],
         [typeof(RoleEntity)] = [new("Name", "Name")],
         [typeof(UserEntity)] = [new("Name", "Name")],
         [typeof(LabelLayoutEntity)] = [new("Name", "Name"), new("IsActive", "In use"), new("PageWidthMm", "Page width mm"), new("PageHeightMm", "Page height mm"),
@@ -40,7 +40,7 @@ public static class ActivityLogWriter
             new("ContentDownMm", "Content down mm"), new("ContentLeftMm", "Content left mm"), new("QrMm", "QR size mm"),
             new("NameFontPt", "Name text pt"), new("VariantFontPt", "Variant text pt"), new("IdFontPt", "ID text pt")],
         // Stage 2: a sales return, a damage record ... (StockChangeEntity.Kind says which).
-        [typeof(StockChangeEntity)] = [new("CustomerEntityId", "Customer"), new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Reason", "Reason"), new("Remarks", "Remarks"), new("Status", "Status")],
+        [typeof(StockChangeEntity)] = [new("CustomerEntityId", "Customer"), new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Reason", "Reason"), new("Remarks", "Remarks"), new("Status", "Status"), new("PlaceId", "Place")],
     };
 
     private static readonly Dictionary<Type, Field[]> LineFields = new()
@@ -314,6 +314,22 @@ public static class ActivityLogWriter
                     }
                 }
             }
+            else if (type == typeof(UserPlaceEntity))
+            {
+                // Stage 3, batch 3-3: no places at all means every place, so the log names what was given or taken.
+                foreach (var pair in PairUp(list, p => Value(p, "PlaceId")?.ToString()))
+                {
+                    var place = names.PlaceName((int?)Value(pair.New ?? pair.Old!, "PlaceId"));
+                    if (pair.Old is null)
+                    {
+                        yield return new PartLine($"Place {place} given", null);
+                    }
+                    else if (pair.New is null)
+                    {
+                        yield return new PartLine($"Place {place} taken away", null);
+                    }
+                }
+            }
             else if (type == typeof(RolePermissionEntity))
             {
                 foreach (var pair in PairUp(list, p => (string?)Value(p, "Permission")))
@@ -543,6 +559,7 @@ public static class ActivityLogWriter
         Guid g when field is "SupplierEntityId" or "ReturnSupplierEntityId" => names.SupplierName(g),
         Guid g when field == "CustomerEntityId" => names.CustomerName(g),
         Guid g when field == "CategoryId" => names.CategoryName(g),
+        int p when field == "PlaceId" => names.PlaceName(p),   // stage 3: "Place: Godown → Shop"
         _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? "",
     };
 
@@ -577,6 +594,7 @@ public static class ActivityLogWriter
         public string CustomerName(Guid? id) => Get<CustomerEntity>(id, c => c.Name, q => q.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault());
         public string CategoryName(Guid? id) => Get<CategoryEntity>(id, c => c.Name, q => q.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault());
         public string RoleName(int? id) => Get<RoleEntity>(id, r => r.Name, q => q.Where(r => r.Id == id).Select(r => r.Name).FirstOrDefault());
+        public string PlaceName(int? id) => Get<PlaceEntity>(id, p => p.Name, q => q.Where(p => p.Id == id).Select(p => p.Name).FirstOrDefault());
 
         /// <summary>"Purchase 12 of 25-11-2026".</summary>
         public string PurchaseLabel(Guid? id) => Get<PurchaseEntity>(id, PurchaseText,

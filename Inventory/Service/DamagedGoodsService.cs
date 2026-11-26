@@ -261,6 +261,10 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             Status = await StockChangeService.NewStatusAsync(db),
             SupplierEntityId = supplier,
             Remarks = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            // Stage 3 (Hiten, 26 Nov 2026): a repaired piece goes back to the shop (where sales leave from); a purchase return
+            // starts in the godown, so good stock added to it later has a place ("From" on the purchase return changes it).
+            PlaceId = to == StockState.Sellable ? await PlaceSettings.SalesPlaceAsync(db)
+                : kind == StockChangeKind.PurchaseReturn ? await PlaceSettings.PurchasePlaceAsync(db) : null,
         };
         var serial = 1;
         foreach (var lot in lots)
@@ -355,7 +359,8 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
         });
     }
 
-    public async Task<StockChangeEntity> CreatePurchaseReturnAsync(Guid supplierId, DateOnly date, string? remarks)
+    /// <param name="placeId">Stage 3 (Hiten, 26 Nov 2026): where good stock sent back leaves from – shop or godown (null = where purchases arrive).</param>
+    public async Task<StockChangeEntity> CreatePurchaseReturnAsync(Guid supplierId, DateOnly date, string? remarks, int? placeId = null)
     {
         if (supplierId == Guid.Empty)
         {
@@ -363,6 +368,11 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
         }
 
         await using var db = await factory.CreateDbContextAsync();
+        if (placeId is { } chosen && !await db.Places.AnyAsync(p => p.Id == chosen))
+        {
+            throw new StockChangeRefused("Choose the place first.");
+        }
+
         var change = new StockChangeEntity
         {
             Id = Guid.NewGuid(),
@@ -372,6 +382,8 @@ public class DamagedGoodsService(IDbContextFactory<AppDbContext> factory)
             Status = await StockChangeService.NewStatusAsync(db),
             SupplierEntityId = supplierId,
             Remarks = string.IsNullOrWhiteSpace(remarks) ? null : remarks.Trim(),
+            // Stage 3: good stock sent back leaves from the place chosen ("From"), else where purchases arrive (the godown).
+            PlaceId = placeId ?? await PlaceSettings.PurchasePlaceAsync(db),
         };
         db.StockChanges.Add(change);
         await db.SaveChangesAsync();

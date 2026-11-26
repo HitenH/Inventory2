@@ -145,6 +145,144 @@ public class PlaceService(IDbContextFactory<AppDbContext> factory, ActivityLogSe
         await activity.WriteAsync("Setting", $"Place deleted: {place.Number:00} {place.Name}");
     }
 
+    // ----- Where purchases arrive and sales leave from (batch 3-4) -----
+
+    /// <summary>The places purchases arrive in and sales leave from (repaired goods go back there too).</summary>
+    public async Task<(int Purchases, int Sales)> FlowAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return (await PlaceSettings.PurchasePlaceAsync(db), await PlaceSettings.SalesPlaceAsync(db));
+    }
+
+    /// <summary>Hiten, 26 Nov 2026: purchases arrive in the godown. Changes only new purchases; saved ones keep their place.</summary>
+    public Task SetPurchasePlaceAsync(int placeId) => SetFlowAsync(PlaceSettings.PurchasesKey, placeId, "Purchases arrive in");
+
+    /// <summary>Hiten, 26 Nov 2026: sales leave from the shop; sales returns and repaired goods come back there.</summary>
+    public Task SetSalesPlaceAsync(int placeId) => SetFlowAsync(PlaceSettings.SalesKey, placeId, "Sales leave from");
+
+    private async Task SetFlowAsync(string key, int placeId, string what)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var place = await db.Places.FindAsync(placeId) ?? throw new PlaceRefused("This place is no longer there.");
+        var setting = await db.AppSettings.FindAsync(key);
+        if (setting is null)
+        {
+            db.AppSettings.Add(new AppSettingEntity { Key = key, Value = placeId.ToString() });
+        }
+        else if (setting.Value == placeId.ToString())
+        {
+            return;
+        }
+        else
+        {
+            setting.Value = placeId.ToString();
+        }
+
+        await db.SaveChangesAsync();
+        await activity.WriteAsync("Setting", $"{what}: {place.Number:00} {place.Name}");
+    }
+
+    // ----- Changing the place of a saved entry (Hiten, 26 Nov 2026: "Admin can edit") -----
+
+    public const string OnlyAdminChangesPlace = "Only the Admin can change the place of a saved entry.";
+
+    /// <summary>
+    /// The place a saved purchase's goods are counted in. Damage recorded on the purchase came out of that place, so it moves
+    /// with it (repairs, write-offs and sending back do not: they have their own places).
+    /// </summary>
+    public async Task ChangePurchasePlaceAsync(Guid purchaseId, int placeId, UserAccess access)
+    {
+        RefuseUnlessAdmin(access);
+        await using var db = await factory.CreateDbContextAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        await RefuseUnknownPlaceAsync(db, placeId);
+        var purchase = await db.Purchases.FirstOrDefaultAsync(p => p.Id == purchaseId) ?? throw new PlaceRefused("This purchase was not found.");
+        if (purchase.PlaceId == placeId)
+        {
+            return;
+        }
+
+        var old = purchase.PlaceId;
+        purchase.PlaceId = placeId;
+        foreach (var damage in await db.StockChanges.Include(s => s.Lines).Where(s => s.PurchaseEntityId == purchaseId).ToListAsync())
+        {
+            MoveEntry(damage, old, placeId);
+        }
+
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    /// <summary>The place a saved sale's goods left from.</summary>
+    public async Task ChangeSalePlaceAsync(Guid saleId, int placeId, UserAccess access)
+    {
+        RefuseUnlessAdmin(access);
+        await using var db = await factory.CreateDbContextAsync();
+        await RefuseUnknownPlaceAsync(db, placeId);
+        var sale = await db.Sales.FirstOrDefaultAsync(s => s.Id == saleId) ?? throw new PlaceRefused("This sale was not found.");
+        if (sale.PlaceId == placeId)
+        {
+            return;
+        }
+
+        sale.PlaceId = placeId;
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// The place of a saved stock change entry (the Stock changes screen) or purchase return: the entry and every line of it
+    /// that took or gave pieces in the old place move to the new one.
+    /// </summary>
+    public async Task ChangeEntryPlaceAsync(Guid entryId, int placeId, UserAccess access)
+    {
+        RefuseUnlessAdmin(access);
+        await using var db = await factory.CreateDbContextAsync();
+        await RefuseUnknownPlaceAsync(db, placeId);
+        var entry = await db.StockChanges.Include(s => s.Lines).FirstOrDefaultAsync(s => s.Id == entryId) ?? throw new PlaceRefused("This entry was not found.");
+        var old = entry.PlaceId ?? Places.StartingId;
+        if (entry.PlaceId == placeId)
+        {
+            return;
+        }
+
+        MoveEntry(entry, old, placeId);
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>The entry's place, and its lines' sellable side where it was the old place.</summary>
+    private static void MoveEntry(StockChangeEntity entry, int old, int now)
+    {
+        entry.PlaceId = now;
+        foreach (var line in entry.Lines)
+        {
+            if (line.From == StockState.Sellable && (line.FromPlaceId ?? Places.StartingId) == old)
+            {
+                line.FromPlaceId = now;
+            }
+
+            if (line.To == StockState.Sellable && (line.ToPlaceId ?? Places.StartingId) == old)
+            {
+                line.ToPlaceId = now;
+            }
+        }
+    }
+
+    private static void RefuseUnlessAdmin(UserAccess access)
+    {
+        if (!access.HasAdminRole)
+        {
+            throw new PlaceRefused(OnlyAdminChangesPlace);
+        }
+    }
+
+    private static async Task RefuseUnknownPlaceAsync(AppDbContext db, int placeId)
+    {
+        if (!await db.Places.AnyAsync(p => p.Id == placeId))
+        {
+            throw new PlaceRefused("This place is no longer there.");
+        }
+    }
+
     // ----- Racks -----
 
     /// <summary>Adds racks <paramref name="from"/> to <paramref name="to"/> with levels A up to <paramref name="levels"/>; racks already there are left as they are. Returns how many were added.</summary>

@@ -29,6 +29,8 @@ namespace Inventory.Domain.Repository
                 Date = sale.Date,
                 VoucherId = sale.VoucherId,
                 Remarks = sale.Remarks,
+                // Stage 3, batch 3-4: the place chosen in the Sale screen's "From" box (where sales leave from unless changed).
+                PlaceId = await context.Places.AnyAsync(p => p.Id == sale.PlaceId) ? sale.PlaceId : await PlaceSettings.SalesPlaceAsync(context),
                 SalesVariants = sale.SalesVariants?.Select(v => new SalesVariantEntity
                 {
                     ProductEntityId = v.ProductEntityId,

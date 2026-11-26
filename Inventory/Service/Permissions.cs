@@ -44,6 +44,8 @@ public static class Permissions
     public const string StockApprove = "stock.approve";
     /// <summary>Stage 3, batch 3-2: set which racks a variant is kept on (product page; later put-away). Places and racks themselves are kept from Settings.</summary>
     public const string StockRacks = "stock.racks";
+    /// <summary>Stage 3, batch 3-4 (Hiten, 26 Nov 2026: "maybe some senior can do it"): change a sale's "From" place (e.g. a bulk order straight from the godown).</summary>
+    public const string SalesOtherPlace = "sales.other-place";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -125,6 +127,7 @@ public static class Permissions
         new(StockDamage, "Record damage", StockGroup),
         new(StockApprove, "Approve stock changes", StockGroup),
         new(StockRacks, "Set where items are kept (racks)", StockGroup),
+        new(SalesOtherPlace, "Sell from another place (e.g. the godown)", StockGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

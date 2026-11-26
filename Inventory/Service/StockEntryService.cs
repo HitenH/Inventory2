@@ -113,10 +113,16 @@ public class StockEntryService(IDbContextFactory<AppDbContext> factory, Activity
         return found;
     }
 
-    public async Task<StockChangeEntity> CreateAsync(StockEntryType type, DateOnly date, string? reason, string? remarks)
+    /// <param name="placeId">Stage 3, batch 3-4: the place the stock is counted, found damaged or written off in (null = where sales leave from).</param>
+    public async Task<StockChangeEntity> CreateAsync(StockEntryType type, DateOnly date, string? reason, string? remarks, int? placeId = null)
     {
         await using var db = await factory.CreateDbContextAsync();
         var kind = KindOf(type);
+        if (placeId is { } chosen && !await db.Places.AnyAsync(p => p.Id == chosen))
+        {
+            throw new StockChangeRefused("Choose the place first.");
+        }
+
         var entry = new StockChangeEntity
         {
             Id = Guid.NewGuid(),
@@ -126,6 +132,7 @@ public class StockEntryService(IDbContextFactory<AppDbContext> factory, Activity
             Status = await StockChangeService.NewStatusAsync(db),
             Reason = Clean(reason),
             Remarks = Clean(remarks),
+            PlaceId = placeId ?? await PlaceSettings.SalesPlaceAsync(db),
         };
         db.StockChanges.Add(entry);
         await db.SaveChangesAsync();

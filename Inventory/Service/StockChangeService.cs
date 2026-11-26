@@ -185,14 +185,19 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
         }
 
         Guid? supplier = null;
+        int place;   // stage 3 (Hiten, 26 Nov 2026): damage on a purchase comes out of the place it arrived in; on a sales return, out of the return's place
         if (source == DamageSource.Purchase)
         {
-            supplier = await db.Purchases.Where(p => p.Id == sourceId).Select(p => (Guid?)p.SupplierEntityId).FirstOrDefaultAsync()
+            var purchase = await db.Purchases.Where(p => p.Id == sourceId).Select(p => new { p.SupplierEntityId, p.PlaceId }).FirstOrDefaultAsync()
                 ?? throw new StockChangeRefused("This purchase was not found. It may have been deleted by someone else.");
+            supplier = purchase.SupplierEntityId;
+            place = purchase.PlaceId;
         }
-        else if (!await db.StockChanges.AnyAsync(s => s.Id == sourceId && s.Kind == StockChangeKind.SalesReturn))
+        else
         {
-            throw new StockChangeRefused("This sales return was not found. It may have been deleted by someone else.");
+            var salesReturn = await db.StockChanges.Where(s => s.Id == sourceId && s.Kind == StockChangeKind.SalesReturn).Select(s => new { s.PlaceId }).FirstOrDefaultAsync()
+                ?? throw new StockChangeRefused("This sales return was not found. It may have been deleted by someone else.");
+            place = salesReturn.PlaceId ?? Inventory.Domain.Entities.Places.StartingId;
         }
 
         var today = Today;
@@ -206,6 +211,7 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             PurchaseEntityId = source == DamageSource.Purchase ? sourceId : null,
             SourceStockChangeId = source == DamageSource.SalesReturn ? sourceId : null,
             Remarks = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            PlaceId = place,
         };
         var serial = 1;
         var more = 0;
@@ -304,6 +310,8 @@ public class StockChangeService(IDbContextFactory<AppDbContext> factory)
             Status = await NewStatusAsync(db),
             CustomerEntityId = customerId,
             Remarks = string.IsNullOrWhiteSpace(remarks) ? null : remarks.Trim(),
+            // Stage 3 (Hiten, 26 Nov 2026): returned goods come back into, and exchanges are given from, the place sales leave from (the shop).
+            PlaceId = await PlaceSettings.SalesPlaceAsync(db),
         };
         db.StockChanges.Add(change);
         await db.SaveChangesAsync();   // the save marks it "being created", so lines added on this screen fold into its "Created" entry

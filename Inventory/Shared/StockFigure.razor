@@ -5,16 +5,21 @@
    Waiting pieces have not moved yet, so they are still inside the sellable figure.
    One component for every place stock shows, so they cannot disagree. *@
 <span class="stock-fig">
-    @if (Figures.HasBreakdown)
+    @if (Figures.HasBreakdown || SplitOverPlaces)
     {
         <button type="button" class="stock-toggle" aria-expanded="@(open ? "true" : "false")"
-                title="@($"{Describe(Figures)} – click to {(open ? "hide" : "show")} the breakdown")" @onclick="() => open = !open">
+                title="@($"{HoverText()} – click to {(open ? "hide" : "show")} the breakdown")" @onclick="() => open = !open">
             <span class="stock-sellable">@Figures.Sellable</span><span class="stock-caret" aria-hidden="true">@(open ? "▴" : "▾")</span>
         </button>
         @if (open)
         {
             <span class="stock-breakdown">
                 <span>Sellable <b>@Figures.Sellable</b></span>
+                @* Stage 3, batch 3-3: where the sellable pieces are (only the places this person sees). *@
+                @foreach (var place in Places ?? [])
+                {
+                    <span class="stock-place">in @place.Name <b>@place.Qty</b></span>
+                }
                 <span>Damaged <b>@Figures.Damaged</b></span>
                 @if (Figures.Waiting != 0)
                 {
@@ -33,7 +38,16 @@
 @code {
     [Parameter] public StockFigures Figures { get; set; }
 
+    /// <summary>Stage 3, batch 3-3: the sellable pieces per place; with pieces in two or more places the arrow shows them.</summary>
+    [Parameter] public IReadOnlyList<PlaceStock>? Places { get; set; }
+
+    private bool SplitOverPlaces => Places is { Count: > 1 };
+
     private bool open;
+
+    /// <summary>Stage 3: "Shop 4 · Godown 6 · + 3 damaged" – the places (when split) and <see cref="Describe"/>.</summary>
+    private string HoverText() => string.Join(" · ",
+        (SplitOverPlaces ? Places!.Select(p => $"{p.Name} {p.Qty}") : []).Concat(Describe(Figures) is { Length: > 0 } d ? [d] : Array.Empty<string>()));
 
     /// <summary>"+ 3 damaged", "+ 3 damaged · 2 waiting" or "2 waiting" (the arrow's hover text).</summary>
     public static string Describe(StockFigures f)

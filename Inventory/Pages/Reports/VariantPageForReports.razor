@@ -3,6 +3,21 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
+@* Stage 3, batch 3-3 (Hiten, 26 Nov 2026): the stock of all the places this person sees, or of one place. With all places
+   shown, Stock In Hand is split into a column per place and a Total in bold; with one place, one column. *@
+@if (places.Count > 1)
+{
+    <div class="field mt-2" style="width:220px;">
+        <label for="variant-report-place" class="form-label"><h4>Place</h4></label>
+        <select id="variant-report-place" class="form-control" value="@(placeFilter?.ToString() ?? "")" @onchange="OnPlaceAsync">
+            <option value="">@(Access?.Places is null ? "All places" : "All my places")</option>
+            @foreach (var p in places)
+            {
+                <option value="@p.Id">@p.Name</option>
+            }
+        </select>
+    </div>
+}
 <MudTable Items="variants" Dense="true" Bordered="true" Striped="true" Class="mt-2">
     <HeaderContent>
         <MudTh>
@@ -15,11 +30,27 @@
                 Name
             </MudTableSortLabel>
         </MudTh>
-        <MudTh Class="num">
-            <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.StockInHand)">
-                Stock In Hand
-            </MudTableSortLabel>
-        </MudTh>
+        @if (Split)
+        {
+            @foreach (var p in places)
+            {
+                var place = p;
+                <MudTh Class="num c-place-qty">
+                    <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => QtyIn(x.Id, place))">@place.Name</MudTableSortLabel>
+                </MudTh>
+            }
+            <MudTh Class="num c-place-total">
+                <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => stockInHand.GetValueOrDefault(x.Id).Sellable)">Total</MudTableSortLabel>
+            </MudTh>
+        }
+        else
+        {
+            <MudTh Class="num">
+                <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => stockInHand.GetValueOrDefault(x.Id).Sellable)">
+                    Stock In Hand
+                </MudTableSortLabel>
+            </MudTh>
+        }
         <MudTh Class="num">
             <MudTableSortLabel SortBy="new Func<VariantModel, object>(x => x.ReorderLevel)">
                 Reorder Level
@@ -34,7 +65,18 @@
     <RowTemplate>
         <MudTd>@context.VariantId</MudTd>
         <MudTd>@context.Name</MudTd>
-        <MudTd Class="num"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
+        @if (Split)
+        {
+            @foreach (var p in places)
+            {
+                <MudTd Class="num c-place-qty">@QtyIn(context.Id, p)</MudTd>
+            }
+            <MudTd Class="num c-place-total"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
+        }
+        else
+        {
+            <MudTd Class="num"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
+        }
         <MudTd Class="num">@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
@@ -56,7 +98,16 @@
 </MudTable> 
 <MudText Typo="Typo.h6" Class="mt-4">
     @* Stage 2: the total works like the rows – sellable pieces, the breakdown on a click. *@
-    Total Stock In Hand: <StockFigure Figures="@totalStock" />
+    Total Stock In Hand:
+    @if (Split)
+    {
+        @foreach (var p in places)
+        {
+            <span class="variant-total-place">@p.Name @variants.Sum(v => QtyIn(v.Id, p))</span>
+        }
+        <span class="variant-total-place">Total</span>
+    }
+    <StockFigure Figures="@totalStock" />
 </MudText>
 @code{
 
@@ -65,14 +116,28 @@
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IImageRepository ImageRepository { get; set; }
     [Inject] private IConfiguration config { get; set; }
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
 
     private List<VariantModel> variants = new();
     // Stage 2: sellable, damaged and waiting pieces per variant (shown by StockFigure).
     private Dictionary<Guid, Inventory.Domain.StockFigures> stockInHand = new();
     private Inventory.Domain.StockFigures totalStock;
+    // Stage 3, batch 3-3: the places this person sees, the one chosen in the Place filter (null = all of them), pieces per place.
+    private List<PlaceItem> places = new();
+    private int? placeFilter;
+    private Dictionary<Guid, List<Inventory.Domain.PlaceStock>> placeStock = new();
+
+    /// <summary>All places shown (no place chosen) and more than one of them: a column per place and a Total.</summary>
+    private bool Split => placeFilter is null && places.Count > 1;
+
+    /// <summary>The sellable pieces of a variant in one place.</summary>
+    private int QtyIn(Guid variantId, PlaceItem place) =>
+        (placeStock.GetValueOrDefault(variantId) ?? []).FirstOrDefault(s => s.Name == place.Name).Qty;
 
     protected override async Task OnParametersSetAsync()
     {
+        places = (await PlaceService.AllAsync()).Where(p => Access?.SeesPlace(p.Id) != false).ToList();
         GetVariants();
         await LoadStockInHandAsync();
         CalculateTotalStockInHand();
@@ -107,11 +172,21 @@
         if (Product?.Variants is not { Count: > 0 })
         {
             stockInHand = new Dictionary<Guid, Inventory.Domain.StockFigures>();
+            placeStock = new Dictionary<Guid, List<Inventory.Domain.PlaceStock>>();
             return;
         }
 
-        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(
-            Product.Variants.Select(v => v.Id));
+        var shown = placeFilter is { } one ? new HashSet<int> { one } : Access?.Places;
+        var ids = Product.Variants.Select(v => v.Id).ToList();
+        stockInHand = await ProductRepository.GetStockByVariantIdsAsync(ids, shown);
+        placeStock = await ProductRepository.GetPlaceStockAsync(ids, shown);
+    }
+
+    private async Task OnPlaceAsync(ChangeEventArgs e)
+    {
+        placeFilter = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await LoadStockInHandAsync();
+        CalculateTotalStockInHand();
     }
 
     private void CalculateTotalStockInHand()

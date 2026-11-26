@@ -24,6 +24,50 @@ public partial class Sale
     [Inject] private IJSRuntime JSRuntime { get; set; }
     [Inject] private ISnackbar Snackbar { get; set; }
     [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    // Stage 3, batch 3-4: where the goods of this sale leave from ("From"), and the places that can be chosen there.
+    private int fromPlaceId = Inventory.Domain.Entities.Places.StartingId;
+    private List<PlaceItem> fromPlaces = new();
+    private List<PlaceItem> allPlaces = new();
+    private bool MayChangeFrom => SaleId == null ? Access?.Allows(Permissions.SalesOtherPlace) == true : Access?.HasAdminRole == true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allPlaces = await PlaceService.AllAsync();
+        fromPlaceId = (await PlaceService.FlowAsync()).Sales;
+        SetFromPlaces();
+    }
+
+    /// <summary>The places offered in "From": the ones this person works in, and always the sale's own place.</summary>
+    private void SetFromPlaces() =>
+        fromPlaces = allPlaces.Where(p => p.Id == fromPlaceId || (MayChangeFrom && (SaleId != null || Access?.SeesPlace(p.Id) != false))).ToList();
+
+    private async Task OnFromChanged(ChangeEventArgs e)
+    {
+        if (!MayChangeFrom || !int.TryParse(e.Value?.ToString(), out var id) || id == fromPlaceId)
+        {
+            return;
+        }
+
+        if (SaleId == null)
+        {
+            fromPlaceId = id;   // saved with the sale at Summarize
+            return;
+        }
+
+        try
+        {
+            await PlaceService.ChangeSalePlaceAsync(salesEntity.Id, id, Access ?? UserAccess.Nobody);
+            fromPlaceId = salesEntity.PlaceId = id;
+            Snackbar.Add($"This sale now leaves from {allPlaces.FirstOrDefault(p => p.Id == id)?.Name}.", Severity.Success);
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
 
     private bool IsDisabled { get; set; }
     private CustomerEntity customer = new();
@@ -63,6 +107,8 @@ public partial class Sale
                     salesModel.Date = salesEntity.Date;
                     salesModel.Id = salesEntity.Id;
 
+                    fromPlaceId = salesEntity.PlaceId;   // stage 3: a saved sale keeps the place it left from
+                    SetFromPlaces();
                     customer = salesEntity.Customer ?? new CustomerEntity();
                     salesModelVariants = salesEntity.SalesVariants?.Select(v => new SalesVariantModel()
                     {
@@ -129,7 +175,8 @@ public partial class Sale
                     Date = salesModel.Date,
                     CustomerEntityId = customer.Id,
                     VoucherId = salesModel.VoucherId,
-                    SalesVariants = salesEntityVariants
+                    SalesVariants = salesEntityVariants,
+                    PlaceId = fromPlaceId,
                 };
                 var id = await SaleRepository.Create(salesEntity);
                 Snackbar.Add("Operation successful", Severity.Success);
@@ -176,6 +223,7 @@ public partial class Sale
 
                 salesEntity.CustomerEntityId = customer.Id;
                 salesEntity.Date = salesModel.Date;
+                salesEntity.PlaceId = fromPlaceId;
                 salesEntity.SalesVariants = salesModelVariants.Select(v => new SalesVariantEntity()
                 {
                     ProductEntityId = v.ProductEntityId,

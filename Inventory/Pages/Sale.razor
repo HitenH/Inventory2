@@ -43,6 +43,19 @@
             <label for="date" class="form-label"><h4>Date</h4></label>
             <DateBox TValue="DateOnly" @bind-Value="salesModel.Date" Style="width:170px;" OpenLeft="true" />
         </div>
+        @* Stage 3, batch 3-4 (Hiten, 26 Nov 2026): where the goods leave from – the shop, filled in by itself and skipped by the
+           cursor so the scanner flow stays as it was; on a new sale only someone with "Sell from another place" can change it
+           (a bulk order straight from the godown); on a saved sale only the Admin (saved at once). *@
+        <div class="field field-place">
+            <label for="sale-from" class="form-label"><h4>From</h4></label>
+            <select id="sale-from" class="form-control" tabindex="-1" value="@fromPlaceId" @onchange="OnFromChanged"
+                    disabled="@(!MayChangeFrom)" title="@(MayChangeFrom ? "Where the goods of this sale leave from" : "Where the goods of this sale leave from (changing it needs \"Sell from another place\")")">
+                @foreach (var p in fromPlaces)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
     </div>
     <ValidationSummary />
     </div>

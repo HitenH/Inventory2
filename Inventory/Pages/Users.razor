@@ -21,15 +21,18 @@
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Roles</MudTh>
+                <MudTh>Places</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">@context.Name</MudTd>
                 <MudTd DataLabel="Roles">@RolesText(context)</MudTd>
+                <MudTd DataLabel="Places" Class="user-places-text">@PlacesText(context)</MudTd>
                 <MudTd DataLabel="Status">@(context.IsDisabled ? "Disabled" : "Active")</MudTd>
                 <MudTd DataLabel="Actions">
                     <MudButton Class="user-roles" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Size="MudBlazor.Size.Small" OnClick="() => EditRoles(context)">Roles</MudButton>
+                    <MudButton Class="user-places-open" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Size="MudBlazor.Size.Small" OnClick="() => EditPlaces(context)">Places</MudButton>
                     <MudButton Class="user-password" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Size="MudBlazor.Size.Small" OnClick="() => ResetPassword(context)">Password</MudButton>
                     @if (context.IsDisabled)
                     {

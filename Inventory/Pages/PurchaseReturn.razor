@@ -21,6 +21,18 @@
             <label for="date" class="form-label"><h4>Date</h4></label>
             <DateBox TValue="DateOnly" @bind-Value="header.Date" Style="width:168px;" OpenLeft="true" />
         </div>
+        @* Stage 3 (Hiten, 26 Nov 2026): good stock sent back can leave from the shop or the godown. Godown unless changed;
+           on a saved return only the Admin can change it (saved at once; its good-stock lines move with it). *@
+        <div class="field field-place">
+            <label for="purchasereturn-place" class="form-label"><h4>From</h4></label>
+            <select id="purchasereturn-place" class="form-control" tabindex="-1" value="@header.PlaceId" @onchange="OnPlaceAsync"
+                    disabled="@(purchaseReturn != null && Access?.HasAdminRole != true)" title="Where good stock sent back leaves from">
+                @foreach (var p in places)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
         <div class="head-actions">
             @if (ReturnId == null)
             {
@@ -114,11 +126,15 @@
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private ILogger<PurchaseReturn> Logger { get; set; } = default!;
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+    private List<PlaceItem> places = new();
 
     private sealed class Header
     {
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public string? Remarks { get; set; }
+        public int PlaceId { get; set; }
     }
 
     private readonly Header header = new();
@@ -134,9 +150,37 @@
 
     protected override async Task OnInitializedAsync()
     {
+        places = (await PlaceService.AllAsync()).Where(p => Access?.SeesPlace(p.Id) != false || Access?.HasAdminRole == true).ToList();
+        var purchases = (await PlaceService.FlowAsync()).Purchases;
+        header.PlaceId = places.Any(p => p.Id == purchases) ? purchases : places.FirstOrDefault()?.Id ?? purchases;
         if (ReturnId != null)
         {
             await ReloadAsync();
+        }
+    }
+
+    private async Task OnPlaceAsync(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var id) || id == header.PlaceId)
+        {
+            return;
+        }
+
+        if (purchaseReturn is null)
+        {
+            header.PlaceId = id;
+            return;
+        }
+
+        try
+        {
+            await PlaceService.ChangeEntryPlaceAsync(purchaseReturn.Id, id, Access ?? UserAccess.Nobody);
+            Snackbar.Add($"Good stock on this return now leaves from {places.FirstOrDefault(p => p.Id == id)?.Name}.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
         }
     }
 
@@ -154,6 +198,7 @@
         sources = await DamagedGoods.SourcesAsync(loaded);
         header.Date = loaded.Date;
         header.Remarks = loaded.Remarks;
+        header.PlaceId = loaded.PlaceId ?? header.PlaceId;
         selectedSupplier = loaded.Supplier?.ToModel();
     }
 
@@ -183,7 +228,7 @@
         {
             if (ReturnId == null)
             {
-                var created = await DamagedGoods.CreatePurchaseReturnAsync(selectedSupplier.Id, header.Date, header.Remarks);
+                var created = await DamagedGoods.CreatePurchaseReturnAsync(selectedSupplier.Id, header.Date, header.Remarks, header.PlaceId);
                 ReturnId = created.Id.ToString();
                 await ReloadAsync();
                 await JS.FocusBoxAsync(".focus-line-product");

@@ -49,6 +49,16 @@ namespace Inventory.Domain.Entities
         public bool IsMain { get; set; }
     }
 
+    /// <summary>
+    /// Stage 3, batch 3-3 (Hiten, 26 Nov 2026): a place a user works in and sees ("a godown person sees only godown stock,
+    /// a manager both"). A user with no rows works in every place (also places added later); the Admin role always does.
+    /// </summary>
+    public class UserPlaceEntity
+    {
+        public int UserId { get; set; }
+        public int PlaceId { get; set; }
+    }
+
     public static class Places
     {
         /// <summary>

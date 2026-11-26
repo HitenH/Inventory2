@@ -60,6 +60,7 @@ run check-damage-returns.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.js
 run check-damage-report.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"
 run check-stock-approval.mjs SCRATCH="$S"
 run check-places.mjs SCRATCH="$S" PRODUCT_ID=56671BCA-9D74-4363-A048-6B80076A892F   # stage 3: places, racks, racks per variant
+run check-place-flow.mjs SCRATCH="$S"   # stage 3, 3-3/3-4: purchases arrive in the godown, Sale "From", places per user
 run check-look.mjs SCRATCH="$S"
 run check-activity-screen.mjs SCRATCH="$S" LOG_CUSTOMER="$CUST" LOG_PURCHASE="$PUR"
 stop_app

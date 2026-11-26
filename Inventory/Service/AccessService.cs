@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Inventory.Service;
 
 /// <summary>What one person may do, read fresh from the database (roles changed by the Admin apply on the next screen).</summary>
-public sealed class UserAccess(string? name, bool signedIn, bool found, bool isDisabled, IReadOnlyList<RoleGrant> grants, DateTime now)
+public sealed class UserAccess(string? name, bool signedIn, bool found, bool isDisabled, IReadOnlyList<RoleGrant> grants, DateTime now,
+    IReadOnlySet<int>? places = null)
 {
     /// <summary>Not logged in.</summary>
     public static readonly UserAccess Nobody = new(null, false, false, false, Array.Empty<RoleGrant>(), DateTime.MinValue);
@@ -19,6 +20,15 @@ public sealed class UserAccess(string? name, bool signedIn, bool found, bool isD
 
     /// <summary>Batch 1c-5: holds an Admin role that has not expired (only the Admin role may erase the activity log).</summary>
     public bool HasAdminRole => Found && !IsDisabled && grants.Any(g => g.IsAdmin && (g.ExpiresAt is null || g.ExpiresAt > now));
+
+    /// <summary>
+    /// Stage 3, batch 3-3 (Hiten, 26 Nov 2026): the places this person works in and sees stock of ("a godown person sees only
+    /// godown stock, a manager both"); null = every place (no places ticked on the Users screen, or the Admin role).
+    /// </summary>
+    public IReadOnlySet<int>? Places => HasAdminRole ? null : places;
+
+    /// <summary>True when this person works in (and sees the stock of) the place.</summary>
+    public bool SeesPlace(int placeId) => Places is null || Places.Contains(placeId);
 
     public bool SeesPurchaseRates => Allows(Permissions.RatesPurchaseSee);
     public bool SeesSaleRates => Allows(Permissions.RatesSaleSee);
@@ -73,6 +83,7 @@ public class AccessService(IDbContextFactory<AppDbContext> factory, Authenticati
         var keys = await db.RolePermissions.AsNoTracking().Where(k => roleIds.Contains(k.RoleId)).ToListAsync();
         var grants = roles.Select(r => new RoleGrant(r.IsAdmin,
             keys.Where(k => k.RoleId == r.Id).Select(k => k.Permission).ToHashSet(), r.ExpiresAt)).ToList();
-        return new UserAccess(user.Name, true, true, user.IsDisabled, grants, now);
+        var places = await db.UserPlaces.AsNoTracking().Where(p => p.UserId == user.Id).Select(p => p.PlaceId).ToListAsync();
+        return new UserAccess(user.Name, true, true, user.IsDisabled, grants, now, places.Count == 0 ? null : places.ToHashSet());
     }
 }

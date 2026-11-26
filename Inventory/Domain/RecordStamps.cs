@@ -186,6 +186,8 @@ public static class RecordStamps
                 return Load<RoleEntity>(Key(nameof(RolePermissionEntity.RoleId)));
             case UserRoleEntity:
                 return Load<UserEntity>(Key(nameof(UserRoleEntity.UserId)));
+            case UserPlaceEntity:
+                return Load<UserEntity>(Key(nameof(UserPlaceEntity.UserId)));   // stage 3: the places a user works in
             case StockChangeLineEntity:
                 // Stage 2: a line (or a damaged lot's supplier / "ready to send") stamps its stock change.
                 return Load<StockChangeEntity>(Key(nameof(StockChangeLineEntity.StockChangeEntityId)));

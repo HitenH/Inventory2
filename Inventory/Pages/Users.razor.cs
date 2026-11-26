@@ -12,9 +12,11 @@ public partial class Users
     [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
 
     private List<UserRow> rows = new();
     private List<RoleChoice> roles = new();
+    private List<PlaceItem> places = new();
     private string? currentUser;
     private bool loaded;
     private bool mayManage;
@@ -38,12 +40,26 @@ public partial class Users
     {
         rows = await Admin.ListAsync();
         roles = await Admin.ListRolesAsync();
+        places = await PlaceService.AllAsync();
     }
 
     private static string RolesText(UserRow user)
         => user.Roles.Count == 0
             ? "-"
             : string.Join(", ", user.Roles.Select(r => r.ExpiresAt is { } end ? $"{r.RoleName} (to {end:d MMM yyyy})" : r.RoleName));
+
+    /// <summary>Stage 3, batch 3-3: "All places", or the names of the user's places.</summary>
+    private string PlacesText(UserRow user) =>
+        user.PlaceIds.Count == 0 ? "All places" : string.Join(", ", places.Where(p => user.PlaceIds.Contains(p.Id)).Select(p => p.Name));
+
+    private async Task EditPlaces(UserRow user)
+    {
+        var parameters = new DialogParameters<UserPlacesDialog>
+        {
+            { x => x.UserId, user.Id }, { x => x.Places, places }, { x => x.Current, user.PlaceIds }
+        };
+        await ShowAsync<UserPlacesDialog>($"Places for {user.Name}", parameters);
+    }
 
     private async Task AddUser()
     {

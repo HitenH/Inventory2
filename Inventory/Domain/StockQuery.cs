@@ -14,6 +14,9 @@ public readonly record struct StockFigures(int Sellable, int Damaged, int Waitin
     public bool HasBreakdown => Damaged != 0 || Waiting != 0;
 }
 
+/// <summary>Stage 3, batch 3-3: the sellable pieces of one variant in one place, for the breakdown under a stock figure ("Shop 4").</summary>
+public readonly record struct PlaceStock(string Name, int Qty);
+
 /// <summary>
 /// The one place stock is worked out (stage 2, "way B"). Nothing is stored; every time:
 /// sellable = purchased − sold + approved stock-change pieces moved into Sellable − those moved out of it;
@@ -85,6 +88,28 @@ public static class StockQuery
     }
 
     private static int Effect(StockState state, StockState counted, int qty) => state == counted ? qty : 0;
+
+    /// <summary>
+    /// Stage 3, batch 3-3: like <see cref="ForVariantsAsync"/>, but the sellable figure counts only the pieces in
+    /// <paramref name="places"/> (a godown person sees godown stock only). Damaged and waiting pieces have no place and stay
+    /// as they are. Null places = every place, exactly <see cref="ForVariantsAsync"/>.
+    /// </summary>
+    public static async Task<Dictionary<Guid, StockFigures>> ForVariantsInPlacesAsync(AppDbContext context, IReadOnlyCollection<Guid>? variantIds, IReadOnlySet<int>? places)
+    {
+        var totals = await ForVariantsAsync(context, variantIds);
+        if (places is null)
+        {
+            return totals;
+        }
+
+        var byPlace = await SellableByPlaceAsync(context, variantIds);
+        return totals.Keys.Union(byPlace.Keys).ToDictionary(v => v, v =>
+        {
+            var all = totals.GetValueOrDefault(v);
+            var mine = (byPlace.GetValueOrDefault(v) ?? new Dictionary<int, int>()).Where(p => places.Contains(p.Key)).Sum(p => p.Value);
+            return all with { Sellable = mine };
+        });
+    }
 
     /// <summary>
     /// Stage 3: the sellable pieces of each variant per place (place id → pieces). The places of a variant always add up
@@ -161,13 +186,14 @@ public static class StockQuery
 public static class StockPlaces
 {
     /// <summary>
-    /// Stage 3, batch 3-1: a stock change line whose sellable side has no place gets the starting place (the shop), so every
-    /// screen of stage 2 keeps working unchanged. Batch 3-4 gives each kind of entry its own place (Hiten's rules); this
-    /// stays as the fallback. Runs before every save (<see cref="AppDbContext.SaveChangesAsync(bool, CancellationToken)"/>).
+    /// Stage 3: a stock change line whose sellable side has no place of its own gets its entry's place
+    /// (<see cref="StockChangeEntity.PlaceId"/>, set by each kind of entry by Hiten's rules, batch 3-4), or the starting place
+    /// (the shop) when the entry has none. Moves between places (batch 3-5) give their lines both places themselves.
+    /// Runs before every save (<see cref="AppDbContext.SaveChangesAsync(bool, CancellationToken)"/>).
     /// </summary>
-    public static void FillStartingPlace(DbContext context)
+    public static void FillPlaces(AppDbContext context)
     {
-        foreach (var entry in context.ChangeTracker.Entries<StockChangeLineEntity>())
+        foreach (var entry in context.ChangeTracker.Entries<StockChangeLineEntity>().ToList())
         {
             if (entry.State is not (EntityState.Added or EntityState.Modified))
             {
@@ -175,16 +201,47 @@ public static class StockPlaces
             }
 
             var line = entry.Entity;
-            if (line.From == StockState.Sellable && line.FromPlaceId is null)
+            var needsFrom = line.From == StockState.Sellable && line.FromPlaceId is null;
+            var needsTo = line.To == StockState.Sellable && line.ToPlaceId is null;
+            if (!needsFrom && !needsTo)
             {
-                line.FromPlaceId = Places.StartingId;
+                continue;
             }
 
-            if (line.To == StockState.Sellable && line.ToPlaceId is null)
+            var header = line.StockChange ?? context.StockChanges.Find(line.StockChangeEntityId);
+            var place = header?.PlaceId ?? Places.StartingId;
+            if (needsFrom)
             {
-                line.ToPlaceId = Places.StartingId;
+                line.FromPlaceId = place;
+            }
+
+            if (needsTo)
+            {
+                line.ToPlaceId = place;
             }
         }
+    }
+}
+
+/// <summary>
+/// Stage 3, batch 3-4 (Hiten, 26 Nov 2026): where purchases arrive (the godown) and where sales leave from (the shop; repaired
+/// goods go back there too). Kept in the database (<see cref="AppSettingEntity"/>), changed by the Admin on Places and racks.
+/// A setting pointing to a place that no longer exists falls back to the default.
+/// </summary>
+public static class PlaceSettings
+{
+    public const string PurchasesKey = "PurchasesArriveIn";
+    public const string SalesKey = "SalesLeaveFrom";
+
+    public static async Task<int> PurchasePlaceAsync(AppDbContext db) =>
+        await ReadAsync(db, PurchasesKey) ?? (await db.Places.AnyAsync(p => p.Id == Places.GodownId) ? Places.GodownId : Places.StartingId);
+
+    public static async Task<int> SalesPlaceAsync(AppDbContext db) => await ReadAsync(db, SalesKey) ?? Places.StartingId;
+
+    private static async Task<int?> ReadAsync(AppDbContext db, string key)
+    {
+        var text = await db.AppSettings.AsNoTracking().Where(s => s.Key == key).Select(s => s.Value).FirstOrDefaultAsync();
+        return int.TryParse(text, out var id) && await db.Places.AnyAsync(p => p.Id == id) ? id : null;
     }
 }
 

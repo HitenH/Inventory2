@@ -80,10 +80,10 @@ namespace Inventory.Domain.Repository
                 .ToListAsync();
         }
 
-        public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false)
+        public async Task<List<ProductReportItem>> GetProductStockReportAsync(bool onlyBelowReorderLevel = false, IReadOnlySet<int>? places = null)
         {
             await using var context = await factory.CreateDbContextAsync();
-            var stockByVariant = await StockQuery.ForVariantsAsync(context, variantIds: null);
+            var stockByVariant = await StockQuery.ForVariantsInPlacesAsync(context, variantIds: null, places);
             var salesQtyByVariant = await context.SalesVariants.AsNoTracking()
                 .GroupBy(sv => sv.VariantEntityId)
                 .Select(g => new { VariantEntityId = g.Key, Qty = g.Sum(x => x.Quantity ?? 0) })
@@ -141,7 +141,7 @@ namespace Inventory.Domain.Repository
         }
 
         /// <summary>Stage 2: sellable, damaged and waiting-for-approval pieces per variant (see <see cref="StockQuery"/>).</summary>
-        public async Task<Dictionary<Guid, StockFigures>> GetStockByVariantIdsAsync(IEnumerable<Guid> variantIds)
+        public async Task<Dictionary<Guid, StockFigures>> GetStockByVariantIdsAsync(IEnumerable<Guid> variantIds, IReadOnlySet<int>? places = null)
         {
             await using var context = await factory.CreateDbContextAsync();
             var idList = variantIds.Distinct().ToList();
@@ -150,8 +150,27 @@ namespace Inventory.Domain.Repository
                 return new Dictionary<Guid, StockFigures>();
             }
 
-            var stock = await StockQuery.ForVariantsAsync(context, idList);
+            var stock = await StockQuery.ForVariantsInPlacesAsync(context, idList, places);
             return idList.ToDictionary(id => id, id => stock.GetValueOrDefault(id));
+        }
+
+        public async Task<Dictionary<Guid, List<PlaceStock>>> GetPlaceStockAsync(IEnumerable<Guid> variantIds, IReadOnlySet<int>? places = null)
+        {
+            await using var context = await factory.CreateDbContextAsync();
+            var idList = variantIds.Distinct().ToList();
+            if (idList.Count == 0)
+            {
+                return new Dictionary<Guid, List<PlaceStock>>();
+            }
+
+            var all = await context.Places.AsNoTracking().OrderBy(p => p.Number).Select(p => new { p.Id, p.Name }).ToListAsync();
+            var byPlace = await StockQuery.SellableByPlaceAsync(context, idList);
+            return idList.ToDictionary(id => id, id =>
+            {
+                var mine = byPlace.GetValueOrDefault(id) ?? new Dictionary<int, int>();
+                return all.Where(p => (places is null || places.Contains(p.Id)) && mine.GetValueOrDefault(p.Id) != 0)
+                    .Select(p => new PlaceStock(p.Name, mine[p.Id])).ToList();
+            });
         }
 
         public async Task<ProductEntity> GetById(Guid id)

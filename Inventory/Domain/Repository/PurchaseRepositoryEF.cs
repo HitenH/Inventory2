@@ -26,7 +26,9 @@ namespace Inventory.Domain.Repository
                 VoucherId = purchase.VoucherId,
                 Remarks = purchase.Remarks,
                 DiscountAmount = purchase.DiscountAmount,
-                TotalAmountProduct = purchase.TotalAmountProduct
+                TotalAmountProduct = purchase.TotalAmountProduct,
+                // Stage 3, batch 3-4 (Hiten, 26 Nov 2026): purchases arrive in the godown (Settings → Places and racks).
+                PlaceId = await PlaceSettings.PurchasePlaceAsync(context),
             };
 
             await context.Purchases.AddAsync(entity);

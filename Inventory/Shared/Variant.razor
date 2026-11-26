@@ -87,7 +87,7 @@
             @context.VariantId
         </MudTd>
         <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
-        <MudTd><span @onclick:stopPropagation="true"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></span></MudTd>
+        <MudTd><span @onclick:stopPropagation="true"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" Places="@placeStock.GetValueOrDefault(context.Id)" /></span></MudTd>
         <MudTd>@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)

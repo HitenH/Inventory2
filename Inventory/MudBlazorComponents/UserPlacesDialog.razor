@@ -1,0 +1,70 @@
+@* Stage 3, batch 3-3 (Hiten, 26 Nov 2026): the places a user works in and sees stock of ("a godown person sees only godown
+   stock, a manager both"). Every place ticked = every place, including places added later. The Admin role always has
+   every place. Rules in Service/UserAdmin.cs (SetPlacesAsync). *@
+@inject UserAdmin Users
+
+<MudDialog>
+    <DialogContent>
+        <div class="user-places">
+            @foreach (var pick in picks)
+            {
+                <MudCheckBox T="bool" @bind-Value="pick.Chosen" Label="@($"{pick.Place.NumberText} {pick.Place.Name}")" Dense="true" Class="user-place-pick" />
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="d-block mt-1">
+            The user sees the stock of the ticked places only, and works in them. All ticked = every place, also ones added later.
+            Someone with the Admin role always has every place.
+        </MudText>
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" id="user-dialog-error">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" OnClick="() => MudDialog.Cancel()">Cancel</MudButton>
+        <MudButton id="user-save" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="busy" data-shortcut="save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int UserId { get; set; }
+    [Parameter] public IReadOnlyList<PlaceItem> Places { get; set; } = [];
+    /// <summary>The user's places now; empty = every place.</summary>
+    [Parameter] public IReadOnlyList<int> Current { get; set; } = [];
+
+    private sealed class PlacePick(PlaceItem place, bool chosen)
+    {
+        public PlaceItem Place { get; } = place;
+        public bool Chosen { get; set; } = chosen;
+    }
+
+    private List<PlacePick> picks = new();
+    private string? error;
+    private bool busy;
+
+    protected override void OnInitialized() =>
+        picks = Places.Select(p => new PlacePick(p, Current.Count == 0 || Current.Contains(p.Id))).ToList();
+
+    private async Task Save()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var result = await Users.SetPlacesAsync(UserId, picks.Where(p => p.Chosen).Select(p => p.Place.Id).ToList());
+            if (result.Ok)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

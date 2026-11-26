@@ -26,6 +26,7 @@
 
 @code {
     [Inject] private IProductRepository ProductRepository { get; set; }
+    [CascadingParameter] private UserAccess? Access { get; set; }   // stage 3, batch 3-3: the stock of the places this person sees
     [Inject] private ILogger<Products> Logger { get; set; }
     [Inject] IMobileService MobileService { get; set; }
     [Inject] ISnackbar Snackbar { get; set; }
@@ -51,7 +52,7 @@
     {
         try
         {
-            productReportItems = await ProductRepository.GetProductStockReportAsync();
+            productReportItems = await ProductRepository.GetProductStockReportAsync(places: Access?.Places);
             StateHasChanged();
         }
         catch (Exception ex)

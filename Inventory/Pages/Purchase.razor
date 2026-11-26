@@ -44,6 +44,18 @@
             <label for="date" class="form-label"><h4>Date</h4></label>
             <DateBox TValue="DateOnly" @bind-Value="purchaseModel.Date" Style="width:168px;" OpenLeft="true" />
         </div>
+        @* Stage 3, batch 3-4 (Hiten, 26 Nov 2026): purchases arrive in the godown (Settings → Places and racks). Skipped by the
+           cursor. Only the Admin can change the place of a saved purchase (a mistake is corrected, not deleted and re-entered). *@
+        <div class="field field-place">
+            <label for="purchase-place" class="form-label"><h4>Arrives in</h4></label>
+            <select id="purchase-place" class="form-control" tabindex="-1" value="@arrivesInId" @onchange="ChangePlaceAsync"
+                    disabled="@(!MayChangePlace)" title="@(MayChangePlace ? "Where the goods of this purchase are counted (Admin)" : "Where the goods of this purchase are counted. New purchases arrive in the place set on Settings → Places and racks; only the Admin can change it on a saved purchase.")">
+                @foreach (var p in placeChoices)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
         <div class="head-actions">
             @if (PurchaseId == null)
             {
