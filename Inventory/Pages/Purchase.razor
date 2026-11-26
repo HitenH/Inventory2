@@ -82,6 +82,12 @@
             <div class="totals-actions">
                 <MudButton id="bulk-entry-open" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="() => purchaseLines!.OpenBulkEntryAsync()" data-shortcut="bulk" title="Alt+B">Bulk Entry</MudButton>
+                @if (Access?.Allows(Inventory.Service.Permissions.StockDamage) == true && purchaseEntity.PurchaseVariants is { Count: > 0 })
+                {
+                    @* Stage 2, batch 2-3 (Hiten): one button, one pop-up listing every line - not a button per line. *@
+                    <MudButton id="purchase-record-damage" Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.BrokenImage" OnClick="RecordDamageAsync">Record damage</MudButton>
+                }
                 <button type="submit" id="button-submit" class="btn btn-success" @onclick="AddTotalAmount">Save Total Amount</button>
             </div>
             @* Batch 17 round 3: Remarks/Narration moved here from the top card; saved by Update and by Save Total Amount. *@

@@ -59,7 +59,7 @@
                 <MudNavLink Icon="@Icons.Material.Filled.LocalOffer" Href="/labels"><NavText Text="Labels" Url="/labels" /></MudNavLink>
             }
 
-            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales))
+            @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns))
             {
                 <MudDivider Class="my-2" />
                 <MudText Typo="Typo.caption" Class="px-4 mud-text-secondary">Transactions</MudText>
@@ -79,6 +79,11 @@
             @if (May(Permissions.ScreenSales))
             {
                 <MudNavLink Icon="@Icons.Material.Filled.PointOfSale" Href="/sales"><NavText Text="Sales" Url="/sales" /></MudNavLink>
+            }
+            @if (May(Permissions.ScreenSalesReturns))
+            {
+                @* Stage 2, batch 2-4: goods customers bring back. No Alt + letter chosen yet. *@
+                <MudNavLink Icon="@Icons.Material.Filled.AssignmentReturn" Href="/salesreturns"><NavText Text="Sales Returns" Url="/salesreturns" /></MudNavLink>
             }
         </Authorized>
         <NotAuthorized>

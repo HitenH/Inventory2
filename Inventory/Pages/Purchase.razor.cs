@@ -350,7 +350,8 @@ public partial class Purchase
 
             Logger.LogError(ex, "Delete purchase failed");
 
-            Snackbar.Add("Something went wrong", Severity.Warning);
+            // Stage 2: a refusal (damage recorded on it) says why in plain words.
+            Snackbar.Add(ex is StockChangeRefused ? ex.Message : "Something went wrong", Severity.Warning);
 
         }
 
@@ -465,6 +466,24 @@ public partial class Purchase
     }
 
 
+
+    /// <summary>Stage 2, batch 2-3: the "Record damage" pop-up for this purchase's lines.</summary>
+    private async Task RecordDamageAsync()
+    {
+        if (purchaseEntity.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        var title = $"Record damage – Purchase {purchaseEntity.VoucherId} of {purchaseEntity.Date:dd-MM-yyyy}, {purchaseEntity.Supplier?.Name}";
+        var saved = await RecordDamageDialog.ShowAsync(DialogService, DamageSource.Purchase, purchaseEntity.Id, title);
+        if (saved is { Changed: true })
+        {
+            Snackbar.Add(saved.Text, Severity.Success);
+        }
+
+        await JS.FocusBoxAsync(".focus-line-product");
+    }
 
     // Batch 17: the totals bar's Bulk Entry button opens the pop-up of this purchase's line editor.
     private Inventory.Shared.PurchaseVariantComponent? purchaseLines;

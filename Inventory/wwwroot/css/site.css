@@ -290,6 +290,7 @@ a, .btn-link {
 .act-rec-product { color: hsl(330 55% 35%); }
 .act-rec-people { color: hsl(30 12% 30%); }
 .act-rec-system { color: var(--mud-palette-text-secondary); }
+.act-rec-stock { color: hsl(20 40% 33%); }   /* stage 2: sales returns, damage - a cocoa brown */
 .app-dark .act-rec-purchase { color: hsl(28 85% 65%); }
 .app-dark .act-rec-purchase-order { color: hsl(45 75% 60%); }
 .app-dark .act-rec-sale { color: hsl(215 75% 72%); }
@@ -297,6 +298,7 @@ a, .btn-link {
 .app-dark .act-rec-party { color: hsl(180 50% 62%); }
 .app-dark .act-rec-product { color: hsl(130 45% 64%); }
 .app-dark .act-rec-people { color: hsl(320 50% 76%); }
+.app-dark .act-rec-stock { color: hsl(35 40% 72%); }
 .act-person { display: inline-block; padding: 0 8px; border-radius: 10px; font-size: 0.85rem; white-space: nowrap;
               background: hsl(var(--act-h) 50% 92%); color: hsl(var(--act-h) 35% 28%); }
 .app-dark .act-person { background: hsl(var(--act-h) 22% 26%); color: hsl(var(--act-h) 45% 85%); }
@@ -358,3 +360,16 @@ a, .btn-link {
 .num .stock-breakdown { align-items: flex-end; }
 .stock-breakdown b { color: var(--mud-palette-text-primary); font-weight: 600; }
 .app-dark .stock-caret { color: hsl(32 85% 68%); }
+/* Stage 2, batch 2-3: the "Record damage" pop-up (MudBlazorComponents/RecordDamageDialog.razor). */
+.lines-table.damage-table th { white-space: normal; text-overflow: clip; line-height: 1.2; vertical-align: bottom; }   /* two-word headings wrap instead of being cut */
+.damage-table .c-dmg { width: 120px; }
+.lines-table.damage-table .c-already { width: 90px; }
+.damage-table .c-dmg input { width: 90px; margin-left: auto; padding: 2px 6px; }
+.damage-table .c-reason { width: 230px; }
+.damage-table .c-reason select { padding: 2px 6px; }
+.damage-table .damage-row-full td { color: var(--mud-palette-text-disabled); }
+.damage-table .damage-was { font-size: 0.75rem; color: hsl(25 80% 34%); text-align: center; }
+.app-dark .damage-table .damage-was { color: hsl(32 85% 68%); }
+.damage-table .damage-not { font-size: 0.85rem; color: var(--mud-palette-text-secondary); }
+/* Stage 2: "Given in exchange" on a sales return (Pages/SalesReturn.razor). */
+.exchange-title { font-weight: 600; margin-bottom: 6px; }

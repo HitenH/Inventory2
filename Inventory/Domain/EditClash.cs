@@ -108,6 +108,8 @@ public sealed class RecordChangedException(string message) : Exception(message)
         nameof(RoleEntity) => "role",
         nameof(PurchaseVariant) or nameof(SalesOrderVariantEntity) or nameof(SalesVariantEntity) => "line",
         nameof(VariantEntity) => "variant",
+        nameof(StockChangeEntity) => "entry",   // stage 2: a sales return, a damage record ...
+        nameof(StockChangeLineEntity) => "line",
         _ => "record",
     };
 

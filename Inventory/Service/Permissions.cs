@@ -19,6 +19,8 @@ public static class Permissions
     public const string ScreenSalesOrders = "screen.sales-orders";
     public const string ScreenSales = "screen.sales";
     public const string ScreenReports = "screen.reports";
+    /// <summary>Stage 2, batch 2-4: the Sales Returns list and a sales return.</summary>
+    public const string ScreenSalesReturns = "screen.sales-returns";
 
     public const string AdminUsers = "admin.users";
     public const string AdminImport = "admin.import";
@@ -30,12 +32,16 @@ public static class Permissions
     /// <summary>Stage L: add, change and delete the named label set-ups (sizes, margins) on the Label settings page.</summary>
     public const string LabelsSettings = "labels.settings";
 
+    /// <summary>Stage 2, batch 2-3: the "Record damage" pop-up on a purchase and a sales return.</summary>
+    public const string StockDamage = "stock.damage";
+
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
 
     public const string ScreensGroup = "Screens";
     public const string AdminGroup = "Admin";
     public const string RatesGroup = "Rates";
+    public const string StockGroup = "Stock";
 
     /// <summary>Required by a screen nobody has listed below: only an Admin role can open it.</summary>
     public const string Unlisted = "unlisted";
@@ -51,6 +57,7 @@ public static class Permissions
         ["purchases"] = ScreenPurchases, ["purchase"] = ScreenPurchases,
         ["salesorders"] = ScreenSalesOrders, ["salesorder"] = ScreenSalesOrders,
         ["sales"] = ScreenSales, ["sale"] = ScreenSales, ["salessummary"] = ScreenSales,
+        ["salesreturns"] = ScreenSalesReturns, ["salesreturn"] = ScreenSalesReturns,
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
@@ -88,6 +95,7 @@ public static class Permissions
         new(ScreenPurchases, "Open the Purchases screen", ScreensGroup),
         new(ScreenSalesOrders, "Open the Sales Orders screen", ScreensGroup),
         new(ScreenSales, "Open the Sales screen", ScreensGroup),
+        new(ScreenSalesReturns, "Open the Sales Returns screen", ScreensGroup),
         new(ScreenReports, "Open the Reports screen", ScreensGroup),
         new(LabelsPrint, "Print labels", ScreensGroup),
         new(AdminUsers, "Manage users and roles", AdminGroup),
@@ -95,6 +103,7 @@ public static class Permissions
         new(AdminSettings, "Change settings and backups", AdminGroup),
         new(ActivitySee, "See activity log", AdminGroup),
         new(LabelsSettings, "Change label settings", AdminGroup),
+        new(StockDamage, "Record damage", StockGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

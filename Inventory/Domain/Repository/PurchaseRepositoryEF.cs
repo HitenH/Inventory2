@@ -46,6 +46,12 @@ namespace Inventory.Domain.Repository
                 return;
             }
 
+            // Stage 2: damage recorded on this purchase refers to it and its lines.
+            if (await context.StockChanges.AnyAsync(s => s.PurchaseEntityId == existing.Id))
+            {
+                throw new Inventory.Service.StockChangeRefused(Inventory.Service.StockChangeRules.DamagedPurchaseCannotBeDeleted);
+            }
+
             context.Purchases.Remove(existing);
             await context.SaveChangesAsync();
         }

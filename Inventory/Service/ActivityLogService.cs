@@ -19,7 +19,7 @@ public sealed record ActivityGroup(DateTime At, string? By, IReadOnlyList<string
 }
 
 /// <summary>Batch 1c-5: the kinds offered by the Kind filter of the Activity log screen.</summary>
-public enum ActivityKind { Everything, Customers, Suppliers, Products, PurchaseOrders, Purchases, SalesOrders, Sales, UsersAndRoles, Logins, Backups, Imports, Labels }
+public enum ActivityKind { Everything, Customers, Suppliers, Products, PurchaseOrders, Purchases, SalesOrders, Sales, ReturnsAndDamage, UsersAndRoles, Logins, Backups, Imports, Labels }
 
 /// <summary>What the Activity log screen asks for. Person null = everyone.</summary>
 public sealed record ActivityFilter(DateOnly From, DateOnly To, string? Person, ActivityKind Kind, string? Search);
@@ -246,6 +246,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         ActivityKind.Purchases => [nameof(PurchaseEntity)],
         ActivityKind.SalesOrders => [nameof(SalesOrderEntity)],
         ActivityKind.Sales => [nameof(SalesEntity)],
+        ActivityKind.ReturnsAndDamage => [nameof(StockChangeEntity)],   // stage 2
         ActivityKind.UsersAndRoles => [nameof(UserEntity), nameof(RoleEntity)],
         _ => [],
     };
@@ -260,6 +261,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         nameof(CustomerEntity) or nameof(SupplierEntity) => "party",
         nameof(ProductEntity) or nameof(CategoryEntity) => "product",
         nameof(UserEntity) or nameof(RoleEntity) => "people",
+        nameof(StockChangeEntity) => "stock",   // stage 2: sales returns, damage ...
         _ => "system",
     };
 
@@ -316,6 +318,9 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
         existing.UnionWith(await db.SalesOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         existing.UnionWith(await db.Sales.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
         existing.UnionWith(await db.PurchaseOrders.Where(x => guids.Contains(x.Id)).Select(x => x.Id).ToListAsync());
+        // Stage 2: a sales return has its own screen; other stock changes (damage ...) have none yet.
+        var salesReturns = (await db.StockChanges.Where(x => guids.Contains(x.Id) && x.Kind == StockChangeKind.SalesReturn).Select(x => x.Id).ToListAsync()).ToHashSet();
+        existing.UnionWith(salesReturns);
 
         return rows.Select(r =>
         {
@@ -330,6 +335,7 @@ public class ActivityLogService(IDbContextFactory<AppDbContext> factory, Current
                 nameof(PurchaseOrderEntity) => "/purchaseorder",
                 nameof(UserEntity) => "/users",
                 nameof(RoleEntity) => "/roles",
+                nameof(StockChangeEntity) when Guid.TryParse(r.RecordId, out var sr) && salesReturns.Contains(sr) => $"/salesreturn/{r.RecordId}",
                 _ => null,
             };
             var exists = r.RecordType is nameof(UserEntity) or nameof(RoleEntity)

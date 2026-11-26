@@ -99,4 +99,7 @@ public static class StockReasons
         "Count difference",
         "Other",
     ];
+
+    /// <summary>Hiten, 26 Nov 2026: the reason written when recorded damage is lowered (pieces go back to sellable).</summary>
+    public const string NotDamaged = "Not damaged after all";
 }

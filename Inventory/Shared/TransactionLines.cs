@@ -32,6 +32,12 @@ namespace Inventory.Shared
         public abstract Task CreateRange(List<LineEditorModel> newLines);
 
         public abstract Task Delete(Guid lineId);
+
+        /// <summary>Stage 2: false for vouchers that carry quantities only (sales returns): no rate, amount or discount boxes.</summary>
+        public virtual bool HasRates => true;
+
+        /// <summary>Stage 2: a rule of this voucher type on top of the common line rules (e.g. a return must be more than 0), or null.</summary>
+        public virtual string? ExtraProblem(LineEditorModel line) => null;
     }
 
     public sealed class PurchaseLines : TransactionLines
@@ -115,6 +121,59 @@ namespace Inventory.Shared
                 AmountAfterDiscount = line.AmountAfterDiscount,
                 ProductRate = line.ProductRate
             }).ToList());
+    }
+
+    /// <summary>
+    /// Stage 2, batch 2-4: the lines of a sales return (quantities only). Saved through <see cref="Inventory.Service.StockChangeService"/>,
+    /// which also refuses changes that would not match the damage already recorded on a line.
+    /// </summary>
+    public sealed class SalesReturnLines : TransactionLines
+    {
+        private readonly StockChangeEntity salesReturn;
+        private readonly Inventory.Service.StockChangeService service;
+
+        public SalesReturnLines(StockChangeEntity salesReturn, Inventory.Service.StockChangeService service)
+        {
+            this.salesReturn = salesReturn;
+            this.service = service;
+        }
+
+        public override string Kind => "sales return";
+        public override bool HasRemarks => false;
+        public override bool HasRates => false;
+        // No Bulk Entry on sales returns (no button); the kind only matters for rates, which a return does not have.
+        public override Inventory.Service.BulkEntryKind BulkKind => Inventory.Service.BulkEntryKind.SalesOrder;
+        public override Guid HeaderId => salesReturn.Id;
+
+        public override string? ExtraProblem(LineEditorModel line) => line.Quantity is null or <= 0 ? "The quantity returned must be more than 0." : null;
+
+        public override List<LineEditorModel> Load() =>
+            salesReturn.Lines
+                .Where(l => l.From == StockState.Outside)
+                .OrderBy(l => l.SerialNumber)
+                .Select(l => new LineEditorModel
+                {
+                    Id = l.Id,
+                    SerialNumber = l.SerialNumber,
+                    ProductEntityId = l.ProductEntityId,
+                    ProductId = l.Product?.ProductId ?? "",
+                    ProductName = l.Product?.Name ?? "",
+                    VariantEntityId = l.VariantEntityId,
+                    ProductVariantId = l.ProductVariant?.VariantId ?? "",
+                    Quantity = l.Quantity,
+                    ProductRate = null, Amount = null, DiscountPercent = null, AmountAfterDiscount = null,
+                }).ToList();
+
+        public override Task Create(LineEditorModel line, Guid productEntityId, int serialNumber) =>
+            service.AddSalesReturnLineAsync(salesReturn.Id, productEntityId, line.VariantEntityId!.Value, line.Quantity, serialNumber);
+
+        public override Task Update(LineEditorModel line, Guid productEntityId) =>
+            service.UpdateSalesReturnLineAsync(line.Id, productEntityId, line.VariantEntityId!.Value, line.Quantity, line.SerialNumber);
+
+        public override Task CreateRange(List<LineEditorModel> newLines) =>
+            service.AddSalesReturnLinesAsync(salesReturn.Id, newLines.Select(l => (l.ProductEntityId, l.VariantEntityId!.Value, l.Quantity, l.SerialNumber)).ToList());
+
+        public override Task Delete(Guid lineId) => service.DeleteSalesReturnLineAsync(lineId);
     }
 
     public sealed class SalesOrderLines : TransactionLines

@@ -162,6 +162,8 @@
     /// <summary>Purchase Orders: the supplier already chosen on the screen (if any) is filled in.</summary>
     [Parameter] public SupplierModel? InitialSupplier { get; set; }
     [Parameter] public BulkOrderHeader? InitialHeader { get; set; }
+    /// <summary>Stage 2 (Hiten, 26 Nov 2026): "Given in exchange" on a sales return - product, variant and quantity only, more than 0.</summary>
+    [Parameter] public bool QuantitiesOnly { get; set; }
 
     [Inject] private IProductRepository ProductRepository { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
@@ -169,12 +171,12 @@
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private ILogger<BulkEntryDialog> Logger { get; set; } = default!;
 
-    private bool HasDiscount => Kind != BulkEntryKind.PurchaseOrder;
+    private bool HasDiscount => !QuantitiesOnly && Kind != BulkEntryKind.PurchaseOrder;
     [CascadingParameter] private UserAccess? Access { get; set; }
     // Batch 1b-5: rate, discount and amount are left out for someone without this kind of rates.
-    private bool ShowRates => Access?.SeesRates(Kind) == true;
+    private bool ShowRates => !QuantitiesOnly && Access?.SeesRates(Kind) == true;
     private bool ShowDiscount => HasDiscount && ShowRates;
-    private bool HasRemarks => Kind != BulkEntryKind.Purchase;
+    private bool HasRemarks => !QuantitiesOnly && Kind != BulkEntryKind.Purchase;
 
     private BulkOrderHeader header = new();
     private SupplierModel supplier = new();
@@ -261,7 +263,8 @@
         Guid? variantId = Guid.TryParse(variantKey, out var v) ? v : null;
         // Stage 1a: the discount is checked too now (0-100). Its box accepted any number before,
         // and a discount over 100 makes the line amount negative.
-        var missing = BulkEntry.WhatIsMissing(product.Id, variantId, quantity, HasDiscount ? discount : null);
+        var missing = BulkEntry.WhatIsMissing(product.Id, variantId, quantity, HasDiscount ? discount : null)
+            ?? (QuantitiesOnly && quantity < 0 ? "The quantity must be more than 0." : null);
         if (missing != null)
         {
             Snackbar.Add(missing, Severity.Warning);
@@ -338,13 +341,14 @@
 
     /// <summary>Opens the pop-up with the options every screen uses. Returns null when nothing is to be saved.</summary>
     public static async Task<BulkEntryResult?> ShowAsync(IDialogService dialogService, BulkEntryKind kind,
-        SupplierModel? supplier = null, BulkOrderHeader? header = null)
+        SupplierModel? supplier = null, BulkOrderHeader? header = null, bool quantitiesOnly = false, string title = "Bulk Entry")
     {
         var parameters = new DialogParameters<BulkEntryDialog>
         {
             { x => x.Kind, kind },
             { x => x.InitialSupplier, supplier },
             { x => x.InitialHeader, header },
+            { x => x.QuantitiesOnly, quantitiesOnly },
         };
         var options = new DialogOptions
         {
@@ -356,7 +360,7 @@
             Position = DialogPosition.Center,
             DefaultFocus = DefaultFocus.None,
         };
-        var dialog = await dialogService.ShowAsync<BulkEntryDialog>("Bulk Entry", parameters, options);
+        var dialog = await dialogService.ShowAsync<BulkEntryDialog>(title, parameters, options);
         var result = await dialog.Result;
         return result is { Canceled: false, Data: BulkEntryResult r } ? r : null;
     }

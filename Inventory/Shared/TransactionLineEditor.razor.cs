@@ -18,7 +18,7 @@ namespace Inventory.Shared
         [Parameter] public EventCallback<bool> ChangeState { get; set; }
         [CascadingParameter] private UserAccess? Access { get; set; }
 
-        private bool ShowRates => Access?.SeesRates(Lines.BulkKind) == true;
+        private bool ShowRates => Lines.HasRates && Access?.SeesRates(Lines.BulkKind) == true;
         [Inject] private IProductRepository ProductRepository { get; set; } = default!;
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
         [Inject] private ILogger<TransactionLineEditor> Logger { get; set; } = default!;
@@ -82,7 +82,7 @@ namespace Inventory.Shared
             // the line amount negative, which lowers the voucher, supplier and report totals.
             // The cursor is left where it is on purpose, so the operator can correct the number
             // without hunting for the box again.
-            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent);
+            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent) ?? Lines.ExtraProblem(line);
             if (wrong != null)
             {
                 Snackbar.Add(wrong, Severity.Warning);
@@ -151,7 +151,7 @@ namespace Inventory.Shared
             }
 
             // Stage 1a: an edited line must pass the same rules as a new one (Service/LineRules.cs).
-            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent);
+            var wrong = LineRules.WhatIsWrong(product.Id, line.VariantEntityId, line.Quantity, line.DiscountPercent) ?? Lines.ExtraProblem(line);
             if (wrong != null)
             {
                 Snackbar.Add(wrong, Severity.Warning);

@@ -39,6 +39,8 @@ public static class ActivityLogWriter
             new("GapAcrossMm", "Gap across mm"), new("GapDownMm", "Gap down mm"), new("TopMm", "Top margin mm"), new("LeftMm", "Left margin mm"),
             new("ContentDownMm", "Content down mm"), new("ContentLeftMm", "Content left mm"), new("QrMm", "QR size mm"),
             new("NameFontPt", "Name text pt"), new("VariantFontPt", "Variant text pt"), new("IdFontPt", "ID text pt")],
+        // Stage 2: a sales return, a damage record ... (StockChangeEntity.Kind says which).
+        [typeof(StockChangeEntity)] = [new("CustomerEntityId", "Customer"), new("SupplierEntityId", "Supplier"), new("Date", "Date"), new("VoucherId", "Voucher"), new("Remarks", "Remarks"), new("Status", "Status")],
     };
 
     private static readonly Dictionary<Type, Field[]> LineFields = new()
@@ -47,6 +49,7 @@ public static class ActivityLogWriter
         [typeof(SalesOrderVariantEntity)] = [new("Quantity", "Quantity"), new("Remarks", "Remarks"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
         [typeof(SalesVariantEntity)] = [new("Quantity", "Quantity")],
         [typeof(SalesSummaryEntity)] = [new("Quantity", "Quantity"), new("ProductRate", "Rate", SaleSide), new("DiscountPercent", "Discount %", SaleSide)],
+        [typeof(StockChangeLineEntity)] = [new("Quantity", "Quantity"), new("Reason", "Reason")],
     };
 
     private static readonly Field[] VariantFields = [new("VariantId", "Variant ID"), new("Name", "Name"), new("ReorderLevel", "Reorder level")];
@@ -119,6 +122,15 @@ public static class ActivityLogWriter
                     {
                         Add(record, "Created", $"Rate {Num(product.Rate)}", SaleSide);
                     }
+                    else if (record.Entity is StockChangeEntity { Kind: StockChangeKind.Damage } damage && DamageNote(damage, mine, names) is { } damageNote)
+                    {
+                        // Stage 2: damage recorded on a purchase or a sales return shows in that record's history too.
+                        result.Add(new ActivityEntry
+                        {
+                            At = now, By = who, SaveId = saveId, Action = "Changed", Text = damageNote.Text,
+                            RecordType = damageNote.RecordType, RecordId = damageNote.RecordId.ToString(), RecordLabel = damageNote.Label,
+                        });
+                    }
                     break;
                 case EntityState.Deleted:
                     Add(record, "Deleted", DeletedText(record, mine, names));
@@ -174,9 +186,12 @@ public static class ActivityLogWriter
             var list = byType.ToList();
             if (LineFields.TryGetValue(type, out var fields))
             {
-                var noun = type == typeof(SalesSummaryEntity) ? "Summary line" : "Line";
                 foreach (var line in PairUp(list, LineKey))
                 {
+                    // Stage 2: on a sales return, a line given in exchange (Sellable -> Outside) is named as such.
+                    var noun = type == typeof(SalesSummaryEntity) ? "Summary line"
+                        : (line.New ?? line.Old)!.Entity is StockChangeLineEntity { To: StockState.Outside, From: StockState.Sellable } ? "Exchange line"
+                        : "Line";
                     if (line.Old is null)
                     {
                         var added = line.New!;
@@ -316,6 +331,42 @@ public static class ActivityLogWriter
         }
     }
 
+    /// <summary>"Damage recorded (Damage 1 of 25-11-2026): AJ0120103 1 NO HAATICHAP / G 1 (Broken in transit)", filed under its purchase or sales return.</summary>
+    private static (string Text, string RecordType, Guid RecordId, string Label)? DamageNote(StockChangeEntity damage, List<EntityEntry> parts, Names names)
+    {
+        // Hiten, 26 Nov 2026: damage can be lowered too ("not damaged after all"), so each line says which way it went.
+        var lines = parts.Where(p => p.Entity is StockChangeLineEntity && p.State == EntityState.Added)
+            .Select(p => (StockChangeLineEntity)p.Entity)
+            .Select(l => l.To == StockState.Damaged
+                ? $"{LineCode(parts.First(p => ReferenceEquals(p.Entity, l)), names)} {l.Quantity} damaged" + (string.IsNullOrEmpty(l.Reason) ? "" : $" ({l.Reason})")
+                : $"{LineCode(parts.First(p => ReferenceEquals(p.Entity, l)), names)} {l.Quantity} not damaged after all")
+            .ToList();
+        var text = $"Damage recorded ({StockChangeLabel(damage.Kind, damage.VoucherId, damage.Date)}): " + string.Join("; ", lines);
+        if (damage.PurchaseEntityId is { } purchase)
+        {
+            return (text, nameof(PurchaseEntity), purchase, names.PurchaseLabel(purchase));
+        }
+
+        return damage.SourceStockChangeId is { } source ? (text, nameof(StockChangeEntity), source, names.StockChangeLabel(source)) : null;
+    }
+
+    /// <summary>"Sales return", "Damage" ... - what the shop calls each kind of stock change.</summary>
+    public static string KindName(StockChangeKind kind) => kind switch
+    {
+        StockChangeKind.Damage => "Damage",
+        StockChangeKind.Repaired => "Repair",
+        StockChangeKind.WriteOff => "Write-off",
+        StockChangeKind.CountCorrection => "Count correction",
+        StockChangeKind.OpeningStock => "Opening stock",
+        StockChangeKind.SalesReturn => "Sales return",
+        StockChangeKind.PurchaseReturn => "Purchase return",
+        _ => kind.ToString(),
+    };
+
+    /// <summary>"Sales return 3 of 25-11-2026".</summary>
+    public static string StockChangeLabel(StockChangeKind kind, int voucher, DateOnly date) =>
+        $"{KindName(kind)} {voucher} of {date.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)}";
+
     private static string EndDate(DateTime? end) => end is { } d ? d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture) : "none";
 
     /// <summary>
@@ -387,6 +438,10 @@ public static class ActivityLogWriter
             SalesOrderEntity o => $"Created: customer {names.CustomerName(o.CustomerEntityId)}" + Lines(),
             SalesEntity s => $"Created: customer {names.CustomerName(s.CustomerEntityId)}" + Lines(),
             RoleEntity r => "Created" + (r.Permissions.Count > 0 ? ": " + string.Join(", ", r.Permissions.Select(k => Inventory.Service.Permissions.Describe(k.Permission))) : ""),
+            StockChangeEntity { Kind: StockChangeKind.SalesReturn } s => $"Created: customer {names.CustomerName(s.CustomerEntityId)}" + Lines(),
+            StockChangeEntity { Kind: StockChangeKind.Damage, PurchaseEntityId: { } p } => $"Created: damage on {names.PurchaseLabel(p)}" + Lines(),
+            StockChangeEntity { Kind: StockChangeKind.Damage, SourceStockChangeId: { } r } => $"Created: damage on {names.StockChangeLabel(r)}" + Lines(),
+            StockChangeEntity s => $"Created: {KindName(s.Kind).ToLowerInvariant()}" + Lines(),
             _ => "Created",
         };
     }
@@ -401,6 +456,8 @@ public static class ActivityLogWriter
             PurchaseEntity => $"Deleted: supplier {names.SupplierName((Guid?)record.Property("SupplierEntityId").OriginalValue)}" + count,
             SalesOrderEntity or SalesEntity => $"Deleted: customer {names.CustomerName((Guid?)record.Property("CustomerEntityId").OriginalValue)}" + count,
             PurchaseOrderEntity => $"Deleted: {Value(record, "ProductId")}/{Value(record, "VariantId")}, quantity {Value(record, "Quantity")}, supplier {Value(record, "SupplierId")}",
+            StockChangeEntity { Kind: StockChangeKind.SalesReturn } => $"Deleted: customer {names.CustomerName((Guid?)record.Property("CustomerEntityId").OriginalValue)}" + count,
+            StockChangeEntity => "Deleted" + count,
             _ => "Deleted",
         };
     }
@@ -423,6 +480,7 @@ public static class ActivityLogWriter
             UserEntity => $"User {V("Name")}",
             RoleEntity => $"Role {V("Name")}",
             LabelLayoutEntity => $"Label settings {V("Name")}",
+            StockChangeEntity s => StockChangeLabel(s.Kind, s.VoucherId, s.Date),
             _ => record.Metadata.ClrType.Name,
         };
     }
@@ -517,5 +575,15 @@ public static class ActivityLogWriter
         public string CustomerName(Guid? id) => Get<CustomerEntity>(id, c => c.Name, q => q.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault());
         public string CategoryName(Guid? id) => Get<CategoryEntity>(id, c => c.Name, q => q.Where(c => c.Id == id).Select(c => c.Name).FirstOrDefault());
         public string RoleName(int? id) => Get<RoleEntity>(id, r => r.Name, q => q.Where(r => r.Id == id).Select(r => r.Name).FirstOrDefault());
+
+        /// <summary>"Purchase 12 of 25-11-2026".</summary>
+        public string PurchaseLabel(Guid? id) => Get<PurchaseEntity>(id, PurchaseText,
+            q => q.Where(p => p.Id == id).AsEnumerable().Select(PurchaseText).FirstOrDefault());
+
+        /// <summary>"Sales return 3 of 25-11-2026".</summary>
+        public string StockChangeLabel(Guid? id) => Get<StockChangeEntity>(id, s => ActivityLogWriter.StockChangeLabel(s.Kind, s.VoucherId, s.Date),
+            q => q.Where(s => s.Id == id).AsEnumerable().Select(s => ActivityLogWriter.StockChangeLabel(s.Kind, s.VoucherId, s.Date)).FirstOrDefault());
+
+        private static string PurchaseText(PurchaseEntity p) => $"Purchase {p.VoucherId} of {p.Date.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)}";
     }
 }

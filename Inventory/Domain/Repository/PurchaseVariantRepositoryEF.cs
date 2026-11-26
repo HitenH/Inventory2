@@ -73,6 +73,12 @@ namespace Inventory.Domain.Repository
                 return;
             }
 
+            // Stage 2: the damage recorded on this line refers to it.
+            if (await Inventory.Service.StockChangeService.DamagedOnLineAsync(context, existing.Id, purchaseLine: true) > 0)
+            {
+                throw new Inventory.Service.StockChangeRefused(Inventory.Service.StockChangeRules.DamagedLineCannotBeDeleted);
+            }
+
             context.PurchaseVariant.Remove(existing);
             await SaveWithTotalAsync(context, existing.PurchaseEntityId);
         }
@@ -99,6 +105,14 @@ namespace Inventory.Domain.Repository
             {
                 context.ThrowPartGone<PurchaseVariant>();   // batch 1c-2: deleted by someone else
                 return;
+            }
+
+            // Stage 2: not below the pieces recorded as damaged, and not another item.
+            var damaged = await Inventory.Service.StockChangeService.DamagedOnLineAsync(context, existing.Id, purchaseLine: true);
+            if (Inventory.Service.StockChangeRules.LineChangeProblem(damaged, existing.ProductEntityId, existing.VariantEntityId,
+                    variant.ProductEntityId, variant.VariantEntityId, variant.Quantity) is { } refused)
+            {
+                throw new Inventory.Service.StockChangeRefused(refused);
             }
 
             existing.SerialNumber = variant.SerialNumber;
