@@ -1,0 +1,208 @@
+@using Inventory.Service
+@* Stage 3, batch 3-2 (Hiten, 26 Nov 2026): one box to type or scan an address (0203B or 02-03-B), and three drop-downs
+   Place / Rack / Level beside it. All three ways give the same result, and each fills in the other: a typed or scanned
+   address sets the drop-downs, the drop-downs write the address into the box. Enter in the box with a good address calls
+   OnEnter (a scanner sends Enter after the code). The one address box of the app; never copy it into a screen. *@
+
+<div class="address-box d-flex flex-wrap align-items-center gap-2">
+    <div class="field address-field-text">
+        <label for="@textId" class="form-label"><h4>Address (type or scan)</h4></label>
+        <input id="@textId" class="form-control address-text" value="@text" autocomplete="off" spellcheck="false"
+               @oninput="e => text = e.Value?.ToString() ?? string.Empty" @onchange="OnTextChangedAsync" @onkeydown="OnTextKeyAsync" />
+    </div>
+    <span class="address-or">or</span>
+    <div class="field address-field-place">
+        <label class="form-label"><h4>Place</h4></label>
+        <select class="form-control address-place" value="@(placeId?.ToString() ?? "")" @onchange="OnPlaceAsync">
+            <option value=""></option>
+            @foreach (var p in Places.Where(p => p.Racks.Count > 0))
+            {
+                <option value="@p.Id">@p.NumberText @p.Name</option>
+            }
+        </select>
+    </div>
+    <div class="field address-field-rack">
+        <label class="form-label"><h4>Rack</h4></label>
+        <select class="form-control address-rack" value="@(rackId?.ToString() ?? "")" @onchange="OnRackAsync" disabled="@(Place is null)">
+            <option value=""></option>
+            @foreach (var r in Place?.Racks ?? [])
+            {
+                <option value="@r.Id">@r.Number.ToString("00")</option>
+            }
+        </select>
+    </div>
+    <div class="field address-field-level">
+        <label class="form-label"><h4>Level</h4></label>
+        <select class="form-control address-level" value="@(level?.ToString() ?? "")" @onchange="OnLevelAsync" disabled="@(Rack is null)">
+            <option value=""></option>
+            @for (var i = 1; i <= (Rack?.Levels ?? 0); i++)
+            {
+                var letter = RackAddress.LevelLetter(i);
+                <option value="@letter">@letter</option>
+            }
+        </select>
+    </div>
+</div>
+@if (problem is not null)
+{
+    <div class="address-problem">@problem</div>
+}
+
+@code {
+    /// <summary>The places with their racks (<see cref="PlaceService.AllAsync"/>).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PlaceItem> Places { get; set; } = [];
+
+    /// <summary>The chosen rack level, or null while nothing complete is chosen.</summary>
+    [Parameter] public RackChoice? Value { get; set; }
+    [Parameter] public EventCallback<RackChoice?> ValueChanged { get; set; }
+
+    /// <summary>Enter pressed in the box with a good address (or after a scan).</summary>
+    [Parameter] public EventCallback OnEnter { get; set; }
+
+    private readonly string textId = "address-" + Guid.NewGuid().ToString("N")[..8];
+    private string text = string.Empty;
+    private int? placeId;
+    private int? rackId;
+    private char? level;
+    private string? problem;
+    private string? enteredText;
+
+    private PlaceItem? Place => Places.FirstOrDefault(p => p.Id == placeId);
+    private RackItem? Rack => Place?.Racks.FirstOrDefault(r => r.Id == rackId);
+
+    protected override void OnParametersSet()
+    {
+        // Emptied by the screen (after a rack was added): empty the boxes too.
+        if (Value is null && rackId is not null && level is not null)
+        {
+            Clear();
+        }
+    }
+
+    /// <summary>Empties the box and the drop-downs.</summary>
+    public void Clear()
+    {
+        text = string.Empty;
+        placeId = rackId = null;
+        level = null;
+        problem = null;
+    }
+
+    private async Task OnTextChangedAsync(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        // Chrome also sends "changed" for the Enter that was just handled; by then the screen may have used the address
+        // and emptied the box, so that echo must not fill it again.
+        if (enteredText is not null && value == enteredText)
+        {
+            enteredText = null;
+            return;
+        }
+
+        text = value;
+        await ReadTextAsync();
+    }
+
+    private async Task OnTextKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter")
+        {
+            return;
+        }
+
+        enteredText = text;
+        if (await ReadTextAsync() && OnEnter.HasDelegate)
+        {
+            await OnEnter.InvokeAsync();
+        }
+    }
+
+    /// <summary>Reads the typed or scanned text; true when it is a rack level that exists.</summary>
+    private async Task<bool> ReadTextAsync()
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            problem = null;
+            return false;
+        }
+
+        if (!RackAddress.TryParse(text, out var address))
+        {
+            problem = "Type an address like 0203B or 02-03-B (place, rack, level).";
+            placeId = rackId = null;
+            level = null;
+            await SetAsync(null);
+            return false;
+        }
+
+        var (rack, why) = PlaceService.Resolve(Places, address);
+        if (rack is null)
+        {
+            problem = why;
+            placeId = rackId = null;
+            level = null;
+            await SetAsync(null);
+            return false;
+        }
+
+        problem = null;
+        placeId = Places.First(p => p.Number == address.Place).Id;
+        rackId = rack.Id;
+        level = address.Level;
+        text = address.Text;
+        await SetAsync(new RackChoice(rack.Id, address));
+        return true;
+    }
+
+    private async Task OnPlaceAsync(ChangeEventArgs e)
+    {
+        placeId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        rackId = null;
+        level = null;
+        await FromDropDownsAsync();
+    }
+
+    private async Task OnRackAsync(ChangeEventArgs e)
+    {
+        rackId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        if (Rack is { Levels: 1 })
+        {
+            level = 'A';
+        }
+        else if (level is { } l && RackAddress.LevelNumber(l) > (Rack?.Levels ?? 0))
+        {
+            level = null;
+        }
+
+        await FromDropDownsAsync();
+    }
+
+    private async Task OnLevelAsync(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        level = string.IsNullOrEmpty(value) ? null : value[0];
+        await FromDropDownsAsync();
+    }
+
+    private async Task FromDropDownsAsync()
+    {
+        problem = null;
+        if (Place is { } place && Rack is { } rack && level is { } l)
+        {
+            var address = new RackAddress(place.Number, rack.Number, l);
+            text = address.Text;
+            await SetAsync(new RackChoice(rack.Id, address));
+        }
+        else
+        {
+            text = string.Empty;
+            await SetAsync(null);
+        }
+    }
+
+    private async Task SetAsync(RackChoice? choice)
+    {
+        Value = choice;
+        await ValueChanged.InvokeAsync(choice);
+    }
+}

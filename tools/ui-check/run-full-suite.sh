@@ -59,6 +59,7 @@ run check-stock-figures.mjs SCRATCH="$S" STOCK_JSON="$A/data/stock-figures.json"
 run check-damage-returns.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"
 run check-damage-report.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"
 run check-stock-approval.mjs SCRATCH="$S"
+run check-places.mjs SCRATCH="$S" PRODUCT_ID=56671BCA-9D74-4363-A048-6B80076A892F   # stage 3: places, racks, racks per variant
 run check-look.mjs SCRATCH="$S"
 run check-activity-screen.mjs SCRATCH="$S" LOG_CUSTOMER="$CUST" LOG_PURCHASE="$PUR"
 stop_app

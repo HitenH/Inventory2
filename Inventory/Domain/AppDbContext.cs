@@ -37,6 +37,9 @@ namespace Inventory.Domain
         public DbSet<StockChangeLineEntity> StockChangeLines { get; set; }
         public DbSet<StockChangeReasonEntity> StockChangeReasons { get; set; }
         public DbSet<AppSettingEntity> AppSettings { get; set; }
+        public DbSet<PlaceEntity> Places { get; set; }
+        public DbSet<RackEntity> Racks { get; set; }
+        public DbSet<VariantRackEntity> VariantRacks { get; set; }
 
         /// <summary>Batch 1c-3: when set (by an import), the next save writes this one activity-log line instead of one per record.</summary>
         public string? ActivityNote { get; set; }
@@ -48,6 +51,7 @@ namespace Inventory.Domain
         /// </summary>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
+            StockPlaces.FillStartingPlace(this);
             try
             {
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -61,6 +65,7 @@ namespace Inventory.Domain
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
+            StockPlaces.FillStartingPlace(this);
             try
             {
                 return base.SaveChanges(acceptAllChangesOnSuccess);
@@ -194,6 +199,24 @@ namespace Inventory.Domain
             modelBuilder.Entity<AppSettingEntity>().ToTable("AppSettings");   // batch 2-8: e.g. the approval switch
             modelBuilder.Entity<StockChangeReasonEntity>().Property(r => r.Name).UseCollation("NOCASE");
             modelBuilder.Entity<StockChangeReasonEntity>().HasIndex(r => r.Name).IsUnique();
+            // Stage 3 (Hiten, 26 Nov 2026): places that count stock, their racks, and where each variant is kept.
+            // Purchases, sales and stock change lines carry a place number column without a database link (adding a link
+            // would rebuild those tables); triggers made by the Places upgrade refuse a place that does not exist.
+            modelBuilder.Entity<PlaceEntity>().Property(p => p.Name).UseCollation("NOCASE");
+            modelBuilder.Entity<PlaceEntity>().HasIndex(p => p.Name).IsUnique();
+            modelBuilder.Entity<PlaceEntity>().HasIndex(p => p.Number).IsUnique();
+            modelBuilder.Entity<PlaceEntity>().HasMany(p => p.Racks).WithOne(r => r.Place).HasForeignKey(r => r.PlaceId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RackEntity>().HasIndex(r => new { r.PlaceId, r.Number }).IsUnique();
+            modelBuilder.Entity<VariantRackEntity>().Property(v => v.Level).HasMaxLength(1);
+            modelBuilder.Entity<VariantRackEntity>().HasIndex(v => new { v.VariantEntityId, v.RackId, v.Level }).IsUnique();
+            modelBuilder.Entity<VariantRackEntity>().HasOne(v => v.Variant).WithMany().HasForeignKey(v => v.VariantEntityId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<VariantRackEntity>().HasOne(v => v.Rack).WithMany().HasForeignKey(v => v.RackId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PurchaseEntity>().Property(p => p.PlaceId).HasDefaultValue(Entities.Places.StartingId);
+            modelBuilder.Entity<SalesEntity>().Property(s => s.PlaceId).HasDefaultValue(Entities.Places.StartingId);
+            modelBuilder.Entity<PlaceEntity>().HasData(
+                new PlaceEntity { Id = Entities.Places.StartingId, Number = 1, Name = "Shop" },
+                new PlaceEntity { Id = Entities.Places.GodownId, Number = 2, Name = "Godown" });
+
             // A starting list (Hiten keeps it on the reasons list in Settings, batch 2-7).
             modelBuilder.Entity<StockChangeReasonEntity>().HasData(StockReasons.Starting.Select((name, i) =>
                 new StockChangeReasonEntity { Id = i + 1, Name = name, SortOrder = i + 1, IsActive = true }));

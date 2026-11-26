@@ -37,6 +37,8 @@ const SCREENS = {
   'stockchange-new': '/stockchange',
   approvals: '/approvals',
   reasons: '/reasons',
+  // Stage 3, batch 3-2.
+  places: '/places',
 };
 const WIDTHS = [1366, 1920];
 const MODES = ['Light', 'Dark'];

@@ -106,6 +106,10 @@ namespace Inventory.Domain.Entities
         public int Quantity { get; set; }
         public StockState From { get; set; }
         public StockState To { get; set; }
+        /// <summary>Stage 3: when <see cref="From"/> is Sellable, the place the pieces leave (stock is counted per place; damaged and outside have no place).</summary>
+        public int? FromPlaceId { get; set; }
+        /// <summary>Stage 3: when <see cref="To"/> is Sellable, the place the pieces go into.</summary>
+        public int? ToPlaceId { get; set; }
         /// <summary>The reason as chosen at the time (a copy of the text, so changing the reasons list never changes history).</summary>
         public string? Reason { get; set; }
         public string? Note { get; set; }

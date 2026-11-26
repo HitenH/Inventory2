@@ -1,0 +1,287 @@
+@page "/places"
+@using Inventory.Domain.Entities
+@* Stage 3, batch 3-2 (Hiten, 26 Nov 2026): places that count stock (the shop, the godown) and their racks, kept from Settings.
+   Addresses are numbers except the level: place 02, rack 03, level B = 02-03-B; level A is the bottom.
+   Rules in Service/PlaceService.cs. Esc goes back to Settings. *@
+
+<Inventory.MudBlazorComponents.PagesHeader Title="Places and racks" SubTitle="Where stock is counted (shop, godown) and the racks inside each place" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Places</MudText>
+        <table class="table table-sm lines-table places-table mb-3">
+            <thead>
+                <tr>
+                    <th class="c-place-no num">No.</th>
+                    <th>Place</th>
+                    <th class="c-place-racks num">Racks</th>
+                    <th class="c-place-actions"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in places)
+                {
+                    var place = p;
+                    <tr class="place-row @(place.Id == selectedId ? "place-selected" : "")">
+                        <td class="c-place-no num">
+                            <input class="form-control place-number" value="@place.NumberText" disabled="@(place.Racks.Count > 0)" maxlength="2"
+                                   title="@(place.Racks.Count > 0 ? "The number is part of every rack's address, so it stays while the place has racks." : "1 to 99")"
+                                   @onchange="e => RenumberAsync(place, e.Value?.ToString())" autocomplete="off" />
+                        </td>
+                        <td><input class="form-control place-name" value="@place.Name" @onchange="e => RenameAsync(place, e.Value?.ToString())" autocomplete="off" /></td>
+                        <td class="c-place-racks num">@place.Racks.Count</td>
+                        <td class="c-place-actions">
+                            <MudButton Variant="MudBlazor.Variant.Filled" Color="@(place.Id == selectedId ? Color.Primary : Color.Default)" Size="Size.Small"
+                                       Class="place-show-racks" OnClick="() => Select(place)">Racks</MudButton>
+                            @if (!place.IsStarting)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Variant="MudBlazor.Variant.Filled" Size="Size.Small"
+                                               Class="place-delete" title="Delete this place" OnClick="() => DeletePlaceAsync(place)" />
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="field flex-grow-1" style="max-width:420px;">
+                <label for="place-new" class="form-label"><h4>New place</h4></label>
+                <input id="place-new" class="form-control" @bind="newPlace" @bind:event="oninput" @onkeydown="OnNewPlaceKeyAsync" autocomplete="off" />
+            </div>
+            <MudButton id="place-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddPlaceAsync" StartIcon="@Icons.Material.Filled.Add">Add place</MudButton>
+        </div>
+        <MudText Typo="Typo.caption" Class="mt-2 d-block">
+            Stock is counted per place. Racks and levels only say where to look; they are not counted.
+            The first place (where all stock started) cannot be deleted, nor a place that holds stock entries.
+        </MudText>
+    </MudPaper>
+
+    @if (Selected is { } sel)
+    {
+        <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2 racks-title">@sel.Name (@sel.NumberText) – racks</MudText>
+            @if (sel.Racks.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mb-3 racks-none">No racks yet.</MudText>
+            }
+            else
+            {
+                <table class="table table-sm lines-table racks-table mb-3">
+                    <thead>
+                        <tr>
+                            <th class="c-rack-no num">Rack</th>
+                            <th class="c-rack-levels">Levels (A = bottom)</th>
+                            <th class="c-rack-items num">Items</th>
+                            <th class="c-rack-actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in sel.Racks)
+                        {
+                            var rack = r;
+                            <tr class="rack-row">
+                                <td class="c-rack-no num">@sel.NumberText-@rack.Number.ToString("00")</td>
+                                <td class="c-rack-levels">
+                                    A to
+                                    <select class="form-select form-select-sm rack-levels" value="@rack.Levels" @onchange="e => SetLevelsAsync(rack, e.Value?.ToString())">
+                                        @for (var i = 1; i <= Places.MaxLevels; i++)
+                                        {
+                                            <option value="@i">@RackAddress.LevelLetter(i)</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td class="c-rack-items num">@rack.ItemCount</td>
+                                <td class="c-rack-actions">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Variant="MudBlazor.Variant.Filled" Size="Size.Small"
+                                                   Class="rack-delete" title="Delete this rack" OnClick="() => DeleteRackAsync(sel, rack)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span>Add racks</span>
+                <div class="field" style="width:90px;">
+                    <label for="rack-from" class="form-label"><h4>From</h4></label>
+                    <input id="rack-from" class="form-control text-end" type="number" min="1" max="99" @bind="rackFrom" />
+                </div>
+                <div class="field" style="width:90px;">
+                    <label for="rack-to" class="form-label"><h4>To</h4></label>
+                    <input id="rack-to" class="form-control text-end" type="number" min="1" max="99" @bind="rackTo" @onkeydown="OnRackKeyAsync" />
+                </div>
+                <div class="field" style="width:120px;">
+                    <label for="rack-top" class="form-label"><h4>Levels A to</h4></label>
+                    <select id="rack-top" class="form-control" @bind="rackLevels">
+                        @for (var i = 1; i <= Places.MaxLevels; i++)
+                        {
+                            <option value="@i">@RackAddress.LevelLetter(i)</option>
+                        }
+                    </select>
+                </div>
+                <MudButton id="rack-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="AddRacksAsync" StartIcon="@Icons.Material.Filled.Add">Add</MudButton>
+            </div>
+            <MudText Typo="Typo.caption" Class="mt-2 d-block">
+                Racks already there are left as they are. A rack (or a level) that still holds items cannot be deleted.
+            </MudText>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<PlaceItem> places = new();
+    private int? selectedId;
+    private string? newPlace;
+    private int? rackFrom = 1;
+    private int? rackTo = 1;
+    private int rackLevels = 4;
+
+    private PlaceItem? Selected => places.FirstOrDefault(p => p.Id == selectedId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        selectedId = places.FirstOrDefault(p => p.Racks.Count > 0)?.Id ?? places.FirstOrDefault()?.Id;
+        SuggestNextRacks();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.FocusBoxAsync("#place-new");
+        }
+    }
+
+    private async Task LoadAsync() => places = await PlaceService.AllAsync();
+
+    private void Select(PlaceItem place)
+    {
+        selectedId = place.Id;
+        SuggestNextRacks();
+    }
+
+    /// <summary>The next free rack number, so adding racks one batch after another needs no typing.</summary>
+    private void SuggestNextRacks()
+    {
+        var next = (Selected?.Racks.Select(r => r.Number).DefaultIfEmpty(0).Max() ?? 0) + 1;
+        rackFrom = rackTo = Math.Min(next, Places.MaxNumber);
+    }
+
+    private async Task<bool> RunAsync(Func<Task> action, string? done = null)
+    {
+        var ok = false;
+        try
+        {
+            await action();
+            ok = true;
+            if (done is not null)
+            {
+                Snackbar.Add(done, Severity.Success);
+            }
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        await LoadAsync();
+        return ok;
+    }
+
+    private async Task AddPlaceAsync()
+    {
+        var name = newPlace;
+        PlaceItem? added = null;
+        if (await RunAsync(async () => { added = await PlaceService.AddPlaceAsync(name); newPlace = null; }, "Place added."))
+        {
+            selectedId = added!.Id;
+            SuggestNextRacks();
+        }
+
+        await JS.FocusBoxAsync("#place-new");
+    }
+
+    private async Task OnNewPlaceKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddPlaceAsync();
+        }
+    }
+
+    private Task RenameAsync(PlaceItem place, string? name) => RunAsync(() => PlaceService.RenamePlaceAsync(place.Id, name), "Place renamed.");
+
+    private Task RenumberAsync(PlaceItem place, string? number)
+    {
+        if (!int.TryParse(number, out var n))
+        {
+            Snackbar.Add("A place number is 1 to 99.", Severity.Warning);
+            return LoadAsync();
+        }
+
+        return RunAsync(() => PlaceService.RenumberPlaceAsync(place.Id, n), "Place number changed.");
+    }
+
+    private async Task DeletePlaceAsync(PlaceItem place)
+    {
+        if (!await DialogService.ConfirmAsync("Delete place", $"Delete {place.NumberText} {place.Name}?", "Delete", Color.Error))
+        {
+            return;
+        }
+
+        if (await RunAsync(() => PlaceService.DeletePlaceAsync(place.Id), "Place deleted.") && selectedId == place.Id)
+        {
+            selectedId = places.FirstOrDefault()?.Id;
+            SuggestNextRacks();
+        }
+    }
+
+    private async Task AddRacksAsync()
+    {
+        if (Selected is not { } place)
+        {
+            return;
+        }
+
+        if (rackFrom is not { } from || rackTo is not { } to)
+        {
+            Snackbar.Add("Type the first and last rack number.", Severity.Warning);
+            return;
+        }
+
+        var count = 0;
+        if (await RunAsync(async () => count = await PlaceService.AddRacksAsync(place.Id, from, to, rackLevels)))
+        {
+            Snackbar.Add(count == 1 ? "Rack added." : $"{count} racks added.", Severity.Success);
+            SuggestNextRacks();
+        }
+    }
+
+    private async Task OnRackKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Task.Yield();   // let the box's value reach rackTo first
+            await AddRacksAsync();
+        }
+    }
+
+    private Task SetLevelsAsync(RackItem rack, string? value) =>
+        int.TryParse(value, out var levels) ? RunAsync(() => PlaceService.SetRackLevelsAsync(rack.Id, levels), "Levels changed.") : Task.CompletedTask;
+
+    private async Task DeleteRackAsync(PlaceItem place, RackItem rack)
+    {
+        if (!await DialogService.ConfirmAsync("Delete rack", $"Delete rack {place.NumberText}-{rack.Number:00}?", "Delete", Color.Error))
+        {
+            return;
+        }
+
+        await RunAsync(() => PlaceService.DeleteRackAsync(rack.Id), "Rack deleted.");
+    }
+}

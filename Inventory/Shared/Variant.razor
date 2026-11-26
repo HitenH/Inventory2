@@ -37,7 +37,8 @@
         <ValidationSummary />
     </EditForm>
 </MudPaper>
-<MudTable Items="variants" Dense="true" Bordered="true" Striped="false" Outlined="true" Elevation="0" Class="mt-2">
+<MudTable T="VariantModel" Items="variants" Dense="true" Bordered="true" Striped="false" Outlined="true" Elevation="0" Class="mt-2 variants-table"
+          OnRowClick="RowClicked" RowClassFunc="RowClass">
     <HeaderContent>
         <MudTh></MudTh>
         <MudTh>
@@ -67,42 +68,87 @@
         </MudTh>
     </HeaderContent>
     <RowTemplate>
+        @* Stage 3, batch 3-2 (Hiten, 26 Nov 2026): clicking a variant line opens a strip under it with named buttons
+           (Print labels, Where it is kept) instead of icons beside the reorder level. Clicks on the buttons, the stock
+           figure and the photo do their own job and do not open or close the line. *@
         <MudTd>
-            <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="Size.Small" OnClick="() => UpdateVariant(context)" Icon="@Icons.Material.Filled.Edit">
-            </MudIconButton>
-            <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteVariant(context.Id)" Icon="@Icons.Material.Filled.Delete">
-            </MudIconButton>
+            <div class="d-inline-flex gap-1" @onclick:stopPropagation="true">
+                <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Tertiary" Size="Size.Small" OnClick="() => UpdateVariant(context)" Icon="@Icons.Material.Filled.Edit">
+                </MudIconButton>
+                <MudIconButton Variant="MudBlazor.Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteVariant(context.Id)" Icon="@Icons.Material.Filled.Delete">
+                </MudIconButton>
+            </div>
         </MudTd>
-        <MudTd>@context.VariantId</MudTd>
-        <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
-        <MudTd><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></MudTd>
         <MudTd>
-            @context.ReorderLevel
-            @if (Access?.Allows(Inventory.Service.Permissions.LabelsPrint) == true && Product?.Id != Guid.Empty)
+            @if (CanOpen(context))
             {
-                @* Stage L (Hiten, 25 Nov 2026): Labels with this product and variant chosen, cursor in Copies. *@
-                <a href="@($"/labels?product={Product!.Id}&variant={context.Id}")" class="variant-labels-link ms-2" title="Print labels for this variant" aria-label="Print labels for this variant">
-                    <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Small" />
-                </a>
+                <MudIcon Icon="@(expandedId == context.Id ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" Size="Size.Small" Class="variant-chevron" />
             }
+            @context.VariantId
         </MudTd>
+        <MudTd Class="c-vname-p" title="@context.Name">@context.Name</MudTd>
+        <MudTd><span @onclick:stopPropagation="true"><StockFigure Figures="@stockInHand.GetValueOrDefault(context.Id)" /></span></MudTd>
+        <MudTd>@context.ReorderLevel</MudTd>
         <MudTd>
             @if (context.Image != null)
             {
-                <MudImage Src="@GetImage(context.Image)"
-                          Width="56"
-                          Height="56"
-                          Alt="@($"Photo of variant {context.VariantId}")"
-                          @onclick="() => OpenImagePopup(context.Image)"
-                          Elevation="25"
-                          Class="rounded-lg ma-1" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                               OnClick="async () => await DeleteFile(context.Image)"
-                               Variant="MudBlazor.Variant.Filled">
-                </MudIconButton>
+                <div class="d-inline-flex align-center" @onclick:stopPropagation="true">
+                    <MudImage Src="@GetImage(context.Image)"
+                              Width="56"
+                              Height="56"
+                              Alt="@($"Photo of variant {context.VariantId}")"
+                              @onclick="() => OpenImagePopup(context.Image)"
+                              Elevation="25"
+                              Class="rounded-lg ma-1" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="async () => await DeleteFile(context.Image)"
+                                   Variant="MudBlazor.Variant.Filled">
+                    </MudIconButton>
+                </div>
             }
         </MudTd>
     </RowTemplate>
+    <ChildRowContent>
+        @if (expandedId == context.Id && CanOpen(context))
+        {
+            var racks = racksByVariant.GetValueOrDefault(context.Id) ?? [];
+            <MudTr Class="variant-more-tr">
+                <td colspan="6" class="variant-more">
+                    <div class="variant-more-row">
+                        @if (Access?.Allows(Inventory.Service.Permissions.LabelsPrint) == true)
+                        {
+                            @* Stage L (Hiten, 25 Nov 2026): Labels with this product and variant chosen, cursor in Copies. *@
+                            <MudButton Href="@($"/labels?product={Product!.Id}&variant={context.Id}")" Class="variant-labels-link"
+                                       Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small" StartIcon="@Icons.Material.Filled.LocalOffer">Print labels</MudButton>
+                        }
+                        <MudButton Class="variant-racks-open" OnClick="() => OpenRacksAsync(context)"
+                                   Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small" StartIcon="@Icons.Material.Filled.Place">Where it is kept</MudButton>
+                        <span class="variant-more-racks">
+                            @if (racks.Count == 0)
+                            {
+                                <span class="vr-none">Not on any rack yet.</span>
+                            }
+                            else
+                            {
+                                @foreach (var group in racks.GroupBy(r => r.PlaceId))
+                                {
+                                    <span class="variant-more-place">
+                                        <span class="variant-more-label">@group.First().PlaceName:</span>
+                                        @foreach (var rack in group)
+                                        {
+                                            <span class="variant-more-rack @(rack.IsMain ? "vr-main" : "")" title="@(rack.IsMain ? "Main rack: look here first" : "")">
+                                                @(rack.IsMain ? "★ " : "")<span class="vr-address">@rack.Address</span> @rack.RackDescription
+                                            </span>
+                                        }
+                                    </span>
+                                }
+                            }
+                        </span>
+                    </div>
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
     <NoRecordsContent>
         <MudTd Class="text-center">Not Found!</MudTd>
     </NoRecordsContent>

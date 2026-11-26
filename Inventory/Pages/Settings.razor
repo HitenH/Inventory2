@@ -66,6 +66,13 @@
         </MudText>
     </MudPaper>
 
+    @* Stage 3, batch 3-2 (Hiten, 26 Nov 2026): the places that count stock and their racks. *@
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Places and racks</MudText>
+        <MudButton id="settings-places" Variant="MudBlazor.Variant.Filled" Color="Color.Secondary" Href="/places">Places and racks</MudButton>
+        <MudText Typo="Typo.caption" Class="ml-2">The shop, the godown and the racks inside them (addresses like 02-03-B).</MudText>
+    </MudPaper>
+
     <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
         <MudText Typo="Typo.body2"><b>Database:</b> @backupService.DatabasePath</MudText>
         <div class="d-flex flex-wrap align-center gap-2">

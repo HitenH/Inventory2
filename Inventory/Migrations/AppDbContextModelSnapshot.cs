@@ -344,6 +344,45 @@ namespace Inventory.Migrations
                     b.ToTable("PairRules");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.PlaceEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("Places");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Shop",
+                            Number = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Godown",
+                            Number = 2
+                        });
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -411,6 +450,11 @@ namespace Inventory.Migrations
                     b.Property<decimal?>("DiscountAmount")
                         .HasColumnType("TEXT")
                         .HasColumnName("Discount");
+
+                    b.Property<int>("PlaceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Remarks")
                         .HasColumnType("TEXT");
@@ -529,6 +573,29 @@ namespace Inventory.Migrations
                     b.ToTable("PurchaseVariant");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.RackEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Levels")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlaceId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlaceId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("Racks");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.RoleEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -602,6 +669,11 @@ namespace Inventory.Migrations
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("TEXT")
                         .HasColumnName("Discount");
+
+                    b.Property<int>("PlaceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Remarks")
                         .HasColumnType("TEXT");
@@ -874,6 +946,9 @@ namespace Inventory.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("FromPlaceId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Note")
                         .HasColumnType("TEXT");
 
@@ -908,6 +983,9 @@ namespace Inventory.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ToPlaceId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("VariantEntityId")
                         .HasColumnType("TEXT");
@@ -1118,6 +1196,36 @@ namespace Inventory.Migrations
                     b.ToTable("Variants");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.VariantRackEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RackId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("VariantEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RackId");
+
+                    b.HasIndex("VariantEntityId", "RackId", "Level")
+                        .IsUnique();
+
+                    b.ToTable("VariantRacks");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.Image", b =>
                 {
                     b.HasOne("Inventory.Domain.Entities.VariantEntity", "Variant")
@@ -1199,6 +1307,17 @@ namespace Inventory.Migrations
                     b.Navigation("ProductVariant");
 
                     b.Navigation("Purchase");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.RackEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.PlaceEntity", "Place")
+                        .WithMany("Racks")
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Place");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.RolePermissionEntity", b =>
@@ -1366,6 +1485,25 @@ namespace Inventory.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Inventory.Domain.Entities.VariantRackEntity", b =>
+                {
+                    b.HasOne("Inventory.Domain.Entities.RackEntity", "Rack")
+                        .WithMany()
+                        .HasForeignKey("RackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Inventory.Domain.Entities.VariantEntity", "Variant")
+                        .WithMany()
+                        .HasForeignKey("VariantEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rack");
+
+                    b.Navigation("Variant");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Entities.CategoryEntity", b =>
                 {
                     b.Navigation("Products");
@@ -1378,6 +1516,11 @@ namespace Inventory.Migrations
                     b.Navigation("Sales");
 
                     b.Navigation("SalesOrders");
+                });
+
+            modelBuilder.Entity("Inventory.Domain.Entities.PlaceEntity", b =>
+                {
+                    b.Navigation("Racks");
                 });
 
             modelBuilder.Entity("Inventory.Domain.Entities.ProductEntity", b =>

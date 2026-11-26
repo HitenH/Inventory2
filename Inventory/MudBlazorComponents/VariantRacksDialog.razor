@@ -1,0 +1,175 @@
+@* Stage 3, batch 3-2 (Hiten, 26 Nov 2026): "Where this item is kept" – the racks of one variant in a section per place
+   (heading "Shop (01)", "Godown (02)" …), one boxed line per rack in words ("01-01-B  Rack 1, Level B"), the main rack of
+   each place first (★ = where to look first; the first rack added in a place becomes its main rack). Opened from
+   "Where it is kept" in the strip under a variant line on the product page.
+   With the switch "Set where items are kept (racks)": add with the address box (type or scan 0203B, or pick Place / Rack /
+   Level; Enter adds), ☆ makes main, ✕ takes a rack off, "Same for all variants" gives every other variant exactly these
+   racks. Without it the list is shown only. Each change is saved at once and written into the product's history.
+   Esc or Done closes. Rules in Service/PlaceService.cs. *@
+
+<MudDialog Class="variant-racks-dialog">
+    <DialogContent>
+        @foreach (var group in racks.GroupBy(r => r.PlaceId))
+        {
+            var first = group.First();
+            <div class="vr-place-section">
+                <div class="vr-place-title">@first.PlaceName <span class="vr-place-no">(@first.Address.Place.ToString("00"))</span></div>
+        <table class="table table-sm lines-table variant-racks-table">
+            <tbody>
+                @foreach (var r in group)
+                {
+                    var rack = r;
+                    <tr class="vr-row @(rack.IsMain ? "vr-main" : "")">
+                        <td class="c-vr-address"><span class="vr-address">@rack.Address</span></td>
+                        <td class="vr-description" title="@rack.Description">@rack.RackDescription</td>
+                        <td class="c-vr-main">
+                            @if (rack.IsMain)
+                            {
+                                <span class="vr-star" title="Main rack in @rack.PlaceName: look here first">★ main</span>
+                            }
+                            else if (CanChange)
+                            {
+                                <button type="button" class="vr-make-main" title="Make this the main rack in @rack.PlaceName" @onclick="() => SetMainAsync(rack)">☆ make main</button>
+                            }
+                        </td>
+                        @if (CanChange)
+                        {
+                            <td class="c-vr-remove">
+                                <button type="button" class="vr-remove" title="Take this rack off" @onclick="() => RemoveAsync(rack)">✕</button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+            </div>
+        }
+        @if (racks.Count == 0)
+        {
+            <div class="vr-none mb-3">Not on any rack yet.</div>
+        }
+        @if (CanChange)
+        {
+            @if (places.All(p => p.Racks.Count == 0))
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">No racks yet. Add them on Settings → Places and racks.</MudAlert>
+            }
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <AddressBox @ref="box" Places="places" @bind-Value="choice" OnEnter="AddAsync" />
+                <MudCheckBox T="bool" @bind-Value="makeMain" Label="Make main" Dense="true" Class="vr-make-main-box" />
+                <MudButton id="variant-rack-add" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">Add</MudButton>
+            </div>
+            @if (choice is { } c)
+            {
+                <div class="vr-choice">@c.Address = @RackAddress.Describe(places.First(p => p.Number == c.Address.Place).Name, c.Address)</div>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (CanChange && OtherVariants > 0)
+        {
+            <MudButton id="variant-racks-copy" Variant="MudBlazor.Variant.Filled" Color="Color.Default" OnClick="CopyAsync">Same for all variants</MudButton>
+        }
+        <MudButton id="variant-racks-done" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => MudDialog.Close(DialogResult.Ok(changed))">Done</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Guid VariantId { get; set; }
+    /// <summary>How many other variants the product has (for "Same for all variants").</summary>
+    [Parameter] public int OtherVariants { get; set; }
+    /// <summary>The person has "Set where items are kept (racks)"; without it the racks are only shown.</summary>
+    [Parameter] public bool CanChange { get; set; }
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<PlaceItem> places = new();
+    private List<VariantRackItem> racks = new();
+    private RackChoice? choice;
+    private bool makeMain;
+    private bool changed;
+    private AddressBox? box;
+
+    protected override async Task OnInitializedAsync()
+    {
+        places = await PlaceService.AllAsync();
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && CanChange)
+        {
+            await JS.FocusBoxAsync(".variant-racks-dialog .address-text");
+        }
+    }
+
+    private async Task LoadAsync() =>
+        racks = (await PlaceService.RacksOfVariantsAsync([VariantId])).GetValueOrDefault(VariantId) ?? new List<VariantRackItem>();
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+            changed = true;
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task AddAsync()
+    {
+        if (choice is not { } c)
+        {
+            Snackbar.Add("Type or scan an address, or pick the place, rack and level.", Severity.Warning);
+            return;
+        }
+
+        await RunAsync(() => PlaceService.AddVariantRackAsync(VariantId, c.RackId, c.Address.Level, makeMain));
+        choice = null;
+        makeMain = false;
+        box?.Clear();
+        await JS.FocusBoxAsync(".variant-racks-dialog .address-text");
+    }
+
+    private Task SetMainAsync(VariantRackItem rack) => RunAsync(() => PlaceService.SetMainAsync(rack.Id));
+
+    private Task RemoveAsync(VariantRackItem rack) => RunAsync(() => PlaceService.RemoveVariantRackAsync(rack.Id));
+
+    private async Task CopyAsync()
+    {
+        var what = racks.Count == 0 ? "no racks" : string.Join(", ", racks.Select(r => r.Address.Text));
+        if (!await DialogService.ConfirmAsync("Same for all variants",
+                $"Give all {OtherVariants} other variant{(OtherVariants == 1 ? "" : "s")} of this product exactly these racks ({what})? Their own racks are replaced.",
+                "Copy", Color.Primary))
+        {
+            return;
+        }
+
+        var count = 0;
+        await RunAsync(async () => count = await PlaceService.CopyToOtherVariantsAsync(VariantId));
+        if (count > 0)
+        {
+            Snackbar.Add($"Racks copied to {count} variant{(count == 1 ? "" : "s")}.", Severity.Success);
+        }
+    }
+
+    /// <summary>Opens the pop-up; true when something was changed (the product page then reloads the racks).</summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService, string title, Guid variantId, int otherVariants, bool canChange)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true, Position = DialogPosition.Center, DefaultFocus = DefaultFocus.None };
+        var dialog = await dialogService.ShowAsync<VariantRacksDialog>(title,
+            new DialogParameters<VariantRacksDialog> { { x => x.VariantId, variantId }, { x => x.OtherVariants, otherVariants }, { x => x.CanChange, canChange } }, options);
+        var result = await dialog.Result;
+        // Esc closes too; the racks may have changed before it, so the page reloads either way.
+        return result is not null;
+    }
+}

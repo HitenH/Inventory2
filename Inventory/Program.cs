@@ -36,6 +36,7 @@ builder.Services.AddScoped<LabelSourceService>();   // stage L-2: labels from a 
 builder.Services.AddScoped<StockChangeService>();   // stage 2: damage, sales returns (the rule book for stock changes)
 builder.Services.AddScoped<DamagedGoodsService>();   // stage 2: damage report and purchase returns
 builder.Services.AddScoped<StockEntryService>();   // stage 2: stock changes screen, reasons list, approval
+builder.Services.AddScoped<PlaceService>();   // stage 3: places, racks and where each variant is kept
 
 // Database and backup locations come from appsettings.json (DataFolder / BackupFolder).
 // Installed app default: %ProgramData%\InventoryApp. Development: the build folder (appsettings.Development.json).

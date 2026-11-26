@@ -16,6 +16,8 @@ namespace Inventory.Domain.Entities
         public SupplierEntity? Supplier { get; set; }
         public DateOnly Date { get; set; }
         public string? Remarks { get; set; }
+        /// <summary>Stage 3: the place the goods came into (entries before stage 3: the shop, <see cref="Places.StartingId"/>).</summary>
+        public int PlaceId { get; set; } = Places.StartingId;
     [System.ComponentModel.DataAnnotations.Schema.Column("Discount")]
         public decimal? DiscountAmount { get; set; }
         public decimal? TotalAmountProduct { get; set; }

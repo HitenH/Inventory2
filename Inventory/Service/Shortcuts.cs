@@ -108,9 +108,9 @@ namespace Inventory.Service
             {
                 return "/damage";
             }
-            if (segment.Equals("reasons", StringComparison.OrdinalIgnoreCase))
+            if (segment.Equals("reasons", StringComparison.OrdinalIgnoreCase) || segment.Equals("places", StringComparison.OrdinalIgnoreCase))
             {
-                return "/settings";   // the reasons list is kept from Settings
+                return "/settings";   // the reasons list (stage 2) and places and racks (stage 3) are kept from Settings
             }
             if (segment.Equals("category", StringComparison.OrdinalIgnoreCase))
             {

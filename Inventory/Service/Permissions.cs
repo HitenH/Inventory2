@@ -42,6 +42,8 @@ public static class Permissions
     public const string StockDamage = "stock.damage";
     /// <summary>Stage 2, batch 2-8: the "Waiting for approval" list - approve or reject stock changes.</summary>
     public const string StockApprove = "stock.approve";
+    /// <summary>Stage 3, batch 3-2: set which racks a variant is kept on (product page; later put-away). Places and racks themselves are kept from Settings.</summary>
+    public const string StockRacks = "stock.racks";
 
     public const string RatesPurchaseSee = "rates.purchase.see";
     public const string RatesSaleSee = "rates.sale.see";
@@ -71,6 +73,7 @@ public static class Permissions
         ["stockchanges"] = ScreenStockChanges, ["stockchange"] = ScreenStockChanges,
         ["approvals"] = StockApprove,
         ["reasons"] = AdminSettings,   // the reasons list is kept from Settings
+        ["places"] = AdminSettings,    // stage 3: places and racks are kept from Settings
         ["reports"] = ScreenReports,
         ["settings"] = AdminSettings,
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
@@ -121,6 +124,7 @@ public static class Permissions
         new(LabelsSettings, "Change label settings", AdminGroup),
         new(StockDamage, "Record damage", StockGroup),
         new(StockApprove, "Approve stock changes", StockGroup),
+        new(StockRacks, "Set where items are kept (racks)", StockGroup),
         new(RatesPurchaseSee, "See purchase rates", RatesGroup),
         new(RatesSaleSee, "See sale rates", RatesGroup),
     }.AsReadOnly();

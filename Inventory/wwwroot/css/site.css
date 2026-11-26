@@ -424,3 +424,52 @@ a, .btn-link {
 .reasons-table .c-reason-move { width: 90px; white-space: nowrap; }
 .reasons-table .c-reason-state { width: 130px; }
 .reasons-table .reason-off input { color: var(--mud-palette-text-disabled); text-decoration: line-through; }
+
+/* ==== Stage 3, batch 3-2: places and racks (Settings), the address box, racks per variant ==== */
+.places-table .c-place-no { width: 70px; }
+.places-table .c-place-no input { text-align: right; padding-left: 6px; padding-right: 6px; }
+.places-table .c-place-racks { width: 70px; }
+.places-table .c-place-actions { width: 130px; white-space: nowrap; }
+.places-table .place-selected td { background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); }
+.racks-table .c-rack-no { width: 80px; white-space: nowrap; }
+.racks-table .c-rack-levels { width: 170px; white-space: nowrap; }
+.racks-table .c-rack-levels select { display: inline-block; width: 70px; margin-left: 6px; padding: 2px 6px; }
+.racks-table .c-rack-items { width: 70px; }
+.racks-table .c-rack-actions { width: 50px; }
+.address-box .address-field-text { width: 190px; }
+.address-box .address-field-place { width: 170px; }
+.address-box .address-field-rack, .address-box .address-field-level { width: 82px; }
+.address-box .address-text { font-family: ui-monospace, Consolas, monospace; letter-spacing: .5px; }
+.address-or { color: var(--mud-palette-text-secondary); font-size: 12px; }
+.address-problem { color: var(--mud-palette-error); font-size: 12.5px; margin-top: 4px; }
+/* Hiten, 26 Nov 2026: the pop-up has a section per place, and each rack line its own small bordered box. */
+.vr-place-section { margin-bottom: 12px; }
+.vr-place-title { font-weight: 600; font-size: 14px; margin: 0 0 2px 2px; color: var(--mud-palette-primary); }
+.vr-place-no { font-weight: 400; color: var(--mud-palette-text-secondary); }
+.variant-racks-table { margin-bottom: 0 !important; }
+.variant-more-place { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 2px 10px; border: 1px solid var(--mud-palette-lines-default); border-radius: 6px; background: var(--mud-palette-surface); }
+.variant-racks-table { border-collapse: separate; border-spacing: 0 5px; }
+.variant-racks-table tr td { border-top: 1px solid var(--mud-palette-lines-default); border-bottom: 1px solid var(--mud-palette-lines-default) !important; background: var(--mud-palette-surface); }
+.variant-racks-table tr td:first-child { border-left: 1px solid var(--mud-palette-lines-default); border-radius: 6px 0 0 6px; }
+.variant-racks-table tr td:last-child { border-right: 1px solid var(--mud-palette-lines-default); border-radius: 0 6px 6px 0; }
+.variant-racks-table tr.vr-main td { border-color: color-mix(in srgb, var(--mud-palette-primary) 45%, transparent) !important; }
+.variant-racks-table .c-vr-address { width: 90px; }
+.variant-racks-table .c-vr-main { width: 120px; white-space: nowrap; }
+.variant-racks-table .c-vr-remove { width: 40px; text-align: center; }
+.variant-racks-table .vr-main .vr-description { font-weight: 600; }
+.variant-racks-table button { border: 0; background: transparent; padding: 0 4px; line-height: 1.4; cursor: pointer; }
+.vr-star, .vr-make-main { color: var(--mud-palette-primary); }
+.vr-remove { color: var(--mud-palette-error) !important; font-weight: 700; }
+.vr-address { font-family: ui-monospace, Consolas, monospace; }
+.vr-none { color: var(--mud-palette-text-secondary); }
+.vr-choice { margin-top: 6px; font-size: 13px; color: var(--mud-palette-text-secondary); }
+/* Product page: a variant line opens a strip with named buttons (Hiten, 26 Nov 2026). */
+.variants-table tr.variant-line { cursor: pointer; }
+.variants-table tr.variant-line:hover > td { background: color-mix(in srgb, var(--mud-palette-primary) 5%, transparent); }
+.variants-table tr.variant-open > td { background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); }
+.variants-table .variant-chevron { vertical-align: middle; margin-left: -4px; margin-right: 2px; color: var(--mud-palette-text-secondary); }
+.variants-table td.variant-more { background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); padding: 6px 12px 10px 12px; }
+.variant-more-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.variant-more-racks { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: 6px; font-size: 13px; }
+.variant-more-label { color: var(--mud-palette-primary); font-weight: 600; }
+.variant-more-rack.vr-main { font-weight: 600; }

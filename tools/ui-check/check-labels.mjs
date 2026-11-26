@@ -125,7 +125,11 @@ try {
 
   await b.goto('/products'); await b.waitFor(`document.querySelector('a[href^="product/"]')`, 10000);
   await b.eval(`document.querySelector('a[href^="product/"]').click()`);
-  await b.waitFor(`document.querySelector('.variant-labels-link')`, 10000); await sleep(800);
+  // Stage 3 (Hiten, 26 Nov 2026): "Print labels" sits in the strip that opens when a variant line is clicked.
+  await b.waitFor(`document.querySelector('tr.variant-line td.c-vname-p')`, 10000); await sleep(800);
+  for (let i = 0; i < 6 && !(await b.eval(`!!document.querySelector('.variant-labels-link')`)); i++) {
+    await b.eval(`document.querySelector('tr.variant-line td.c-vname-p').click()`); await sleep(1200);
+  }
   await b.eval(`document.querySelector('.variant-labels-link').click()`);
   await b.waitFor(`location.pathname === '/labels' && document.querySelector('#label-variant')?.value`, 10000); await sleep(1500);
   expect('the variant icon chose the product', (await b.eval(`document.querySelector('.focus-label-product input').value`)).length > 0, true);

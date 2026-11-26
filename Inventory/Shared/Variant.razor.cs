@@ -20,12 +20,15 @@ public partial class Variant
     [Inject] private IProductRepository ProductRepository { get; set; }
     [Inject] private IImageRepository ImageRepository { get; set; }
     [Inject] private IConfiguration config { get; set; }
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
 
     private VariantModel variantModel = new();
     private Image image = new();
     private List<VariantModel> variants = new();
     // Stage 2: sellable, damaged and waiting pieces per variant (shown by StockFigure).
     private Dictionary<Guid, Inventory.Domain.StockFigures> stockInHand = new();
+    // Stage 3: the racks each variant is kept on.
+    private Dictionary<Guid, List<VariantRackItem>> racksByVariant = new();
     private EditContext? editContext;
     private MudTextField<string?> variantInputRef = null!;
     private ValidationMessageStore? messageStore;
@@ -42,6 +45,39 @@ public partial class Variant
     {
         GetVariants();
         await LoadStockInHandAsync();
+        await LoadRacksAsync();
+    }
+
+    private async Task LoadRacksAsync() =>
+        racksByVariant = Product?.Variants is { Count: > 0 }
+            ? await PlaceService.RacksOfVariantsAsync(Product.Variants.Select(v => v.Id))
+            : new Dictionary<Guid, List<VariantRackItem>>();
+
+    // Stage 3, batch 3-2 (Hiten, 26 Nov 2026): the variant line that is open (its strip with Print labels / Where it is kept).
+    private Guid? expandedId;
+
+    private bool CanOpen(VariantModel variant) => Product?.Id != Guid.Empty && variant.Id != Guid.Empty;
+
+    private void RowClicked(TableRowClickEventArgs<VariantModel> e)
+    {
+        if (e.Item is { } variant && CanOpen(variant))
+        {
+            expandedId = expandedId == variant.Id ? null : variant.Id;
+        }
+    }
+
+    private string RowClass(VariantModel variant, int index) =>
+        !CanOpen(variant) ? "" : expandedId == variant.Id ? "variant-line variant-open" : "variant-line";
+
+    /// <summary>Stage 3, batch 3-2: the "Where this item is kept" pop-up for one variant.</summary>
+    private async Task OpenRacksAsync(VariantModel variant)
+    {
+        var others = (Product?.Variants?.Count ?? 1) - 1;
+        var canChange = Access?.Allows(Permissions.StockRacks) == true;
+        if (await VariantRacksDialog.ShowAsync(DialogService, $"Where {Product?.ProductId} / {variant.VariantId} is kept", variant.Id, others, canChange))
+        {
+            await LoadRacksAsync();
+        }
     }
 
     private void HandleValidationRequested(object? sender, ValidationStateChangedEventArgs args)

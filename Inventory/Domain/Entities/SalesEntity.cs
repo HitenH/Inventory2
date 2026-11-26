@@ -18,6 +18,8 @@ namespace Inventory.Domain.Entities
         public List<SalesVariantEntity>? SalesVariants { get; set; } = new();
         public List<SalesSummaryEntity>? SalesSummaries { get; set; } = new();
         public string? Remarks { get; set; }
+        /// <summary>Stage 3: the place the goods left from (entries before stage 3: the shop, <see cref="Places.StartingId"/>).</summary>
+        public int PlaceId { get; set; } = Places.StartingId;
         public decimal TotalQuantity { get; set; }
     [System.ComponentModel.DataAnnotations.Schema.Column("Discount")]
         public decimal DiscountAmount { get; set; }

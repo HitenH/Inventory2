@@ -1,8 +1,8 @@
 # Plan for version 3.0 – from one counter PC to a multi-user, multi-location system
 
-**Status:** agreed direction, 14 Nov 2026 (session 10). **Built so far:** stage 0 (live 16 Nov 2026), stages 1a, 1b, 1c and L-1/L-2 (25 Nov 2026) – **installed: the counter PC runs version 3.0** (Hiten, 26 Nov 2026; the package made 25 Nov 2026 from commit `f910f58`). 1d parked while there is one PC; L-3 waits for the sticker printer. **Stage 2** (stock breakdown and damage): 2-1 and 2-2 pushed (`d66af1f`), 2-3 and 2-4 pushed (`663098e`), 2-5 and 2-6 pushed 26 Nov 2026, 2-7 and 2-8 pushed 26 Nov 2026 – **stage 2 complete**; not installed. See "Where we are" below.
+**Status:** agreed direction, 14 Nov 2026 (session 10); **next: stage 3 (locations), to be opened in a fresh chat** (26 Nov 2026). **Built so far:** stage 0 (live 16 Nov 2026), stages 1a, 1b, 1c and L-1/L-2 (25 Nov 2026) – **installed: the counter PC runs version 3.0** (Hiten, 26 Nov 2026; the package made 25 Nov 2026 from commit `f910f58`). 1d parked while there is one PC; L-3 waits for the sticker printer. **Stage 2** (stock breakdown and damage): 2-1 and 2-2 pushed (`d66af1f`), 2-3 and 2-4 pushed (`663098e`), 2-5 and 2-6 pushed 26 Nov 2026, 2-7 and 2-8 pushed 26 Nov 2026 – **stage 2 complete**; not installed. See "Where we are" below.
 **Versions:** 1.0 = the May 2026 build. 2.0 = the current app, concluded 14 Nov 2026 and described in `README.md` (what it does, how it is built, how to run, test and install it, known limits). 3.0 = this plan.
-**How this fits:** `README.md` explains the app as it is. This file is the only plan. Nothing is due on version 2.0. When a stage starts, its open questions (section 9) are asked and its batches are written into a "Current stage" section added at the top of this file.
+**How this fits:** `README.md` explains the app as it is. This file is the only plan. Nothing is due on version 2.0. When a stage starts, its open questions (section 9) are asked and its batches are written into a section for that stage near the top of this file (see stage 1, L and 2).
 **Written for:** Hiten (plain English) and any future session picking this up.
 **This plan will change.** It is reviewed at the start of every stage; what we learn in one stage may reorder the next.
 
@@ -10,46 +10,53 @@
 
 ---
 
-# CURRENT STAGE: Stage 1 – Foundation (opened 24 Nov 2026)
+# WHERE WE ARE (26 Nov 2026, end of session 14) – read this first
+
+**On the counter PC:** version 3.0 – the package made 25 Nov 2026 from commit `f910f58` (stages 1a, 1b, 1c, L-1, L-2), installed by Hiten (confirmed 26 Nov 2026). **Stage 2 is pushed but not installed.**
+
+**Done and pushed (all on `main`, last commit `4013c7d`):**
+- **Stage 1a** (rules in one place) – line rules (negative quantities allowed, zero refused), double-Enter guard, "not found" and plain messages (partly). 1a-3 parked.
+- **Stage 1b** (users and permissions) – Users and Roles screens, screens and menu follow the role, rate hiding both ways, three starter roles.
+- **Stage 1c** (who and when) – record stamps, "someone else changed this, reload", the activity log (panel per record and the Activity log screen).
+- **Stage L, L-1 and L-2** (labels) – A4 sheets of 65, named label set-ups, labels from a purchase or a product.
+- **Stage 2** (stock breakdown and damage) – **complete**, see "Stage 2" below: stock changes beside purchases and sales (nothing old converted); stock in hand = sellable pieces with damaged behind an arrow; Record damage on purchases and sales returns (and lowering it again); Sales Returns with Given in exchange; the damage report (supplier, status, Repaired, Written off, Sent, "See activity log"); Purchase Returns; the Stock changes screen (damage in the shop, count corrections, write-offs, opening stock) and the reasons list; approval (Admin's switch in Settings, off; "Waiting for approval"). Commits `d66af1f`, `663098e`, `d38a114`, `4013c7d`.
+
+**Counts now:** build 0 errors / 329 warnings (baseline was 333); **525 tests** pass; **full browser suite for stage 2 (21 checks) passed 26 Nov 2026** (`tools/ui-check/run-full-suite.sh`).
+
+**Now (26 Nov 2026, session 15): stage 3 – Locations – being built.** Describe step and PC mock-ups done with Hiten; answers and batches 3-1 … 3-7 are in the "Stage 3" section below. **3-1 and 3-2 pushed 26 Nov 2026**; next 3-3 + 3-4 (first run `check-places` and `check-labels`, updated for the variant strip but not yet run after the last look changes). The questions below were the Describe step's starting list. Installing stage 2 on the counter PC stays open for whenever Hiten chooses (recommended soon: it is a large change best used for a while; steps under "Install rule" below).
+
+**Stage 3 – questions for the Describe step** (section 4 "Stage 3" and Q7; ask in plain English, a few at a time, with a suggestion each):
+1. How many shops and godowns are there now, and are they in the same building / on the same network? Do goods move between them?
+2. Areas inside each place: rack only, or rack and shelf (and how are they named or numbered today)?
+3. A usual place for each product variant: one per variant, or one per variant per shop/godown?
+4. Purchases and sales: which place does a purchase arrive in and a sale leave from – one default place per screen or user, or chosen on each voucher?
+5. Moving stock between areas and between places: who may do it, does it need approval (the stage 2 approval switch can cover it), and should goods between two buildings show as "in transit"?
+6. Starting point: put all existing stock in one starting place (for example "Main shop") and fill in areas gradually or with a first stock count (stage 4)?
+7. Should users be limited to their places (a godown person sees only the godown)?
+8. Damage, returns and the damage report per place?
+Design note for stage 3 (same "way B" as stage 2): stock stays worked out, never stored – each entry (purchase, sale, stock change, and a new transfer entry) carries the place it happens in; old entries get the starting place; `Domain/StockQuery.cs` adds up per place. Read "Stage 2" below and README section 4 ("Stock query", "Stock changes …", "Damage report …", "Stock changes screen …") before designing.
+
+**Parked (Hiten's decision, comes back later):**
+- **1d – shop network:** parked 25 Nov 2026 ("I only have 1 system as of now"); back when a second PC, tablet or phone is added.
+- **Amounts and totals** (1a-3; returns and exchanges carry quantities only for now), and CSV imports refusing quantity ≤ 0.
+- **L-3 – sticker printer settings:** when Hiten has the sticker printer (make, model, label size).
+- **Labels tied to purchases** (extra labels only with permission): with goods inwards, stage 5.
+- **Year-end close** into a fresh database (see "To do – Year-end close"; first close would be 31 March 2027).
+- Offers not yet answered: an Alt + letter for Sales Returns / Purchase Returns / Stock changes / Damage report (none chosen; Alt+N and Esc work); whether the starter roles Purchase and Sales get the new stage 2 switches (today only Admin has them).
+
+**Install rule:** copy the live database before installing anything (README section 10). The upgrades not yet on the counter PC: `StockChanges` (stage 2-1: new tables and two indexes) and `StockApproval` (2-8: a column and a table); both only add, and 2-1 was tried on a copy of real data (every item's stock identical). An older build cannot open an upgraded database. Steps: full browser suite on a test copy; copy the live database (the counter PC is this PC: live 3.0 runs from `H:` on port 5000 – never touch `H:` or stop it without Hiten's yes); try the upgrade on that copy and compare every item's stock before and after; make the package; Hiten installs; smoke test at the counter.
+
+**Working agreements with Hiten:** plain English, no jargon; he answers questions and says **"push"** to approve – nothing is committed or pushed before that. Show mock-ups (ASCII is fine) before building a new screen. Build step by step or two batches at a time (Hiten, 25 Nov 2026). Tests every batch; one browser check per two batches; the full browser suite once per stage and before any install. Senior-developer role: honest opinions and a recommendation; delegate large batches to a cheaper agent with a precise brief and review its work, or do it directly when Hiten asks.
+
+---
+
+# Stage 1 – Foundation (opened 24 Nov 2026; 1a, 1b, 1c done; 1d parked)
 
 Stage 0 is done (version 2.0 live on the counter PC since 16 Nov 2026). Hiten opened stage 1 on 24 Nov 2026 and asked that it be done **in the order written**: 1a, then 1b, 1c, 1d.
 
 **Baseline taken before any stage 1 code was written (24 Nov 2026):** build 0 errors / 333 warnings; 294 tests pass. Any later failure is stage 1's, not inherited.
 
-**Rollback:** the live counter PC runs the code tagged `live-16-nov-2026`. Before any stage 1 build is installed there, a copy of the live database is taken first (README section 10, "Going back"). Hiten confirmed on 24 Nov 2026 that he also keeps his own database backups in two physical places away from the running drive.
-
-## Where we are (26 Nov 2026, session 14) – read this first
-
-**Installed on the counter PC (Hiten, 26 Nov 2026): version 3.0** – everything below up to and including stage L (the package made 25 Nov 2026 from commit `f910f58`). Stage 2 is not installed yet.
-
-**Done and pushed (all on `main`):**
-- **Stage 1a** (rules in one place) – 1a-1 line rules (negative quantities allowed for returns/damage, zero refused), 1a-2 double-Enter guard, 1a-4 "not found" and plain messages (partly). 1a-3 parked.
-- **Stage 1b** (users and permissions) – Users and Roles screens, screens and menu follow the role, rate hiding both ways, three starter roles.
-- **Stage 1c** (who and when) – who made and changed every record, "someone else changed this, reload", the activity log (side panel on each record and the Activity log screen with coloured record names). Full browser suite passed.
-- **Stage L, batches L-1 and L-2** (label printing) – the Labels screen for A4 sheets of 65 ready-cut labels, named label set-ups on Label settings, filling from the bottom-right with "Already used on this sheet" kept in the database; Labels in the menu under Masters (Alt+L); "Print labels" button and Alt+L on a purchase; label icon per variant on the product page; Ctrl+P prints; Esc goes back to the purchase or product the Labels screen was opened from; every print in the activity log. Last commit `19ee5ed`.
-
-- **Stage 2, batches 2-1 and 2-2** (pushed `d66af1f`) – stock changes beside purchases and sales; stock in hand = sellable pieces, damaged behind a small arrow on the product page and the Variant Report; Damaged column on the Variants List report.
-
-**Counts now:** build 0 errors / 329 warnings (baseline was 333); **525 tests** pass (stage 2 complete and pushed 26 Nov 2026).
-
-**Done by Hiten (25 Nov 2026):** the printer test of the latest labels and the scan test.
-
-**Now (26 Nov 2026): stage 2 – stock breakdown and damage**, step by step or two batches at a time (Hiten). **Batches 2-3 (Record damage) and 2-4 (Sales Returns) built, checked and pushed 26 Nov 2026** (with Hiten's additions: lowering recorded damage, Given in exchange; the exchange does not mark anything damaged by itself – Hiten: "let it be as it is"). Next: 2-5 and 2-6 (damage report, purchase returns).
-
-**Parked (Hiten's decision, comes back later):**
-- **1d – shop network:** parked 25 Nov 2026 ("I only have 1 system as of now"); back when a second PC, tablet or phone is added.
-- **Until the end of stage 1:** amounts/totals (1a-3), the proper damage/returns workflow, CSV imports refusing quantity ≤ 0 (see "Parked" below).
-- **L-3 – sticker printer settings:** when Hiten has the sticker printer (needs make, model and label size).
-- **Labels tied to purchases** (extra labels only with permission from someone higher up): with goods inwards, stage 5.
-
-**Batches 2-5 (damage report) and 2-6 (purchase returns) built, checked and pushed 26 Nov 2026** (with Hiten's changes: Supplier and Status in the row, Repaired / Written off in Status, no "Not ready", "See activity log" in the bottom bar, Esc back to the report).
-
-**Batches 2-7 (Stock changes screen, reasons list) and 2-8 (approval) built, checked and pushed 26 Nov 2026 – stage 2 is complete.** **Full browser suite for stage 2, run 26 Nov 2026: all 21 checks pass** (keyboard-only, entry flows, pop-ups and sale, save and focus, Bulk Entry, Alt+B, line rules, import, access, rates, edit clash, activity log panel, labels, stock figures, damage and returns, damage report, stock changes and approval, look, Activity log screen; users and roles each on a fresh copy), run by `tools/ui-check/run-full-suite.sh`. The import check was updated for the stock report's new Damaged column.
-
-**Next step:** Hiten chooses: install stage 2 on the counter PC, or the next stage (stage 3, locations). Stage 2 is installed when Hiten chooses (steps: full browser suite on a test copy, copy the live database first, try the upgrade on that copy, install, smoke test at the counter).
-
-- **Install rule:** copy the live database before installing anything (README section 10). The upgrades add tables and columns (`UsersAndRoles`, `StarterRoles`, `RecordStamps`, `ActivityLog`, `ActivityLogDetail`, `LabelLayouts`, `LabelSheetUse`): an older build cannot open the upgraded database. The stage 1 upgrades were tried on a copy of real data (both users became Admin, nothing else changed); the two label upgrades only add new tables.
-- **Working agreements with Hiten:** plain English, no jargon; he answers questions and says **"push"** to approve – nothing is committed or pushed before that. Show mock-ups (ASCII is fine) before building a new screen. Tests every batch; one browser check per two batches; the full browser suite once per stage and before any install. Senior-developer role: delegate large batches to a cheaper agent with a precise brief and review its work, or do it directly when Hiten asks. Stop any agent that loops.
+**Rollback:** the counter PC runs version 3.0 (package from commit `f910f58`); version 2.0 is tagged `live-16-nov-2026`. Before anything newer is installed there, a copy of the live database is taken first (README section 10, "Going back"). Hiten confirmed on 24 Nov 2026 that he also keeps his own database backups in two physical places away from the running drive.
 
 ## Stage 1a – Move the rules into one place (nothing new on screen)
 
@@ -125,7 +132,7 @@ As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
 | L-3 | **Label printer settings (Hiten, 25 Nov 2026):** this module as built is for **A4 ready-label sheets**. A Settings page is to let the Admin switch the A4-sheet printing off and choose a different printer with its own settings – first the dedicated sticker printer (needs its make, model and label size); the layout is already kept in one place (`LabelSheetLayout`) for this. | When Hiten has the sticker printer |
 
 
-# Stage 2 – Stock breakdown and damage (opened 25 Nov 2026, before stage 1 is installed: Hiten chose to build it first)
+# Stage 2 – Stock breakdown and damage (opened 25 Nov 2026) – **DONE 26 Nov 2026** (pushed, not installed)
 
 **What the data shows today (copy of real data, read only, 25 Nov 2026):** supplier "CAPITAL" stands in for things that are not purchases – opening stock, customer returns ("RAJA BABU RETURN" …) and 442 minus lines with no reason (stock corrections). 175 minus lines on sales are customer returns ("RETURN GOODS", "EXCHANGE OF GODS"). So a customer return is recorded two different ways, and most corrections carry no reason.
 
@@ -164,6 +171,64 @@ As written in section 4 (stage 1). Stage 1b batches (opened 24 Nov 2026):
 | 2-6 **built 26 Nov 2026** | Purchase Returns (`/purchasereturns`, `/purchasereturn/{id}`, menu under Transactions, switch "Open the Purchase Returns screen"; Alt+N and Esc, no letter): **Sent** on the damage report makes one purchase return for the ticked rows' supplier (different suppliers refused: one supplier at a time) and takes the pieces off the damaged count; the page lists "Damaged goods sent back" with where each was found (X: not sent after all, back on the damage report) and "Good stock sent back" through the line editor (quantities only, more than 0); a purchase return can also be made directly. Deleting one puts damaged goods back on the report. After a purchase return nothing more is tracked (Hiten). 511 tests pass (13 new); `tools/ui-check/check-damage-report.mjs` (setup `setup-damage-returns.py`) passes; `check-look` now also covers Sales Returns, Purchase Returns and the damage report and passes. | Yes |
 | 2-7 **built 26 Nov 2026** | **Stock changes** screen (`/stockchanges`, `/stockchange/{id}`, menu under Transactions, switch "Open the Stock changes screen"; Alt+N and Esc, no letter; `Pages/StockEntries.razor`, `Pages/StockEntry.razor`, rules in `Service/StockEntryService.cs`): an entry has a type – **Damaged in the shop** (Sellable → Damaged; shows on the damage report as "Damaged in the shop, entry N", its From link opens the entry), **Count correction** (type 3 for found more, -2 for found fewer), **Written off** (good stock out), **Opening stock** (in) – fixed once saved, a date, a **Reason** from the list (copied onto every line) and remarks; lines through the line editor (quantities only, Remarks = a note per line). Shop damage already repaired, written off or sent back cannot be lowered below that, changed to another item or deleted. **Reasons list** (`/reasons`, button "Reasons" on Settings; Esc back to Settings): add (Enter), rename, move up/down, take off the list / put back (never deleted; at least one stays); written to the activity log. Upgrade `StockApproval` adds `StockChanges.Reason` and the `AppSettings` table. | Yes |
 | 2-8 **built 26 Nov 2026** | **Approval switch** in Settings that only the Admin may change (Hiten, 25-26 Nov 2026: "turned off with a switch"), and the "Waiting for approval" list (Approve / Reject). With the switch on, **every stock change waits for approval before it moves stock**: damage recorded or lowered on a purchase or sales return, sales returns and their exchanges, purchase returns, and the damage report's Repaired, Written off and Sent (Hiten, 26 Nov 2026: "even these items need approval"); stock changes from the stock change screen (2-7) too. Assigning a supplier and "Ready to send" move no stock and need no approval. The damage report shows pieces waiting for approval as such. `StockChangeService.NewStatusAsync()` is the one place this is decided (setting `StockApproval` in the `AppSettings` table, off unless switched on; switching is confirmed and written to the activity log). Changing the lines of an approved or rejected entry while approval is on sends it for approval again. **Waiting for approval** (`/approvals`, menu under Transactions, switch "Approve stock changes"; `Pages/Approvals.razor`): oldest first, each entry with who made it, what it belongs to and its lines in plain words ("P1 / V1: 4 out of stock"); **Approve** (stock moves now, approver and time recorded) or **Reject** (confirmation; stock never moves). Waiting or rejected entries carry a notice on their page (`Shared/ApprovalBanner.razor`); the damage report shows waiting pieces per row and keeps waiting repairs aside so they cannot be taken twice; stock figures show waiting pieces behind the arrow. 525 tests pass (14 new); `tools/ui-check/check-stock-approval.mjs` passes; `check-look` covers the new screens. | Yes |
+
+
+# Stage 3 – Locations (opened 26 Nov 2026) – 3-1 and 3-2 pushed
+
+**What the data shows today (copy of real data, read only, 26 Nov 2026):** nothing records where goods are kept – no place, rack or shelf anywhere in the data. Stage 3 starts from nothing; old entries get a starting place (way B, as stage 2: nothing converted).
+
+**Decided with Hiten (Describe step, round 1, 26 Nov 2026):**
+- **Places today:** one shop with 3–4 rooms / store places, and one godown, all in the same building. Goods move between them very often. The godown will get a PC or a mobile device (that device needs stage 1d, shop network, which is parked – to be brought back when the device comes; until then moves are entered at the counter PC).
+- **In transit:** built, with a switch; when switched off it appears nowhere (Hiten). Off for now, since everything is in one building – a move counts at once.
+- **Way A chosen:** the app counts stock per place only; racks and levels are **signposts for the pickers** ("where to look"), not counted per shelf. Counter sales stay as today.
+- **Address naming:** Location – Rack (number) – Level (letter), e.g. Godown 1 – Rack 1 – Level A. Nothing is named today.
+- **Many to many:** one variant can sit on several racks in the shop and several in the godown; one rack level holds many variants.
+
+**Round 1 follow-ups and round 2 (Hiten, 26 Nov 2026):**
+- **The shop is one unit** for now (its rooms and the office are not counted separately). Places that count stock: the shop and the godown.
+- **Signposts serve pickers and arrangers** (put-away) alike.
+- **Address numbers only, except the level letter:** location number – rack number – level letter, e.g. `01-03-B` / `0103B`; QR form still open (Hiten unsure about `01 Tab 03 Tab B`).
+- **Network:** the counter PC acts as the server and the godown device connects to it; the godown user's role opens only the screens the godown needs (stage 1b roles already do this). A central server replacing the counter PC was raised as an option (section 6.1); one database either way, so nothing to sync.
+- **Purchases arrive in the godown; sales leave from the shop.** Today goods are fetched from the godown and sold; from now a move is recorded **when goods leave the godown and again when they arrive** in the shop (a two-step move).
+- **Moves:** a "Move stock" switch, with its own approval switch, off (as suggested).
+
+**Round 3 and follow-ups (Hiten, 26 Nov 2026):**
+- **Choosing an address by hand:** Location, Rack, Level picked one by one; the code (`01-03-B`) is put together by the app. Two-digit racks (99 per location) are enough.
+- **Stage 3 goes live only when the godown PC and mobile devices are there** – plan as if they exist (so stage 1d, shop network, is needed before go-live). One Admin PC can still control everything.
+- **Level A is the bottom level.** **One main rack per item**, others "also at".
+- **Starting point:** all existing stock starts in the shop; the godown is filled by "starting count" moves, shop → godown, rack by rack.
+- **Users and places:** a user can be limited to one place or several; what they see follows it (a godown person sees only godown stock, a manager both). Some users may move stock, some not.
+- **Damage needs no location** (damage report as today); Hiten "not sure yet" on returns per place.
+- **Open question from Hiten:** goods arrive in the godown, are checked, some are arranged there and some sent to the shop – how does a purchase get its location? (Proposed flow given 26 Nov 2026, awaiting his answer.)
+
+**Agreed (Hiten, 26 Nov 2026, before mock-ups):**
+- **Three ways to give an address, same result:** type `0103B`, scan the rack label, or pick Location / Rack / Level from drop-downs. The rack QR holds the same text a person types (`0103B`); dashes are accepted too.
+- **PC screens first.** Phone screens are a later piece of work of their own (Hiten: "we have to do the entire thing"). Stage 1d (shop network) is still needed for the godown PC.
+- **Damage (Hiten's correction):** a place is chosen only when damage is found in the shop or godown. Damage on a purchase belongs to the godown; a damaged sales return goes straight to damage (the shop count is not touched); an exchange is given from the shop; a repaired piece goes back to the **shop**.
+- **Purchase flow agreed:** (1) a purchase lands in the godown; (2) checking and arranging sets the signposts only; (3) "Send to shop" on the purchase opens a move filled with its lines – pieces are "on the way"; (4) the shop receives and confirms, differences flagged. A move can also be made without a purchase.
+- **Put-away:** after a purchase the goods are arranged; if an item's rack is full the user chooses another rack and assigns it to the item.
+
+**Mock-ups (PC) shown 26 Nov 2026:** Places and racks (Settings), the address box, racks per variant on the product page, Put away and Send to shop on a purchase, Moves (send / arriving from godown / receive), Where is it?, per-place stock behind the arrow, places per user, Place box on the Stock changes screen. Hiten's answers:
+- **A missing piece on receive is a red flag** and must be highlighted until it is sorted out.
+- **Selling with 0 in the shop is allowed** (in a hurry goods come from the godown without the move being recorded).
+- **Bulk orders sometimes go straight from the godown:** a **"From" box on the Sale** (Shop by default, the cursor skips it, scanner flow unchanged), changed to Godown for such orders; one place per sale. Only some (senior) users may choose Godown – a switch the Admin controls. No three-step transfer → receive → sale.
+- **Pickers work from a sales order** – that is stage 6; **no pick list in stage 3** (Hiten: stick to the plan).
+- **Emptied racks:** the app does not count per rack, so it cannot know a rack is empty; Hiten asked how an emptied rack is recorded (a 100-piece order clears 3 of 4 racks). Proposed 26 Nov 2026: tick "emptied" beside the godown racks on the move as goods are sent, and an "Empty now" button on Where is it?; the main rack stays as the item's home, only extra racks are removed; all godown racks greyed by themselves when the godown count is 0. Hiten (26 Nov 2026): not sure – godown racks change all the time, shop racks are more or less fixed. **Decided: settle it in batch 3-7**, after he has used racks on the test copy. Proposal to try then: shop racks fixed (main + also at, removed only by hand); godown racks "currently at" only (no main), ticked "emptied" on a move and cleared by themselves when the godown count reaches 0.
+- **Order (Hiten, 26 Nov 2026):** finish stage 3, then **install stages 2 and 3 together** on the counter PC, then stage 1d (shop network). Until 1d, moves are entered on the counter PC.
+
+**Batches (proposed 26 Nov 2026; Hiten said "start" the same day; each: its own tests, build clean, browser check per two batches; full suite at the end):**
+
+| Batch | What | Visible? |
+|---|---|---|
+| 3-1 **built 26 Nov 2026** | Groundwork: tables `Places` (01 Shop, 02 Godown made by the upgrade), `Racks`, `VariantRacks`; every purchase and sale carries its place (`PlaceId`, old ones and today's screens: the Shop), stock change lines carry the place of their sellable side (`FromPlaceId` / `ToPlaceId`; stage 2 screens still make lines without one, and the save puts them in the Shop – `StockPlaces.FillStartingPlace` – until 3-4 gives each its own place). `StockQuery.SellableByPlaceAsync`: places always add up to the sellable figure (entries outside the shop are added up, the shop holds the rest – ~0 ms on real data). Database rules: a place must exist; a place holding entries (and the shop) cannot be deleted; a move line Sellable → Sellable is allowed only between two different places (stage 2's "from ≠ to" rule widened for 3-5). Upgrade `Places` only adds (no table rebuilt); tried on a copy of real data: all 675 items' stock identical (12,429 pieces), all in the Shop, no old table changed by a row. | No |
+| 3-2 **built 26 Nov 2026** | **Places and racks** (`/places`, button on Settings, switch "Change settings and backups"; Esc back to Settings; `Pages/PlacesAndRacks.razor`, rules in `Service/PlaceService.cs`): add a place (Enter; next free number), rename, change its number while it has no racks, delete only when empty; per place add racks in a range ("From 1 To 5, levels A to E"; racks already there are skipped; the next free number is suggested), change a rack's top level, delete a rack – refused while a rack or level holds items. The transit switch moves to 3-5 (nothing to switch before moves exist). **Address box** (`Shared/AddressBox.razor`, `Service/RackAddress.cs`): type or scan `0203B` / `02-03-B` / `2-3-b`, or pick Place / Rack / Level – each fills the other; a wrong address says plainly why ("Godown has no rack 09.", "Rack 02-05 has levels A–C."). **Product page** (Hiten, after trying it: "why crowd the product page?"): no Racks column. Then (Hiten, on the uneven icons): **clicking a variant line opens a strip under it** (a small arrow before the Variant ID shows it can open; one line open at a time) with named buttons **Print labels** and **Where it is kept** and the racks in words ("Kept on: ★ 01-01-B Shop, Rack 1, Level B …"); the label icon left the Reorder Level column, which now holds only the number; Edit / Delete, the stock arrow and the photo keep their own clicks. **Where it is kept** opens the "Where … is kept" pop-up (`MudBlazorComponents/VariantRacksDialog.razor`), one row per rack **in full words** ("01-01-B  Shop, Rack 1, Level B  ★ main"). With the new switch "Set where items are kept (racks)" (Admin by default): add (Enter adds; the chosen address is spelled out under the box), ☆ make main, ✕ takes off, "Same for all variants" (confirmation; their own racks are replaced); without it the pop-up only shows the racks. Each rack line in the pop-up has a small gap and a border of its own, and the racks are **grouped in a section per place** with a heading ("Shop (01)", "Godown (02)"; lines then read "01-01-B  Rack 1, Level B"); the strip groups them the same way ("Shop: ★ 01-01-B Rack 1, Level B …") (Hiten). Not re-tested after these last look changes (Hiten: "do not run any tests"); `check-places` and `check-labels` were updated for the strip and run with the next pair. Small rules chosen: the first rack added in a place becomes its main rack; when the main rack is taken off, the next one of that place becomes main. Rack changes go into the product's history (activity log) without stamping the product, so setting racks never clashes with someone editing it; place and rack changes are logged as settings. 561 tests pass (36 new); 329 warnings. Browser check `tools/ui-check/check-places.mjs` (34 checks) passes; `check-look` (now with Places), `check-save-and-focus` and `check-labels` pass. | Yes |
+| 3-3 | Places per user on the Users screen (sees and works only there; a godown person sees godown stock only); stock figures per place behind the arrow; Variant Report Place filter. | Yes |
+| 3-4 | Purchases land in the godown; the Sale "From" box (Shop, skipped by the cursor; Godown only with the new switch); Place box on the Stock changes screen; damage follows Hiten's rules (purchase damage from the godown, damaged sales returns straight to damage, exchange from the shop, repaired back to the shop). Full keyboard checks for the Sale screen. | Yes |
+| 3-5 | Moves: "Send to shop" on a purchase (filled with its lines) and free moves; pieces "on the way"; switch "Move stock" and its own approval switch (off); transit switch off = one-step move; "Starting count" moves (shop → godown, one step). | Yes |
+| 3-6 | Receiving in the shop: "Arriving from godown", confirm received (scan or type); a missing piece is a red flag on the move, the Moves list and the menu until received late or written off; shop figure red below zero and a "Shop below zero" list. | Yes |
+| 3-7 | Put away on a purchase; emptied racks; "Where is it?" (item → racks, rack → items). Then the full browser suite. | Yes |
+
+After stage 3: install stages 2 and 3 together (full browser suite, upgrade tried on a copy of the live database, every item's stock compared), then stage 1d (shop network, its own short Describe step) so the godown PC can connect.
 
 
 # To do – Year-end close (Hiten, 25 Nov 2026)
