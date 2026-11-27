@@ -16,7 +16,10 @@ It builds nothing (build first: `dotnet build Inventory/Inventory.csproj`), make
 `Inventory\bin\Debug\net10.0\Inventory.db` in a scratch folder (`FULLSUITE_DIR`, default `%TEMP%\inventory-fullsuite`),
 prepares them with the setup scripts, starts the app on port 5299, runs every check, and stops the app again. It prints one
 line per check (exit code, FAIL/ERROR lines, last line); each check's full output is in `<dir>/<check>.log`. `check-users`
-and `check-roles` change users and roles, so each gets its own fresh copy. Last run: stage 2, 26 Nov 2026 – all 21 checks pass.
+and `check-roles` change users and roles, so each gets its own fresh copy; `check-damage-returns`, `check-damage-report` and
+`check-whereis` expect the setup's purchase and racks untouched, so they share a second freshly prepared copy. **Build first
+and leave the PC alone while it runs** (about 40 minutes): a build or restart meanwhile makes checks fail on timing.
+Last run: end of stage 3, 27 Nov 2026 – all 24 checks pass.
 
 ## One check by hand
 
@@ -48,7 +51,8 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
 
 ## Scripts
 
-- `cdp.mjs` – tiny Chrome DevTools driver (launch, log in, type, keys, click, where is the cursor).
+- `cdp.mjs` – tiny Chrome DevTools driver (launch, log in, type, keys, click, where is the cursor). Each browser a check
+  opens gets its own free port; clicks scroll the target into view at once (no smooth scrolling) so they land where aimed.
 - `run-full-suite.sh` – the whole suite (above).
 - `check-keyboard-only.mjs` – a whole purchase line by keyboard; Sale customer/product via pop-up; Scan Mass Products; Purchase Order Enter order.
 - `check-entry-flows.mjs` – purchase with two lines, sales order, purchase order, Esc back.
@@ -57,7 +61,7 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
   expected: the list is paged and the test record sorts onto a later page).
 - `check-bulk-entry.mjs` – Bulk Entry on Purchase Orders, Purchases and Sales Orders.
 - `check-alt-b.mjs` – Alt+B opens Bulk Entry / Scan Mass Products.
-- `check-line-rules.mjs` – quantity and discount rules on every screen that makes a line (version 3.0, 1a-1).
+- `check-line-rules.mjs` – quantity and discount rules on every screen that makes a line.
 - `check-import.mjs` – the Import pop-up for customers, suppliers, products and purchases.
 - `check-users.mjs`, `check-roles.mjs` – the Users and Roles screens (each on its own fresh copy).
 - `check-access.mjs` – screens and menu follow the role; disabled users.
@@ -74,8 +78,9 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
   address box (0203B + Enter, drop-downs, a wrong address explained) and racks per variant on a product page (★ main, ✕,
   "Same for all variants") (PRODUCT_ID = a product with several variants; changes the test copy).
 - `check-whereis.mjs` – stage 3, 3-7: Put away on a purchase (a rack per line by typing or scanning, a wrong rack explained) and
-  "Where is it?" (an item by its label, a rack level and a whole rack, ✕ on an emptied rack) (setup-damage-returns.py; DAMAGE_JSON).
-- `check-moves.mjs` – stage 3, 3-5/3-6: the two switches, "Send to …" on a purchase in the godown, receiving (a scan, a typed
+  "Where is it?" (an item by its label, a rack level and a whole rack, ✕ on an emptied rack, arranging rack by rack with
+  "Moving here") (setup-damage-returns.py; DAMAGE_JSON; needs an untouched copy).
+- `check-moves.mjs` – stage 3, stock transfers: the switches, "Send to …" on a purchase in the godown, receiving (a scan, a typed
   quantity), one piece missing – red on the move, in the list and the menu – written off, a starting count, Esc back
   (setup-damage-returns.py; DAMAGE_JSON; changes the copy).
 - `check-place-flow.mjs` – stage 3, 3-3/3-4: purchases arrive in the godown and sales leave from the shop, "Arrives in" on a

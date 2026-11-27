@@ -1,6 +1,7 @@
 // Minimal Chrome DevTools Protocol driver for UI checks against the TEST copy of the app (port 5299).
 import { spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,13 +9,22 @@ export const BASE = 'http://localhost:5299';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export { sleep };
 
+let launches = 0;
+const portFree = port => new Promise(res => {
+  const srv = createServer();
+  srv.once('error', () => res(false));
+  srv.listen(port, '127.0.0.1', () => srv.close(() => res(true)));
+});
+
 // port: a second browser (a second person) needs its own, e.g. launch(9334) (batch 1c-2, check-edit-clash).
 export async function launch(port = 9333) {
   // Stage 3 (27 Nov 2026): a browser closed a moment ago can still hold its port, and a busy PC starts Chrome slowly – both
   // used to crash or hang a check ("reading 'find'"). Take the next free port, wait longer, and never wait forever.
+  // A browser that is closing can still hold its port without answering, so (a) every later browser in the same check gets a
+  // new port, and (b) "free" means the port can really be taken, not just that nothing answers on it.
+  port += launches++;
   for (let tries = 0; tries < 20; tries++, port++) {
-    const taken = await fetch(`http://127.0.0.1:${port}/json/version`).then(() => true, () => false);
-    if (!taken) break;
+    if (await portFree(port)) break;
   }
   const dir = mkdtempSync(join(process.env.SCRATCH || tmpdir(), 'chrome-'));
   const chrome = spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', [
