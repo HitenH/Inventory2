@@ -56,14 +56,27 @@ run check-edit-clash.mjs SCRATCH="$S" CLASH_CUSTOMER="$CUST" CLASH_PURCHASE="$PU
 run check-activity-log.mjs SCRATCH="$S" LOG_CUSTOMER="$CUST" LOG_PURCHASE="$PUR"
 run check-labels.mjs SCRATCH="$S" LOG_PURCHASE="$PUR"
 run check-stock-figures.mjs SCRATCH="$S" STOCK_JSON="$A/data/stock-figures.json"
-run check-damage-returns.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"
-run check-damage-report.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"
 run check-stock-approval.mjs SCRATCH="$S"
 run check-places.mjs SCRATCH="$S" PRODUCT_ID=56671BCA-9D74-4363-A048-6B80076A892F   # stage 3: places, racks, racks per variant
 run check-place-flow.mjs SCRATCH="$S"   # stage 3, 3-3/3-4: purchases arrive in the godown, Sale "From", places per user
 run check-moves.mjs SCRATCH="$S" DAMAGE_JSON="$A/data/damage-returns.json"   # stage 3, 3-5/3-6: moves, receiving, missing pieces
 run check-look.mjs SCRATCH="$S"
 run check-activity-screen.mjs SCRATCH="$S" LOG_CUSTOMER="$CUST" LOG_PURCHASE="$PUR"
+stop_app
+
+# Stage 3 end run (27 Nov 2026): these checks expect the setup's purchase and racks untouched – earlier checks add lines to the
+# same newest purchase and racks to the godown – so they get their own freshly prepared copy, in this order.
+B="$SCR/fresh"
+fresh_copy "$B"
+python tools/ui-check/setup-damage-returns.py "$B/data/Inventory.db" > /dev/null
+python tools/ui-check/setup-full-suite.py "$B/data/Inventory.db" > /dev/null
+start_app "$B" || exit 1
+python tools/ui-check/setup-stock-figures.py "$B/data/Inventory.db" > /dev/null
+stop_app
+start_app "$B" || exit 1
+run check-damage-returns.mjs SCRATCH="$B/" DAMAGE_JSON="$B/data/damage-returns.json"
+run check-damage-report.mjs SCRATCH="$B/" DAMAGE_JSON="$B/data/damage-returns.json"
+run check-whereis.mjs SCRATCH="$B/" DAMAGE_JSON="$B/data/damage-returns.json"   # stage 3, 3-7: put away, Where is it?
 stop_app
 
 for chk in check-users.mjs check-roles.mjs; do

@@ -100,6 +100,12 @@
                     <MudButton id="purchase-record-damage" Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.BrokenImage" OnClick="RecordDamageAsync">Record damage</MudButton>
                 }
+                @if (MayPutAway)
+                {
+                    @* Stage 3, batch 3-7 (Hiten): after checking, the goods are arranged on racks where they arrived. *@
+                    <MudButton id="purchase-put-away" Variant="MudBlazor.Variant.Filled" Color="Color.Default" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Inventory2" OnClick="PutAwayAsync">Put away</MudButton>
+                }
                 @if (MaySendOn)
                 {
                     @* Stage 3, batch 3-5 (Hiten): goods arrive in the godown; some are sent on to the shop. *@

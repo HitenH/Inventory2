@@ -43,7 +43,7 @@ try {
 
   log('--- a new purchase arrives in the godown');
   await b.goto('/purchase'); await b.waitFor(`!!document.querySelector('#purchase-place')`, 10000); await sleep(1000);
-  expect('"Arrives in" shows Godown, read only', await b.eval(`[document.querySelector('#purchase-place').value, document.querySelector('#purchase-place').disabled]`), ['Godown', true]);
+  expect('"Arrives in" shows Godown, read only', await b.eval(`[document.querySelector('#purchase-place').selectedOptions[0]?.text, document.querySelector('#purchase-place').disabled]`), ['Godown', true]);
   truthy('the cursor still starts in Supplier', (await b.active()).includes('focus-supplier'));
 
   log('--- the Sale screen\'s "From" box');
@@ -58,7 +58,8 @@ try {
   await choose(b, '#stockchange-type', 'CountCorrection'); await sleep(300);
   await choose(b, '#stockchange-place', 2); await sleep(300);
   await b.key('s', 2); await sleep(3000);
-  expect('saved; the place is fixed once saved', await b.eval(`[document.querySelector('#stockchange-place').selectedOptions[0].text, document.querySelector('#stockchange-place').disabled]`), ['Godown', true]);
+  // Hiten (3-4): only the Admin may change the place of a saved entry – this check runs as the Admin, so the box stays open.
+  expect('saved in the godown; the Admin may still change the place', await b.eval(`[document.querySelector('#stockchange-place').selectedOptions[0].text, document.querySelector('#stockchange-place').disabled]`), ['Godown', false]);
   await b.eval(`document.querySelector('.focus-line-product input').focus()`);
   await b.type('AJ0120128');
   await b.waitFor(`document.querySelector('.mud-popover-open .mud-list-item')`);

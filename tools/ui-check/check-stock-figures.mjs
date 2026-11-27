@@ -40,13 +40,16 @@ try {
   expect('B: no stock changes, just the number (as before)', await b.eval(figure(productRow('B'))),
     { sellable: String(want.B.sellable), arrow: false, hover: null, breakdown: null });
 
-  await b.eval(click(productRow('G'))); await sleep(500);
+  // Stage 3 (3-3): the breakdown also says where the sellable pieces are ("in Shop 98"). Wait for it rather than a fixed pause.
+  await b.eval(click(productRow('G')));
+  await b.waitFor(`(${productRow('G')}).querySelector('.stock-breakdown')`, 5000).catch(() => {}); await sleep(300);
   expect('G: click opens the breakdown', (await b.eval(figure(productRow('G')))).breakdown,
-    `Sellable ${want.G.sellable} Damaged ${want.G.damaged} Waiting approval ${want.G.waiting}`);
+    `Sellable ${want.G.sellable} in Shop ${want.G.sellable} Damaged ${want.G.damaged} Waiting approval ${want.G.waiting}`);
   expect('the button says it is open', await b.eval(`(${productRow('G')}).querySelector('.stock-toggle').getAttribute('aria-expanded')`), 'true');
   await b.shot(`${shots}stock-product-light.png`);
   expect('no sideways scroll on the product page', await b.eval(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`), true);
-  await b.eval(click(productRow('G'))); await sleep(400);
+  await b.eval(click(productRow('G')));
+  await b.waitFor(`!(${productRow('G')}).querySelector('.stock-breakdown')`, 5000).catch(() => {});
   expect('a second click closes it', (await b.eval(figure(productRow('G')))).breakdown, null);
 
   log('--- keyboard still works after the click');

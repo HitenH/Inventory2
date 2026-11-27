@@ -55,7 +55,7 @@ try {
   await b.waitFor(`location.pathname === '/users'`);
   await b.waitFor(`document.querySelector('#user-add-open')`);
   expect('opened /users from Settings', await b.path(), '/users');
-  expectIncludes('list shows Admin with its role', await rowText('Admin'), 'Admin Admin Active');
+  expectIncludes('list shows Admin with its role', await rowText('Admin'), 'Admin Admin All places Active');
 
   log('--- add user: refused short password and duplicate name');
   await b.click('#user-add-open');
@@ -85,7 +85,7 @@ try {
   await b.click('#user-save'); await sleep(2000);
   expect('dialog closed after adding', await dialogOpen(), false);
   expectIncludes('Snackbar says user added', await b.snack(), 'UiUser1 added');
-  expectIncludes('new user shows temporary role', await rowText('UiUser1'), 'Admin (to 31 Dec 2026) Active');
+  expectIncludes('new user shows temporary role', await rowText('UiUser1'), 'Admin (to 31 Dec 2026) All places Active');
 
   log('--- reset password');
   await clickInRow('UiUser1', 'user-password');
@@ -134,7 +134,7 @@ try {
   expectIncludes('last Admin cannot lose the Admin role', await dialogError(), 'last active Admin');
   expectIncludes('Admin still holds the role', (await b.eval(`document.querySelector('.mud-dialog')?.innerText ?? ''`)), 'Admin');
   await b.key('Escape'); await sleep(800);
-  expectIncludes('Admin row unchanged', await rowText('Admin'), 'Admin Admin Active');
+  expectIncludes('Admin row unchanged', await rowText('Admin'), 'Admin Admin All places Active');
 
   log(failures === 0 ? '\nALL USER CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`);
 } catch (e) {

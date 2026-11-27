@@ -27,6 +27,8 @@ public static class Permissions
     public const string ScreenDamageReport = "screen.damage-report";
     /// <summary>Stage 2, batch 2-7: the Stock changes list and an entry (damage in the shop, count corrections, write-offs, opening stock).</summary>
     public const string ScreenStockChanges = "screen.stock-changes";
+    /// <summary>Stage 3, batch 3-7: "Where is it?" – an item's racks and stock per place, or what is kept on a rack.</summary>
+    public const string ScreenWhereIs = "screen.where-is";
 
     public const string AdminUsers = "admin.users";
     public const string AdminImport = "admin.import";
@@ -94,6 +96,7 @@ public static class Permissions
         ["users"] = AdminUsers, ["roles"] = AdminUsers,
         ["activity"] = ActivitySee,
         ["labels"] = LabelsPrint,
+        ["whereis"] = ScreenWhereIs,   // stage 3, batch 3-7
         ["labelsettings"] = LabelsSettings,
     };
 
@@ -130,6 +133,7 @@ public static class Permissions
         new(ScreenPurchaseReturns, "Open the Purchase Returns screen", ScreensGroup),
         new(ScreenDamageReport, "Open the Damage report", ScreensGroup),
         new(ScreenStockChanges, "Open the Stock changes screen", ScreensGroup),
+        new(ScreenWhereIs, "Open the Where is it? screen", ScreensGroup),
         new(ScreenReports, "Open the Reports screen", ScreensGroup),
         new(LabelsPrint, "Print labels", ScreensGroup),
         new(AdminUsers, "Manage users and roles", AdminGroup),

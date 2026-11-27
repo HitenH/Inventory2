@@ -247,4 +247,96 @@ public class PlaceServiceTests
         Assert.Equal("Variant V1: rack 02-05-A added (main rack in Godown)", line.Text);
         Assert.Contains(await d.ActivityLog.Select(a => a.Text).ToListAsync(Ct), t => t == "Godown: rack 05 added, levels A–B");
     }
+
+    // ---------------------------------------------------------------- batch 3-7: put away, "Where is it?"
+
+    [Fact]
+    public async Task Put_away_adds_a_typed_or_scanned_rack_and_says_plainly_what_is_wrong()
+    {
+        using var db = new TestDatabase();
+        var seed = await db.SeedAsync();
+        var service = Service(db);
+        await service.AddRacksAsync(Places.GodownId, 1, 3, 3);
+
+        Assert.Equal(new RackAddress(2, 3, 'B'), await service.AddVariantRackByAddressAsync(seed.Variant1Id, "0203b"));
+        Assert.Equal(new RackAddress(2, 1, 'A'), await service.AddVariantRackByAddressAsync(seed.Variant1Id, "02-01-A"));
+        Assert.Equal("Type or scan an address like 0203B or 02-03-B (place, rack, level).",
+            (await Assert.ThrowsAsync<PlaceRefused>(() => service.AddVariantRackByAddressAsync(seed.Variant1Id, "AJ0120101"))).Message);
+        Assert.Equal("Godown has no rack 09.", (await Assert.ThrowsAsync<PlaceRefused>(() => service.AddVariantRackByAddressAsync(seed.Variant1Id, "0209A"))).Message);
+        Assert.Equal("Rack 02-03 has levels A–C.", (await Assert.ThrowsAsync<PlaceRefused>(() => service.AddVariantRackByAddressAsync(seed.Variant1Id, "0203D"))).Message);
+
+        var racks = (await service.RacksOfVariantsAsync([seed.Variant1Id]))[seed.Variant1Id];
+        Assert.Equal(["*02-03-B", "02-01-A"], racks.Select(r => (r.IsMain ? "*" : "") + r.Address.Text));   // the first one is the main rack
+    }
+
+    [Fact]
+    public async Task Put_away_lists_the_purchase_lines_in_order()
+    {
+        using var db = new TestDatabase();
+        var seed = await db.SeedAsync();
+        await using (var c = db.Open())
+        {
+            c.Purchases.Add(new PurchaseEntity
+            {
+                Date = new DateOnly(2030, 1, 2), SupplierEntityId = seed.SupplierId, VoucherId = 1,
+                PurchaseVariants =
+                [
+                    new PurchaseVariant { ProductEntityId = seed.ProductId, VariantEntityId = seed.Variant2Id, SerialNumber = 2, Quantity = 4 },
+                    new PurchaseVariant { ProductEntityId = seed.ProductId, VariantEntityId = seed.Variant1Id, SerialNumber = 1, Quantity = 10 },
+                ],
+            });
+            await c.SaveChangesAsync(Ct);
+        }
+
+        await using var d = db.Open();
+        var purchase = await d.Purchases.Select(p => p.Id).SingleAsync(Ct);
+        var lines = await Service(db).PutAwayLinesAsync(purchase);
+        Assert.Equal([(1, "V1", 10), (2, "V2", 4)], lines.Select(l => (l.SerialNumber, l.VariantId, l.Quantity)));
+    }
+
+    [Fact]
+    public async Task Where_is_it_lists_what_is_on_one_level_or_the_whole_rack()
+    {
+        using var db = new TestDatabase();
+        var seed = await db.SeedAsync();
+        var service = Service(db);
+        await service.AddRacksAsync(Places.GodownId, 4, 4, 3);
+        var rack = (await service.AllAsync()).Single(p => p.Id == Places.GodownId).Racks.Single();
+        await service.AddVariantRackAsync(seed.Variant1Id, rack.Id, 'B', makeMain: false);
+        await service.AddVariantRackAsync(seed.Variant2Id, rack.Id, 'B', makeMain: false);
+        await service.AddVariantRackAsync(seed.Variant2Id, rack.Id, 'A', makeMain: false);
+
+        var levelB = await service.RackContentsAsync(rack.Id, 'B');
+        Assert.Equal(["02-04-B V1", "02-04-B V2"], levelB.Select(c => $"{c.Address} {c.VariantId}"));
+        var whole = await service.RackContentsAsync(rack.Id, null);
+        Assert.Equal(["A V2", "B V1", "B V2"], whole.Select(c => $"{c.Address.Level} {c.VariantId}"));
+
+        await service.RemoveVariantRackAsync(levelB.Single(c => c.VariantId == "V2").VariantRackId);   // emptied
+        Assert.Equal(["02-04-B V1"], (await service.RackContentsAsync(rack.Id, 'B')).Select(c => $"{c.Address} {c.VariantId}"));
+        Assert.Equal(Permissions.ScreenWhereIs, Permissions.ForPath("/whereis"));
+    }
+
+    [Fact]
+    public async Task Arranging_rack_by_rack_puts_items_on_a_rack_and_moving_takes_them_off_their_other_racks_in_that_place()
+    {
+        using var db = new TestDatabase();
+        var seed = await db.SeedAsync();
+        var service = Service(db);
+        await service.AddRacksAsync(Places.GodownId, 1, 2, 3);
+        await service.AddRacksAsync(Places.StartingId, 1, 1, 2);
+        var godown = (await service.AllAsync()).Single(p => p.Id == Places.GodownId).Racks;
+        await service.AddVariantRackByAddressAsync(seed.Variant1Id, "0101A");   // the shop: never touched by a godown rearrangement
+        async Task<string> Shown() => string.Join(" ", (await service.RacksOfVariantsAsync([seed.Variant1Id]))[seed.Variant1Id].Select(r => (r.IsMain ? "*" : "") + r.Address.Text));
+
+        Assert.Equal("P1 / V1 put on 02-01-A.", await service.PutOnRackAsync(seed.Variant1Id, godown[0].Id, 'a', moving: false));
+        Assert.Equal("P1 / V1 put on 02-02-C.", await service.PutOnRackAsync(seed.Variant1Id, godown[1].Id, 'C', moving: false));
+        Assert.Equal("*01-01-A *02-01-A 02-02-C", await Shown());
+        Assert.Equal("P1 / V1 is already on 02-01-A.", await service.PutOnRackAsync(seed.Variant1Id, godown[0].Id, 'A', moving: false));   // scanned twice
+
+        Assert.Equal("P1 / V1 moved to 02-02-B.", await service.PutOnRackAsync(seed.Variant1Id, godown[1].Id, 'B', moving: true));
+        Assert.Equal("*01-01-A *02-02-B", await Shown());   // rearranged: only on the new rack in the godown, and it is the main one
+
+        await using var d = db.Open();
+        Assert.Contains(await d.ActivityLog.Select(a => a.Text).ToListAsync(Ct), t => t == "Variant V1: moved off 02-01-A, 02-02-C (rearranged to 02-02-B)");
+    }
 }

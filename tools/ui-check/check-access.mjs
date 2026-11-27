@@ -35,8 +35,10 @@ async function loginAs(b, name, password) {
 let b;
 try {
   log('--- Admin sees everything, as before');
-  b = await launch();
+  b = await launch(9335);
   await login(b);
+  // Stage 3: right after login the side menu can read empty for a moment while it settles – wait for it (a real gap still fails).
+  await b.waitFor(`(document.querySelector('.mud-drawer')?.innerText ?? '').includes('Customers')`, 8000).catch(() => {});
   const adminMenu = await menu(b);
   for (const item of ['Dashboard', 'Settings', 'Reports', 'Purchases', 'Sales', 'Customers']) {
     expect(`Admin menu has ${item}`, adminMenu.includes(item), true);
@@ -47,7 +49,7 @@ try {
   b.close();
 
   log('--- a Sales clerk sees only Sales and Customers');
-  b = await launch();
+  b = await launch(9336);
   await loginAs(b, 'UiClerk', 'UiClerk#2026');
   expect('clerk lands on the welcome text', await b.eval(`!!document.querySelector('#access-welcome')`), true);
   const clerkMenu = await menu(b);
@@ -77,7 +79,7 @@ try {
   b.close();
 
   log('--- a disabled user cannot log in');
-  b = await launch();
+  b = await launch(9337);
   await loginAs(b, 'UiGone', 'UiGone#2026');
   expect('still on the login page', await b.path(), '/login');
   expect('says the user is disabled', (await b.eval(`document.body.innerText`)).includes('This user is disabled'), true);

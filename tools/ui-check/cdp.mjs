@@ -10,18 +10,27 @@ export { sleep };
 
 // port: a second browser (a second person) needs its own, e.g. launch(9334) (batch 1c-2, check-edit-clash).
 export async function launch(port = 9333) {
+  // Stage 3 (27 Nov 2026): a browser closed a moment ago can still hold its port, and a busy PC starts Chrome slowly – both
+  // used to crash or hang a check ("reading 'find'"). Take the next free port, wait longer, and never wait forever.
+  for (let tries = 0; tries < 20; tries++, port++) {
+    const taken = await fetch(`http://127.0.0.1:${port}/json/version`).then(() => true, () => false);
+    if (!taken) break;
+  }
   const dir = mkdtempSync(join(process.env.SCRATCH || tmpdir(), 'chrome-'));
   const chrome = spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`,
     '--no-first-run', '--no-default-browser-check', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
-  let targets;
-  for (let i = 0; i < 50; i++) {
-    try { targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); if (targets.find(t => t.type === 'page')) break; } catch { }
-    await sleep(200);
+  let page;
+  for (let i = 0; i < 150 && !page; i++) {
+    try {
+      const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+      page = Array.isArray(targets) ? targets.find(t => t.type === 'page') : undefined;
+    } catch { }
+    if (!page) await sleep(200);
   }
-  const page = targets.find(t => t.type === 'page');
+  if (!page) { chrome.kill(); throw new Error(`Chrome did not start on port ${port} within 30 seconds`); }
   const ws = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise(r => ws.addEventListener('open', r));
+  await new Promise((r, j) => { ws.addEventListener('open', r); setTimeout(() => j(new Error('Chrome did not answer within 15 seconds')), 15000); });
   let id = 0; const pending = new Map();
   ws.addEventListener('message', ev => {
     const m = JSON.parse(ev.data);
@@ -52,7 +61,7 @@ export async function launch(port = 9333) {
     },
     async type(text) { for (const ch of text) { await send('Input.insertText', { text: ch }); await sleep(60); } },
     async click(selector) {
-      const box = await b.eval(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null; e.scrollIntoView({block:'center'}); const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+      const box = await b.eval(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null; e.scrollIntoView({block:'center', behavior:'instant'}); const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
       if (!box) throw new Error('No element ' + selector);
       for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased'])
         await send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 });

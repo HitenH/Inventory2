@@ -53,28 +53,87 @@ namespace Inventory.Domain
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             StockPlaces.FillPlaces(this);
+            var touched = await RacksBeforeAsync();
+            int saved;
             try
             {
-                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                saved = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             }
             catch (DbUpdateException)
             {
                 RejectPendingChanges();
                 throw;
             }
+
+            return saved + await ClearEmptiedRacksAsync(touched, acceptAllChangesOnSuccess, cancellationToken);
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             StockPlaces.FillPlaces(this);
+            var touched = RacksBeforeAsync().GetAwaiter().GetResult();
+            int saved;
             try
             {
-                return base.SaveChanges(acceptAllChangesOnSuccess);
+                saved = base.SaveChanges(acceptAllChangesOnSuccess);
             }
             catch (DbUpdateException)
             {
                 RejectPendingChanges();
                 throw;
+            }
+
+            return saved + ClearEmptiedRacksAsync(touched, acceptAllChangesOnSuccess, CancellationToken.None).GetAwaiter().GetResult();
+        }
+
+        /// <summary>True while the racks emptied by a save are being cleared (that second save does not look again).</summary>
+        private bool clearingRacks;
+
+        /// <summary>Stage 3: before a save, the stock per place of the items it touches that are kept on racks outside the shop (or null).</summary>
+        private async Task<Dictionary<Guid, Dictionary<int, int>>?> RacksBeforeAsync()
+        {
+            if (clearingRacks)
+            {
+                return null;
+            }
+
+            try
+            {
+                return await RackCleanup.BeforeAsync(this, RackCleanup.Collect(this));
+            }
+            catch (Exception)
+            {
+                return null;   // never stands in the way of the save itself
+            }
+        }
+
+        /// <summary>
+        /// Stage 3, batch 3-7 (Hiten, 27 Nov 2026): after a save that touched stock, items with nothing left in a place other than
+        /// the shop come off their racks there (<see cref="RackCleanup"/>). It never undoes or blocks the save itself: if it
+        /// fails, the racks simply stay until taken off by hand.
+        /// </summary>
+        private async Task<int> ClearEmptiedRacksAsync(Dictionary<Guid, Dictionary<int, int>>? touched, bool acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+        {
+            if (touched is null)
+            {
+                return 0;
+            }
+
+            clearingRacks = true;
+            try
+            {
+                return await RackCleanup.ClearAsync(this, touched)
+                    ? await SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken)
+                    : 0;
+            }
+            catch (Exception)
+            {
+                RejectPendingChanges();
+                return 0;
+            }
+            finally
+            {
+                clearingRacks = false;
             }
         }
 

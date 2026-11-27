@@ -58,6 +58,11 @@
                 @* Stage L (Hiten, 25 Nov 2026): under Masters, after Products; Alt+L. *@
                 <MudNavLink Icon="@Icons.Material.Filled.LocalOffer" Href="/labels"><NavText Text="Labels" Url="/labels" /></MudNavLink>
             }
+            @if (May(Permissions.ScreenWhereIs))
+            {
+                @* Stage 3, batch 3-7: an item's racks and stock per place, or what is kept on a rack. *@
+                <MudNavLink Icon="@Icons.Material.Filled.TravelExplore" Href="/whereis"><NavText Text="Where is it?" Url="/whereis" /></MudNavLink>
+            }
 
             @if (May(Permissions.ScreenPurchaseOrders) || May(Permissions.ScreenPurchases) || May(Permissions.ScreenSalesOrders) || May(Permissions.ScreenSales) || May(Permissions.ScreenSalesReturns) || May(Permissions.ScreenPurchaseReturns) || May(Permissions.ScreenDamageReport) || May(Permissions.ScreenStockChanges) || May(Permissions.StockApprove))
             {

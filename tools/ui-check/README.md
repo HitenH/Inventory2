@@ -73,6 +73,8 @@ AJ0120103 1 NO HAATICHAP, AJ0120128 1 NO LED FRAME).
 - `check-places.mjs` – stage 3: Settings → Places and racks (add places and racks, levels, deleting refused while in use), the
   address box (0203B + Enter, drop-downs, a wrong address explained) and racks per variant on a product page (★ main, ✕,
   "Same for all variants") (PRODUCT_ID = a product with several variants; changes the test copy).
+- `check-whereis.mjs` – stage 3, 3-7: Put away on a purchase (a rack per line by typing or scanning, a wrong rack explained) and
+  "Where is it?" (an item by its label, a rack level and a whole rack, ✕ on an emptied rack) (setup-damage-returns.py; DAMAGE_JSON).
 - `check-moves.mjs` – stage 3, 3-5/3-6: the two switches, "Send to …" on a purchase in the godown, receiving (a scan, a typed
   quantity), one piece missing – red on the move, in the list and the menu – written off, a starting count, Esc back
   (setup-damage-returns.py; DAMAGE_JSON; changes the copy).

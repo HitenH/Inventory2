@@ -1,0 +1,549 @@
+@page "/whereis"
+@using Inventory.Domain
+@using Inventory.Domain.Repository.Abstract
+@using Inventory.Shared.Selectors
+@* Stage 3, batch 3-7 (Hiten, 26 Nov 2026: racks are signposts for pickers and arrangers): "Where is it?"
+   ITEM: scan a label (product and variant) or pick a product – each variant with its stock per place (only the places the
+   person works in; on the way separately) and its racks, place by place, in words.
+   RACK: type or scan an address – 0203B for one level, 0203 (or 02-03) for the whole rack – and see what is kept there, with
+   its stock in that place. With "Set where items are kept (racks)" a ✕ takes an item off a rack it is no longer on (an
+   emptied rack), and – Hiten, 27 Nov 2026: "I just scan a rack and scan the product" – with one level shown, scanning items
+   puts each on it; "Moving here" (rearranging) takes it off its other racks in that place. Rules in Service/PlaceService.cs. *@
+
+<PageTitle>Where is it?</PageTitle>
+<FocusOnOpen Selector="#whereis-product" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">Find an item</MudText>
+        <div class="d-flex flex-wrap align-items-end gap-3">
+            <div class="field field-scan">
+                <label for="whereis-product" class="form-label">Product ID</label>
+                <input id="whereis-product" class="form-control" @bind-value="scanProduct" autocomplete="off" />
+            </div>
+            <div class="field field-scan">
+                <label for="whereis-variant" class="form-label">Variant ID</label>
+                <input id="whereis-variant" class="form-control" @bind-value="scanVariant" @onkeyup="OnScanKeyAsync" autocomplete="off" />
+            </div>
+            <span class="move-scan-hint">scan a label, or</span>
+            <div style="min-width:300px;" class="flex-grow-1">
+                <label class="form-label">Product</label>
+                <ProductAutocomplete T="ProductModel" Class="focus-whereis-product" SelectedProduct="pickedProduct" SelectedProductChanged="OnProductPicked" />
+            </div>
+        </div>
+        @if (items.Count > 0)
+        {
+            <table class="table table-sm mt-3 mb-0 lines-table whereis-items">
+                <thead>
+                    <tr>
+                        <th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th>
+                        @foreach (var p in places)
+                        {
+                            <th class="c-qty num">@p.Name</th>
+                        }
+                        <th>Racks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in items)
+                    {
+                        <tr class="whereis-item">
+                            <td class="c-pid">@item.ProductId</td>
+                            <td class="c-name" title="@item.ProductName">@item.ProductName</td>
+                            <td class="c-vid" title="@item.VariantName">@item.VariantId</td>
+                            @foreach (var p in places)
+                            {
+                                var qty = (placeStock.GetValueOrDefault(item.VariantEntityId) ?? []).FirstOrDefault(s => s.Name == p.Name).Qty;
+                                <td class="c-qty num @(qty < 0 ? "stock-negative" : "")">@qty</td>
+                            }
+                            <td class="whereis-racks">
+                                @{ var racks = racksByVariant.GetValueOrDefault(item.VariantEntityId) ?? []; }
+                                @if (racks.Count == 0)
+                                {
+                                    <span class="vr-none">Not on any rack yet.</span>
+                                }
+                                @foreach (var group in racks.GroupBy(r => r.PlaceId))
+                                {
+                                    <span class="variant-more-place">
+                                        <span class="variant-more-label">@group.First().PlaceName:</span>
+                                        @foreach (var r in group)
+                                        {
+                                            <span class="variant-more-rack @(r.IsMain ? "vr-main" : "")">@(r.IsMain ? "★ " : "")<span class="vr-address">@r.Address</span> @r.RackDescription</span>
+                                        }
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-3 mb-3" Elevation="0" Outlined="true">
+        <MudText Typo="Typo.h6" Class="mb-2">What is on a rack</MudText>
+        <div class="d-flex flex-wrap align-items-end gap-3">
+            <div class="field" style="width:200px;">
+                <label for="whereis-rack" class="form-label"><h4>Rack (type or scan)</h4></label>
+                <input id="whereis-rack" class="form-control address-text" @bind-value="rackText" @onkeyup="OnRackKeyAsync" autocomplete="off" spellcheck="false" />
+            </div>
+            @* Hiten, 27 Nov 2026: or choose the rack from the lists – Place → Rack → Level (or all levels), the three on one line. *@
+            <span class="move-scan-hint">or choose:</span>
+            <div class="d-flex flex-nowrap align-items-end gap-3 whereis-pick">
+            <div class="field" style="width:170px;">
+                <label for="whereis-pick-place" class="form-label"><h4>Place</h4></label>
+                <select id="whereis-pick-place" class="form-control" value="@(pickPlaceId?.ToString() ?? "")" @onchange="OnPickPlace">
+                    <option value=""></option>
+                    @foreach (var p in allPlaces.Where(p => p.Racks.Count > 0))
+                    {
+                        <option value="@p.Id">@p.NumberText @p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field" style="width:90px;">
+                <label for="whereis-pick-rack" class="form-label"><h4>Rack</h4></label>
+                <select id="whereis-pick-rack" class="form-control" value="@(pickRackId?.ToString() ?? "")" @onchange="OnPickRackAsync" disabled="@(PickPlace is null)">
+                    <option value=""></option>
+                    @foreach (var r in PickPlace?.Racks ?? [])
+                    {
+                        <option value="@r.Id">@r.Number.ToString("00")</option>
+                    }
+                </select>
+            </div>
+            <div class="field" style="width:130px;">
+                <label for="whereis-pick-level" class="form-label"><h4>Level</h4></label>
+                <select id="whereis-pick-level" class="form-control" value="@pickLevel" @onchange="OnPickLevelAsync" disabled="@(PickRack is null)">
+                    <option value="">All levels</option>
+                    @for (var i = 1; i <= (PickRack?.Levels ?? 0); i++)
+                    {
+                        var letter = RackAddress.LevelLetter(i);
+                        <option value="@letter">@letter</option>
+                    }
+                </select>
+            </div>
+            </div>
+        </div>
+        <MudText Typo="Typo.caption" Class="d-block mt-1 whereis-rack-hint">0203B = place 02, rack 03, level B; 0203 = the whole rack.</MudText>
+        @if (rackTitle is not null)
+        {
+            <div class="mt-3 whereis-rack-title"><b>@rackTitle</b></div>
+            @if (MayChangeRacks && shownRack is { Level: not null })
+            {
+                @* Arranging rack by rack: scan the rack (above), then scan the items one after another. *@
+                <div class="d-flex flex-wrap align-items-end gap-3 mt-2 whereis-put">
+                    <span class="whereis-put-label">Put items here:</span>
+                    <div class="field field-scan">
+                        <label for="whereis-put-product" class="form-label">Product ID</label>
+                        <input id="whereis-put-product" class="form-control" @bind-value="putProduct" autocomplete="off" />
+                    </div>
+                    <div class="field field-scan">
+                        <label for="whereis-put-variant" class="form-label">Variant ID</label>
+                        <input id="whereis-put-variant" class="form-control" @bind-value="putVariant" @onkeyup="OnPutKeyAsync" autocomplete="off" />
+                    </div>
+                    <MudCheckBox T="bool" @bind-Value="moving" Dense="true" Class="whereis-moving" Label="@($"Moving here: take it off its other racks in {rackPlace?.Name}")" />
+                    @if (lastPut is not null)
+                    {
+                        <span class="move-last-scan">@lastPut</span>
+                    }
+                </div>
+                @* Hiten, 27 Nov 2026: a manual way too – pick the product and variant, Add (Enter moves Product → Variant → Add). *@
+                <div class="d-flex flex-wrap align-items-end gap-3 mt-2 whereis-put-manual">
+                    <span class="whereis-put-label">or pick:</span>
+                    <div style="min-width:300px;" class="flex-grow-1">
+                        <label class="form-label">Product</label>
+                        <ProductAutocomplete T="ProductModel" Class="focus-whereis-put-product" SelectedProduct="putPicked" SelectedProductChanged="OnPutProductPicked" EnterPressed="OnPutProductEnter" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="whereis-put-pick-variant">Variant</label>
+                        <select id="whereis-put-pick-variant" class="form-control text-center" style="min-width:170px;" @bind="putPickedVariant" @onkeydown="OnPutVariantKeyAsync">
+                            <option value="">-</option>
+                            @if (putPickedVariants.Count > 1)
+                            {
+                                <option value="@AllVariants">All variants</option>
+                            }
+                            @foreach (var v in putPickedVariants)
+                            {
+                                <option value="@v.Id">@v.DisplayText</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="button" id="whereis-put-add" class="btn btn-success" @onclick="AddPickedAsync">Add</button>
+                </div>
+            }
+            else if (MayChangeRacks && shownRack is { Level: null })
+            {
+                <MudText Typo="Typo.caption" Class="d-block mt-1">To put items on this rack, scan one level of it (for example @(rackTitle[..5])A).</MudText>
+            }
+            @if (contents.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mt-1 whereis-rack-empty">Nothing is kept here.</MudText>
+            }
+            else
+            {
+                <table class="table table-sm mt-2 mb-0 lines-table whereis-contents">
+                    <thead>
+                        <tr><th class="c-vid">Level</th><th class="c-pid">Product ID</th><th class="c-name">Product Name</th><th class="c-vid">Variant</th><th class="c-qty num">In @rackPlace?.Name</th><th class="c-vr-main"></th><th class="c-act"></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in contents)
+                        {
+                            var content = c;
+                            var qty = (placeStock.GetValueOrDefault(content.VariantEntityId) ?? []).FirstOrDefault(s => s.Name == rackPlace?.Name).Qty;
+                            <tr class="whereis-content">
+                                <td class="c-vid">@content.Address.Level</td>
+                                <td class="c-pid"><a href="@($"/product/{content.ProductEntityId}")">@content.ProductId</a></td>
+                                <td class="c-name" title="@content.ProductName">@content.ProductName</td>
+                                <td class="c-vid" title="@content.VariantName">@content.VariantId</td>
+                                <td class="c-qty num @(qty < 0 ? "stock-negative" : "")">@(MaySeeRackPlace ? qty.ToString() : "")</td>
+                                <td class="c-vr-main">@(content.IsMain ? "★ main" : "")</td>
+                                <td class="c-act">
+                                    @if (MayChangeRacks)
+                                    {
+                                        <button type="button" class="vr-remove whereis-take-off" title="Not on this rack any more (emptied)" @onclick="() => TakeOffAsync(content)">✕</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [Inject] private MoveService MoveService { get; set; } = default!;
+    [Inject] private IProductRepository ProductRepository { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [CascadingParameter] private UserAccess? Access { get; set; }
+
+    /// <summary>One variant shown under "Find an item".</summary>
+    private sealed record ItemRow(Guid VariantEntityId, string ProductId, string ProductName, string VariantId, string VariantName);
+
+    private List<PlaceItem> allPlaces = new();
+    private List<PlaceItem> places = new();
+    private List<ItemRow> items = new();
+    private Dictionary<Guid, List<VariantRackItem>> racksByVariant = new();
+    private Dictionary<Guid, List<PlaceStock>> placeStock = new();
+    private string? scanProduct;
+    private string? scanVariant;
+    private ProductModel pickedProduct = new();
+    private string? rackText;
+    private string? rackTitle;
+    private PlaceItem? rackPlace;
+    private (int RackId, char? Level)? shownRack;
+    private List<RackContent> contents = new();
+
+    private bool MayChangeRacks => Access?.Allows(Permissions.StockRacks) == true;
+    private string? putProduct;
+    private string? putVariant;
+    private string? lastPut;
+    private bool moving;
+
+    // ---------------------------------------------------------------- choosing the rack from the lists (Hiten, 27 Nov 2026)
+
+    private int? pickPlaceId;
+    private int? pickRackId;
+    private string pickLevel = "";
+    private PlaceItem? PickPlace => allPlaces.FirstOrDefault(p => p.Id == pickPlaceId);
+    private RackItem? PickRack => PickPlace?.Racks.FirstOrDefault(r => r.Id == pickRackId);
+
+    private void OnPickPlace(ChangeEventArgs e)
+    {
+        pickPlaceId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        pickRackId = null;
+        pickLevel = "";
+    }
+
+    /// <summary>A rack chosen: the whole rack is shown at once (choose a level to put items on it).</summary>
+    private async Task OnPickRackAsync(ChangeEventArgs e)
+    {
+        pickRackId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        pickLevel = "";
+        await ShowPickedAsync();
+    }
+
+    private async Task OnPickLevelAsync(ChangeEventArgs e)
+    {
+        pickLevel = e.Value?.ToString() ?? "";
+        await ShowPickedAsync();
+    }
+
+    private async Task ShowPickedAsync()
+    {
+        if (PickPlace is { } place && PickRack is { } rack)
+        {
+            await ShowRackAsync(place.Number, rack.Number, pickLevel.Length == 1 ? pickLevel[0] : null);
+        }
+    }
+
+    // ---------------------------------------------------------------- putting items on the rack by hand (Hiten, 27 Nov 2026)
+
+    private const string AllVariants = "all";
+    private ProductModel putPicked = new();
+    private List<VariantModel> putPickedVariants = new();
+    private string putPickedVariant = "";
+
+    private async Task OnPutProductPicked(ProductModel picked)
+    {
+        putPickedVariant = "";
+        if (picked is null || picked.Id == Guid.Empty)
+        {
+            putPicked = new();
+            putPickedVariants = new();
+            return;
+        }
+
+        putPicked = picked;
+        putPickedVariants = (await ProductRepository.GetProductWithVariantsById(picked.Id)).ToModel().Variants;
+        if (putPickedVariants.Count == 1)
+        {
+            putPickedVariant = putPickedVariants[0].Id.ToString();
+        }
+    }
+
+    private async Task OnPutProductEnter(ProductModel picked) => await JS.FocusBoxAsync("#whereis-put-pick-variant");
+
+    private async Task OnPutVariantKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter")
+        {
+            await Task.Yield();   // let the chosen variant reach the page first
+            await AddPickedAsync();
+        }
+    }
+
+    /// <summary>The picked variant (or all variants of the product) goes on the rack level shown, like a scan.</summary>
+    private async Task AddPickedAsync()
+    {
+        if (shownRack is not { Level: { } level } r)
+        {
+            return;
+        }
+
+        var variants = putPickedVariant == AllVariants
+            ? putPickedVariants
+            : putPickedVariants.Where(v => v.Id.ToString() == putPickedVariant).ToList();
+        if (putPicked.Id == Guid.Empty || variants.Count == 0)
+        {
+            Snackbar.Add("Choose a product and a variant first.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var said = new List<string>();
+            foreach (var v in variants)
+            {
+                said.Add(await PlaceService.PutOnRackAsync(v.Id, r.RackId, level, moving));
+            }
+
+            lastPut = said.Count == 1 ? said[0] : $"All {said.Count} variants of {putPicked.ProductId} put on this rack.";
+            await LoadRackAsync();
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        putPicked = new();
+        putPickedVariants = new();
+        putPickedVariant = "";
+        await JS.FocusBoxAsync(".focus-whereis-put-product");
+    }
+
+    /// <summary>A scanned item goes on the rack level shown (read like the Sale screen's scan boxes: saved on "change", acted on when Enter comes up).</summary>
+    private async Task OnPutKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter") || shownRack is not { Level: { } level } r)
+        {
+            return;
+        }
+
+        if (await MoveService.FindItemAsync(putProduct, putVariant) is { } item)
+        {
+            try
+            {
+                lastPut = await PlaceService.PutOnRackAsync(item.VariantEntityId, r.RackId, level, moving);
+                await LoadRackAsync();
+            }
+            catch (PlaceRefused ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Warning);
+            }
+        }
+        else
+        {
+            Snackbar.Add($"{putProduct} / {putVariant} was not found.", Severity.Warning);
+        }
+
+        putProduct = putVariant = null;
+        await JS.FocusBoxAsync("#whereis-put-product");
+    }
+    private bool MaySeeRackPlace => rackPlace is not null && Access?.SeesPlace(rackPlace.Id) != false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allPlaces = await PlaceService.AllAsync();
+        places = allPlaces.Where(p => Access?.SeesPlace(p.Id) != false).ToList();
+    }
+
+    // ---------------------------------------------------------------- an item
+
+    /// <summary>Read like the Sale screen's scan boxes: saved on "change", acted on when Enter comes up.</summary>
+    private async Task OnScanKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter"))
+        {
+            return;
+        }
+
+        if (await MoveService.FindItemAsync(scanProduct, scanVariant) is { } found)
+        {
+            await ShowItemsAsync([new ItemRow(found.VariantEntityId, found.ProductId, found.ProductName, found.VariantId, found.VariantName)]);
+        }
+        else
+        {
+            Snackbar.Add($"{scanProduct} / {scanVariant} was not found.", Severity.Warning);
+        }
+
+        scanProduct = scanVariant = null;
+        await JS.FocusBoxAsync("#whereis-product");
+    }
+
+    /// <summary>A picked product shows all its variants.</summary>
+    private async Task OnProductPicked(ProductModel picked)
+    {
+        pickedProduct = picked ?? new();
+        if (picked is null || picked.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        var product = (await ProductRepository.GetProductWithVariantsById(picked.Id)).ToModel();
+        await ShowItemsAsync(product.Variants.Select(v => new ItemRow(v.Id, product.ProductId ?? "", product.Name ?? "", v.VariantId ?? "", v.Name ?? "")).ToList());
+    }
+
+    private async Task ShowItemsAsync(List<ItemRow> rows)
+    {
+        items = rows;
+        var ids = rows.Select(r => r.VariantEntityId).ToList();
+        racksByVariant = await PlaceService.RacksOfVariantsAsync(ids);
+        placeStock = await ProductRepository.GetPlaceStockAsync(ids, Access?.Places);
+    }
+
+    // ---------------------------------------------------------------- a rack
+
+    private async Task OnRackKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter"))
+        {
+            return;
+        }
+
+        var text = (rackText ?? "").Trim();
+        if (RackAddress.TryParse(text, out var address))
+        {
+            await ShowRackAsync(address.Place, address.Rack, address.Level);
+        }
+        else if (TryWholeRack(text, out var place, out var rack))
+        {
+            await ShowRackAsync(place, rack, null);
+        }
+        else
+        {
+            Snackbar.Add("Type or scan a rack like 0203B (one level) or 0203 (the whole rack).", Severity.Warning);
+        }
+
+        // One level shown (and allowed to arrange): ShowRackAsync already put the cursor in "Put items here" – leave it there.
+        if (!(shownRack is { Level: not null } && MayChangeRacks && rackText is null))
+        {
+            await JS.FocusBoxAsync("#whereis-rack");
+        }
+    }
+
+    /// <summary>"0203", "02-03", "2-3": a whole rack (place and rack, no level).</summary>
+    private static bool TryWholeRack(string text, out int place, out int rack)
+    {
+        place = rack = 0;
+        var parts = text.Split(['-', ' ', '/', '.'], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1 && text.Length == 4)
+        {
+            parts = [text[..2], text[2..]];
+        }
+
+        return parts.Length == 2 && int.TryParse(parts[0], out place) && int.TryParse(parts[1], out rack) && place is >= 1 and <= 99 && rack is >= 1 and <= 99;
+    }
+
+    private async Task ShowRackAsync(int placeNumber, int rackNumber, char? level)
+    {
+        rackPlace = allPlaces.FirstOrDefault(p => p.Number == placeNumber);
+        var rack = rackPlace?.Racks.FirstOrDefault(r => r.Number == rackNumber);
+        if (rackPlace is null || rack is null)
+        {
+            Snackbar.Add(rackPlace is null ? $"There is no place {placeNumber:00}." : $"{rackPlace.Name} has no rack {rackNumber:00}.", Severity.Warning);
+            return;
+        }
+
+        if (level is { } l && RackAddress.LevelNumber(l) > rack.Levels)
+        {
+            Snackbar.Add($"Rack {placeNumber:00}-{rackNumber:00} has levels {rack.LevelsText}.", Severity.Warning);
+            return;
+        }
+
+        shownRack = (rack.Id, level);
+        (pickPlaceId, pickRackId, pickLevel) = (rackPlace.Id, rack.Id, level?.ToString() ?? "");   // the lists show the same rack
+        rackTitle = level is { } lv
+            ? $"{new RackAddress(placeNumber, rackNumber, lv)} – {RackAddress.Describe(rackPlace.Name, new RackAddress(placeNumber, rackNumber, lv))}"
+            : $"{placeNumber:00}-{rackNumber:00} – {rackPlace.Name}, Rack {rackNumber}, all levels ({rack.LevelsText})";
+        rackText = null;
+        lastPut = null;
+        await LoadRackAsync();
+        if (level is not null && MayChangeRacks)
+        {
+            await JS.FocusBoxAsync("#whereis-put-product");   // next: scan the items that go here
+        }
+    }
+
+    private async Task LoadRackAsync()
+    {
+        if (shownRack is not { } r)
+        {
+            return;
+        }
+
+        contents = await PlaceService.RackContentsAsync(r.RackId, r.Level);
+        var ids = contents.Select(c => c.VariantEntityId).Distinct().ToList();
+        placeStock = await ProductRepository.GetPlaceStockAsync(ids, Access?.Places);
+    }
+
+    /// <summary>An emptied rack: the item is no longer kept here (its other racks stay; the next one becomes main if this was).</summary>
+    private async Task TakeOffAsync(RackContent content)
+    {
+        if (!await DialogService.ConfirmAsync("Not on this rack any more",
+                $"{content.ProductId} / {content.VariantId} is no longer kept on {content.Address}?", "Take off", Color.Error))
+        {
+            return;
+        }
+
+        try
+        {
+            await PlaceService.RemoveVariantRackAsync(content.VariantRackId);
+            Snackbar.Add($"{content.ProductId} / {content.VariantId} taken off {content.Address}.", Severity.Success);
+            await LoadRackAsync();
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+
+        if (shownRack is { Level: not null } && MayChangeRacks)
+        {
+            StateHasChanged();
+            await JS.FocusBoxAsync("#whereis-put-product");   // carry on arranging this level
+        }
+    }
+}

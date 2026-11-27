@@ -498,3 +498,12 @@ a, .btn-link {
 .move-receive-table .c-check { width: 40px; text-align: center; }
 .move-last-scan { font-weight: 600; color: var(--mud-palette-success); }
 .below-zero-table .c-pid { white-space: nowrap; width: 150px; }
+/* Stage 3, batch 3-7: Put away, Where is it? */
+.put-away-table .c-putaway-box { width: 150px; }
+.put-away-table tr.put-away-none > td { background: color-mix(in srgb, var(--mud-palette-warning) 12%, transparent); }
+.put-away-no-rack { color: var(--mud-palette-warning-darken, var(--mud-palette-warning)); font-weight: 600; }
+.put-away-rack { display: inline-block; margin-right: 10px; white-space: nowrap; }
+.put-away-rack.vr-main { font-weight: 600; }
+.whereis-racks .variant-more-place { margin: 2px 6px 2px 0; }
+.whereis-rack-title { font-size: 15px; }
+.whereis-put-label { font-weight: 600; }

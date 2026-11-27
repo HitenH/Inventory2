@@ -81,6 +81,18 @@ public partial class Purchase
     private bool MaySendOn => Access?.Allows(Permissions.StockTransferSend) == true && PurchaseId != null && purchaseEntity.Id != Guid.Empty
                               && purchaseEntity.PurchaseVariants is { Count: > 0 } && purchaseEntity.PlaceId != salesPlaceId;
 
+    /// <summary>Stage 3, batch 3-7: "Put away" on a saved purchase with lines (switch "Set where items are kept (racks)").</summary>
+    private bool MayPutAway => Access?.Allows(Permissions.StockRacks) == true && PurchaseId != null && purchaseEntity.Id != Guid.Empty
+                               && purchaseEntity.PurchaseVariants is { Count: > 0 };
+
+    private async Task PutAwayAsync()
+    {
+        var place = placeChoices.FirstOrDefault(p => p.Id == purchaseEntity.PlaceId)?.Name ?? "";
+        await PutAwayDialog.ShowAsync(DialogService, $"Put away – Purchase {purchaseEntity.VoucherId} of {purchaseEntity.Date:dd-MM-yyyy}, {purchaseEntity.Supplier?.Name} ({place})",
+            purchaseEntity.Id, purchaseEntity.PlaceId, place);
+        await JS.FocusBoxAsync(".focus-line-product");
+    }
+
     private async Task SendToShopAsync()
     {
         var title = $"Send to {SalesPlaceName} – Purchase {purchaseEntity.VoucherId} of {purchaseEntity.Date:dd-MM-yyyy}, {purchaseEntity.Supplier?.Name}";

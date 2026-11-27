@@ -28,6 +28,13 @@ public sealed record VariantRackItem(int Id, Guid VariantId, int RackId, int Pla
     public string RackDescription => $"Rack {Address.Rack}, Level {Address.Level}";
 }
 
+/// <summary>Stage 3, batch 3-7: one item kept on a rack (what "Where is it?" lists for a rack).</summary>
+public sealed record RackContent(int VariantRackId, Guid ProductEntityId, Guid VariantEntityId, string ProductId, string ProductName, string VariantId,
+    string VariantName, RackAddress Address, bool IsMain);
+
+/// <summary>Stage 3, batch 3-7: a purchase line to put away.</summary>
+public sealed record PutAwayLine(int SerialNumber, Guid ProductEntityId, Guid VariantEntityId, string ProductId, string ProductName, string VariantId, int Quantity);
+
 /// <summary>Stage 3: a place or rack change the rules do not allow, in plain words for the screen.</summary>
 public sealed class PlaceRefused(string message) : Exception(message);
 
@@ -502,6 +509,119 @@ public class PlaceService(IDbContextFactory<AppDbContext> factory, ActivityLogSe
         Log(db, variant, $"Racks of variant {variant.VariantId} copied to all {others.Count} other variant{(others.Count == 1 ? "" : "s")}: {list}");
         await db.SaveChangesAsync();
         return others.Count;
+    }
+
+    // ----- Put away and "Where is it?" (batch 3-7) -----
+
+    /// <summary>
+    /// "Where is it?" for a rack (Hiten, 26 Nov 2026: signposts for pickers and arrangers): the items kept on one level of a rack,
+    /// or on the whole rack when <paramref name="level"/> is null; by level, then product and variant.
+    /// </summary>
+    public async Task<List<RackContent>> RackContentsAsync(int rackId, char? level)
+    {
+        var text = level?.ToString();
+        await using var db = await factory.CreateDbContextAsync();
+        var rows = await db.VariantRacks.AsNoTracking()
+            .Where(v => v.RackId == rackId && (text == null || v.Level == text))
+            .Select(v => new
+            {
+                v.Id, v.VariantEntityId, v.Level, v.IsMain, ProductEntityId = v.Variant!.ProductEntityId, ProductId = v.Variant.Product.ProductId,
+                ProductName = v.Variant.Product.Name, VariantId = v.Variant.VariantId, VariantName = v.Variant.Name,
+                RackNumber = v.Rack!.Number, PlaceNumber = v.Rack.Place!.Number,
+            })
+            .ToListAsync();
+        return rows
+            .Select(r => new RackContent(r.Id, r.ProductEntityId ?? Guid.Empty, r.VariantEntityId, r.ProductId ?? "", r.ProductName ?? "", r.VariantId ?? "",
+                r.VariantName ?? "", new RackAddress(r.PlaceNumber, r.RackNumber, r.Level[0]), r.IsMain))
+            .OrderBy(r => r.Address.Level).ThenBy(r => r.ProductName).ThenBy(r => r.VariantId)
+            .ToList();
+    }
+
+    /// <summary>"Put away" on a purchase: its lines (product and variant), in serial-number order.</summary>
+    public async Task<List<PutAwayLine>> PutAwayLinesAsync(Guid purchaseId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.PurchaseVariant.AsNoTracking()
+            .Where(l => l.PurchaseEntityId == purchaseId)
+            .OrderBy(l => l.SerialNumber)
+            .Select(l => new PutAwayLine(l.SerialNumber, l.ProductEntityId, l.VariantEntityId, l.Product!.ProductId ?? "", l.Product.Name ?? "",
+                l.ProductVariant!.VariantId ?? "", l.Quantity ?? 0))
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// A typed or scanned address added to a variant ("Put away", the arranger puts the goods on a rack): read, checked against
+    /// the places and racks there are, then <see cref="AddVariantRackAsync"/>. Returns the address it was added on.
+    /// </summary>
+    public async Task<RackAddress> AddVariantRackByAddressAsync(Guid variantId, string? typed, bool makeMain = false)
+    {
+        if (!RackAddress.TryParse(typed, out var address))
+        {
+            throw new PlaceRefused("Type or scan an address like 0203B or 02-03-B (place, rack, level).");
+        }
+
+        var (rack, problem) = Resolve(await AllAsync(), address);
+        if (rack is null)
+        {
+            throw new PlaceRefused(problem!);
+        }
+
+        await AddVariantRackAsync(variantId, rack.Id, address.Level, makeMain);
+        return address;
+    }
+
+    /// <summary>
+    /// Hiten, 27 Nov 2026: arranging rack by rack – "I just scan a rack and scan the product". Puts the item on this rack level.
+    /// When <paramref name="moving"/> (rearranging), it comes off its other racks in the same place and this one becomes its
+    /// main rack; otherwise it is kept on its other racks too. Returns what was done, in words.
+    /// </summary>
+    public async Task<string> PutOnRackAsync(Guid variantId, int rackId, char level, bool moving)
+    {
+        level = char.ToUpperInvariant(level);
+        var text = level.ToString();
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            var rack = await db.Racks.Include(r => r.Place).FirstOrDefaultAsync(r => r.Id == rackId) ?? throw new PlaceRefused("This rack is no longer there.");
+            var address = new RackAddress(rack.Place!.Number, rack.Number, level);
+            var variant = await VariantAsync(db, variantId);
+            var name = $"{variant.Product?.ProductId} / {variant.VariantId}";
+            var already = await db.VariantRacks.AnyAsync(v => v.VariantEntityId == variantId && v.RackId == rackId && v.Level == text);
+            var others = moving
+                ? await db.VariantRacks.Include(v => v.Rack).Where(v => v.VariantEntityId == variantId && v.Rack!.PlaceId == rack.PlaceId && !(v.RackId == rackId && v.Level == text)).ToListAsync()
+                : [];
+            if (already && others.Count == 0)
+            {
+                if (moving)
+                {
+                    var here = await db.VariantRacks.FirstAsync(v => v.VariantEntityId == variantId && v.RackId == rackId && v.Level == text);
+                    if (!here.IsMain)
+                    {
+                        await SetMainAsync(here.Id);
+                    }
+                }
+
+                return $"{name} is already on {address}.";
+            }
+
+            if (others.Count > 0)
+            {
+                var from = string.Join(", ", others.Select(o => $"{rack.Place.Number:00}-{o.Rack!.Number:00}-{o.Level}"));
+                db.VariantRacks.RemoveRange(others);
+                Log(db, variant, $"Variant {variant.VariantId}: moved off {from} (rearranged to {address})");
+                await db.SaveChangesAsync();
+            }
+
+            if (already)
+            {
+                var here = await db.VariantRacks.FirstAsync(v => v.VariantEntityId == variantId && v.RackId == rackId && v.Level == text);
+                here.IsMain = true;
+                await db.SaveChangesAsync();
+                return $"{name} moved to {address} (its only rack in {rack.Place.Name} now).";
+            }
+
+            await AddVariantRackAsync(variantId, rackId, level, makeMain: moving);
+            return moving && others.Count > 0 ? $"{name} moved to {address}." : $"{name} put on {address}.";
+        }
     }
 
     // ----- Helpers -----

@@ -35,8 +35,9 @@ def change(status, lines):
     c.execute("insert into StockChanges (Id, Kind, VoucherId, Date, Status, Remarks, CreatedAt, CreatedBy)"
               " values (?, 'Damage', 1, '2026-11-25 00:00:00', ?, 'ui-check stock figures', '2026-11-25 10:00:00', 'Admin')", (sid, status))
     for n, (vid, qty) in enumerate(lines, 1):
-        c.execute("insert into StockChangeLines (Id, StockChangeEntityId, SerialNumber, ProductEntityId, VariantEntityId, Quantity, \"From\", \"To\", Reason, ReadyToSend)"
-                  " values (?, ?, ?, ?, ?, ?, 'Sellable', 'Damaged', 'Broken in transit', 0)", (str(uuid.uuid4()).upper(), sid, n, product_guid, vid, qty))
+        # Stage 3: the sellable side of a line is in a place (the shop, place 1); the database refuses a line without one.
+        c.execute("insert into StockChangeLines (Id, StockChangeEntityId, SerialNumber, ProductEntityId, VariantEntityId, Quantity, \"From\", \"To\", FromPlaceId, Reason, ReadyToSend)"
+                  " values (?, ?, ?, ?, ?, ?, 'Sellable', 'Damaged', 1, 'Broken in transit', 0)", (str(uuid.uuid4()).upper(), sid, n, product_guid, vid, qty))
 
 
 g, g_stock = variant("G")

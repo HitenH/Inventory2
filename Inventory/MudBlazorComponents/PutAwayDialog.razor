@@ -1,0 +1,140 @@
+@* Stage 3, batch 3-7 (Hiten, 26 Nov 2026): "Put away" on a saved purchase – after checking, the goods are arranged in the place
+   they arrived in. Every line is listed with the racks its item already has there (main rack ★ first); a line whose item has no
+   rack there yet is marked. Type or scan a rack address (0203B) in a line's box and press Enter: the rack is added to that item
+   (the first one in a place becomes its main rack) and the cursor goes to the next line. Racks are signposts – nothing is
+   counted per rack. Needs "Set where items are kept (racks)". Rules in Service/PlaceService.cs. *@
+
+<MudDialog Class="put-away-dialog">
+    <DialogContent>
+        @if (lines is null)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (lines.Count == 0)
+        {
+            <p>This purchase has no lines yet.</p>
+        }
+        else
+        {
+            <small class="text-muted d-block mb-2">Type or scan the rack where each item goes in @PlaceName (for example 0203B), Enter adds it and moves down.</small>
+            <table class="table table-sm mb-0 lines-table put-away-table">
+                <thead>
+                    <tr>
+                        <th class="c-sl num">#</th>
+                        <th class="c-pid">Product ID</th>
+                        <th class="c-name">Product Name</th>
+                        <th class="c-vid">Variant</th>
+                        <th class="c-qty num">Qty</th>
+                        <th>Racks in @PlaceName</th>
+                        <th class="c-putaway-box">Add rack</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < lines.Count; i++)
+                    {
+                        var line = lines[i];
+                        var index = i;
+                        var here = (racks.GetValueOrDefault(line.VariantEntityId) ?? []).Where(r => r.PlaceId == PlaceId).ToList();
+                        <tr class="@(here.Count == 0 ? "put-away-none" : "")">
+                            <td class="c-sl num">@line.SerialNumber</td>
+                            <td class="c-pid">@line.ProductId</td>
+                            <td class="c-name" title="@line.ProductName">@line.ProductName</td>
+                            <td class="c-vid">@line.VariantId</td>
+                            <td class="c-qty num">@line.Quantity</td>
+                            <td class="put-away-racks">
+                                @if (here.Count == 0)
+                                {
+                                    <span class="put-away-no-rack">No rack yet</span>
+                                }
+                                @foreach (var r in here)
+                                {
+                                    <span class="put-away-rack @(r.IsMain ? "vr-main" : "")" title="@r.Description">@(r.IsMain ? "★ " : "")<span class="vr-address">@r.Address</span></span>
+                                }
+                            </td>
+                            <td class="c-putaway-box">
+                                <input id="@($"put-away-{index}")" class="form-control address-text put-away-box" autocomplete="off" spellcheck="false"
+                                       @bind="typed[index]" @bind:event="oninput" @onkeyup="e => OnKeyAsync(e, index)" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton id="put-away-done" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" OnClick="() => MudDialog.Close(DialogResult.Ok(true))">Done</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Guid PurchaseId { get; set; }
+    /// <summary>The place the purchase arrived in (racks there are shown).</summary>
+    [Parameter] public int PlaceId { get; set; }
+    [Parameter] public string PlaceName { get; set; } = "";
+    [Inject] private PlaceService PlaceService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<PutAwayLine>? lines;
+    private string?[] typed = [];
+    private Dictionary<Guid, List<VariantRackItem>> racks = new();
+    private bool focused;
+
+    protected override async Task OnInitializedAsync()
+    {
+        lines = await PlaceService.PutAwayLinesAsync(PurchaseId);
+        typed = new string?[lines.Count];
+        await LoadRacksAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (lines is { Count: > 0 } && !focused)
+        {
+            focused = true;
+            await JS.FocusBoxAsync("#put-away-0");
+        }
+    }
+
+    private async Task LoadRacksAsync() =>
+        racks = await PlaceService.RacksOfVariantsAsync((lines ?? []).Select(l => l.VariantEntityId));
+
+    /// <summary>Enter (when the key comes up, after a scanner's text has arrived, as on the Sale screen) adds the rack and moves down.</summary>
+    private async Task OnKeyAsync(KeyboardEventArgs e, int index)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter") || lines is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(typed[index]))
+        {
+            await JS.FocusBoxAsync(index + 1 < lines.Count ? $"#put-away-{index + 1}" : "#put-away-done");
+            return;
+        }
+
+        try
+        {
+            var address = await PlaceService.AddVariantRackByAddressAsync(lines[index].VariantEntityId, typed[index]);
+            typed[index] = null;
+            await LoadRacksAsync();
+            Snackbar.Add($"{lines[index].ProductId} / {lines[index].VariantId}: rack {address} added.", Severity.Success);
+            await JS.FocusBoxAsync(index + 1 < lines.Count ? $"#put-away-{index + 1}" : "#put-away-done");
+        }
+        catch (PlaceRefused ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Warning);
+        }
+    }
+
+    public static async Task ShowAsync(IDialogService dialogService, string title, Guid purchaseId, int placeId, string placeName)
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, CloseOnEscapeKey = true, Position = DialogPosition.Center, DefaultFocus = DefaultFocus.None };
+        var dialog = await dialogService.ShowAsync<PutAwayDialog>(title, new DialogParameters<PutAwayDialog>
+        {
+            { x => x.PurchaseId, purchaseId }, { x => x.PlaceId, placeId }, { x => x.PlaceName, placeName },
+        }, options);
+        await dialog.Result;
+    }
+}
